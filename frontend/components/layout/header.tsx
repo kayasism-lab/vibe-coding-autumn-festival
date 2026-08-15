@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { Menu, X, ChevronDown, Instagram } from 'lucide-react'
+import { Menu, X, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
@@ -98,15 +98,6 @@ export function Header() {
                   />
                 </span>
                 <span>전국직장인연극단체협의회</span>
-                <a
-                  href="https://www.instagram.com/jikplay1997"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="전국직장인연극단체협의회 Instagram"
-                  className="text-white/70 hover:text-amber-400 transition-colors"
-                >
-                  <Instagram className="h-3.5 w-3.5" />
-                </a>
               </span>
               <span className="text-white/60 hidden lg:inline">|</span>
               <span className="hidden items-center gap-1.5 text-white/70 lg:flex">
