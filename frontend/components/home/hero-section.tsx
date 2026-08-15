@@ -202,7 +202,7 @@ export function HeroSection() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="전국직장인연극단체협의회 Instagram"
-                  className="text-white/70 hover:text-amber-400 transition-colors"
+                  className="text-amber-400 hover:text-amber-300 transition-colors"
                 >
                   <Instagram className="h-3.5 w-3.5" />
                 </a>
