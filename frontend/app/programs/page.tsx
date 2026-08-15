@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
@@ -24,9 +25,28 @@ type Program = {
   posterUrl?: string
 }
 
+const validTypes: Program['type'][] = ['play', 'reading', 'short_play']
+
 export default function ProgramsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProgramsPageContent />
+    </Suspense>
+  )
+}
+
+function ProgramsPageContent() {
+  const searchParams = useSearchParams()
   const [programs, setPrograms] = useState<Program[]>([])
   const [type, setType] = useState<'all' | Program['type']>('all')
+
+  // 헤더 메뉴/홈 통계 카드 등 ?type=xxx 링크로 들어왔을 때 해당 필터를 바로 적용
+  useEffect(() => {
+    const requested = searchParams.get('type')
+    if (requested && validTypes.includes(requested as Program['type'])) {
+      setType(requested as Program['type'])
+    }
+  }, [searchParams])
 
   useEffect(() => {
     const query = type === 'all' ? '' : `?type=${type}`

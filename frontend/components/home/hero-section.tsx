@@ -264,20 +264,29 @@ export function HeroSection() {
 
             {/* Right - Info Cards (2 cols) */}
             <div className={`lg:col-span-2 space-y-6 transition-all duration-1000 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              {/* Stats Cards */}
+              {/* Stats Cards - 클릭하면 공연 프로그램의 해당 유형 필터로 이동 */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-white/10 hover:bg-white/15 transition-colors">
-                  <p className="text-3xl font-bold text-amber-400">2</p>
-                  <p className="text-xs text-white/70 mt-1">연극</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-white/10 hover:bg-white/15 transition-colors">
-                  <p className="text-3xl font-bold text-amber-400">1</p>
-                  <p className="text-xs text-white/70 mt-1">열린 낭독극</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-white/10 hover:bg-white/15 transition-colors">
-                  <p className="text-3xl font-bold text-amber-400">1</p>
-                  <p className="text-xs text-white/70 mt-1">열린 단막극</p>
-                </div>
+                <Link
+                  href="/programs?type=play"
+                  className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-transparent hover:border-amber-400/30 hover:bg-white/15 transition-all duration-300 group cursor-pointer"
+                >
+                  <p className="text-3xl font-bold text-amber-400 group-hover:scale-110 transition-transform">2</p>
+                  <p className="text-xs text-white/70 mt-1 group-hover:text-white transition-colors">연극</p>
+                </Link>
+                <Link
+                  href="/programs?type=reading"
+                  className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-transparent hover:border-amber-400/30 hover:bg-white/15 transition-all duration-300 group cursor-pointer"
+                >
+                  <p className="text-3xl font-bold text-amber-400 group-hover:scale-110 transition-transform">1</p>
+                  <p className="text-xs text-white/70 mt-1 group-hover:text-white transition-colors">열린 낭독극</p>
+                </Link>
+                <Link
+                  href="/programs?type=short_play"
+                  className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-transparent hover:border-amber-400/30 hover:bg-white/15 transition-all duration-300 group cursor-pointer"
+                >
+                  <p className="text-3xl font-bold text-amber-400 group-hover:scale-110 transition-transform">1</p>
+                  <p className="text-xs text-white/70 mt-1 group-hover:text-white transition-colors">열린 단막극</p>
+                </Link>
               </div>
 
               {/* Participating Theater Groups */}
