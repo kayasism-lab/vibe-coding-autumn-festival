@@ -101,9 +101,9 @@ export default function AdminInquiriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="flex min-h-screen bg-muted">
       <AdminSidebar />
-      <main className="lg:ml-64 pt-14 lg:pt-0">
+      <main className="flex-1 pt-14 lg:pt-0">
         <div className="p-6 lg:p-8">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground">문의 관리</h1>

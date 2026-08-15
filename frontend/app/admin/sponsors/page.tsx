@@ -125,9 +125,9 @@ export default function AdminSponsorsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="flex min-h-screen bg-muted">
       <AdminSidebar />
-      <main className="lg:ml-64 pt-14 lg:pt-0">
+      <main className="flex-1 pt-14 lg:pt-0">
         <div className="p-6 lg:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
