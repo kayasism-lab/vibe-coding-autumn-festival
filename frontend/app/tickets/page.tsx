@@ -10,8 +10,9 @@ import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Calendar, ExternalLink, Info, Loader2, MapPin, Ticket, Users } from 'lucide-react'
+import { AlertCircle, Calendar, ExternalLink, Info, Loader2, Ticket, Users } from 'lucide-react'
 import { programTypeConfig } from '@/lib/program-display'
+import { VenueMapButton } from '@/components/shared/venue-map-button'
 import type { ProgramType } from '@/types/index'
 
 interface Program {
@@ -22,25 +23,6 @@ interface Program {
   venue: string
   venueAddress?: string
   ticketUrl?: string
-}
-
-// 주소가 있을 때만 네이버 지도로 연결되는 위치 버튼. 주소가 없으면 비활성(회색) 상태로 표시.
-function VenueMapButton({ address }: { address?: string }) {
-  if (!address) {
-    return <MapPin className="h-4 w-4 text-muted-foreground" />
-  }
-
-  return (
-    <a
-      href={`https://map.naver.com/p/search/${encodeURIComponent(address)}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      title="네이버 지도에서 위치 보기"
-      className="text-blue-600 hover:text-blue-700 transition-colors"
-    >
-      <MapPin className="h-4 w-4" />
-    </a>
-  )
 }
 
 export default function TicketsPage() {

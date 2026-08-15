@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Clock, ExternalLink, MapPin } from 'lucide-react'
+import { Clock, ExternalLink } from 'lucide-react'
 import { formatScheduleDate } from '@/lib/format-date'
 import { programTypeConfig, seatStatusConfig } from '@/lib/program-display'
+import { VenueMapButton } from '@/components/shared/venue-map-button'
 import type { ProgramType, SeatStatus } from '@/types/index'
 
 export interface ScheduleSession {
@@ -20,6 +21,7 @@ export interface ProgramScheduleGroup {
     type: ProgramType
     company: string
     ticketUrl?: string
+    venueAddress?: string
   }
   venue: string
   sessions: ScheduleSession[]
@@ -50,7 +52,7 @@ export function ScheduleCard({ group }: { group: ProgramScheduleGroup }) {
           <p className="text-sm text-muted-foreground mt-1">{group.program.company}</p>
 
           <div className="flex items-center gap-1 mt-3 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" />
+            <VenueMapButton address={group.program.venueAddress} />
             <span>{group.venue}</span>
           </div>
 

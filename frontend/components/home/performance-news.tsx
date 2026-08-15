@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Calendar, MapPin, Sparkles, Users } from 'lucide-react'
+import { ArrowRight, Calendar, Sparkles, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { VenueMapButton } from '@/components/shared/venue-map-button'
 
 type Program = {
   _id: string
@@ -12,6 +13,7 @@ type Program = {
   type: 'play' | 'musical' | 'short_play'
   company: string
   venue: string
+  venueAddress?: string
   posterUrl?: string
 }
 
@@ -93,7 +95,7 @@ export function PerformanceNews() {
                           <span>일정 준비 중</span>
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
+                          <VenueMapButton address={program.venueAddress} />
                           <span>{program.venue}</span>
                         </div>
                       </div>

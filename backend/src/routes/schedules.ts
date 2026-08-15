@@ -38,7 +38,7 @@ schedulesRouter.get(
     }
 
     const schedules = await Schedule.find(query)
-      .populate('programId', 'title type company posterUrl ticketUrl venue')
+      .populate('programId', 'title type company posterUrl ticketUrl venue venueAddress')
       .sort({ date: 1, time: 1 })
       .lean()
 

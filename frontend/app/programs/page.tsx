@@ -6,8 +6,9 @@ import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
 import { Badge } from '@/components/ui/badge'
-import { ArrowRight, Clock, MapPin, Users } from 'lucide-react'
+import { ArrowRight, Clock, Users } from 'lucide-react'
 import { programTypeConfig as typeConfig } from '@/lib/program-display'
+import { VenueMapButton } from '@/components/shared/venue-map-button'
 import type { ProgramType } from '@/types/index'
 
 type Program = {
@@ -18,6 +19,7 @@ type Program = {
   director?: string
   runtime: number
   venue: string
+  venueAddress?: string
   synopsis: string
   posterUrl?: string
 }
@@ -75,7 +77,7 @@ export default function ProgramsPage() {
                         <p className="mb-6 line-clamp-2 leading-relaxed text-card-foreground/80">{program.synopsis}</p>
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{program.runtime}분</span>
-                          <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{program.venue}</span>
+                          <span className="flex items-center gap-1"><VenueMapButton address={program.venueAddress} />{program.venue}</span>
                           {program.director && <span className="flex items-center gap-1"><Users className="h-4 w-4" />연출: {program.director}</span>}
                         </div>
                         <div className="mt-6 flex items-center text-sm font-medium text-primary">자세히 보기<ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" /></div>

@@ -7,9 +7,10 @@ import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, Clock, ExternalLink, MapPin, ShieldCheck, Users } from 'lucide-react'
+import { ArrowLeft, Calendar, Clock, ExternalLink, ShieldCheck, Users } from 'lucide-react'
 import { programTypeConfig, seatStatusConfig } from '@/lib/program-display'
 import { formatScheduleDate } from '@/lib/format-date'
+import { VenueMapButton } from '@/components/shared/venue-map-button'
 import type { ProgramType, SeatStatus } from '@/types/index'
 
 type Program = {
@@ -136,7 +137,11 @@ export default function ProgramDetailPage() {
                   <h3 className="mb-4 text-lg font-semibold text-card-foreground">공연 정보</h3>
                   <dl className="space-y-4">
                     <Info icon={<Clock className="h-5 w-5" />} label="러닝타임" value={`${program.runtime}분`} />
-                    <Info icon={<MapPin className="h-5 w-5" />} label="공연장" value={program.venue} />
+                    <Info
+                      icon={<VenueMapButton address={program.venueAddress} iconClassName="h-5 w-5" />}
+                      label="공연장"
+                      value={program.venue}
+                    />
                     {program.ageRating && <Info icon={<ShieldCheck className="h-5 w-5" />} label="관람 연령" value={program.ageRating} />}
                     {program.director && <Info icon={<Users className="h-5 w-5" />} label="연출" value={program.director} />}
                     <Info icon={<Calendar className="h-5 w-5" />} label="관람료" value="무료" />
