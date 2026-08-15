@@ -18,6 +18,9 @@ next.user-config.*
 백엔드환경값.txt
 docs/env-values.local.md
 
+# DB 백업 (개인정보/비밀번호 해시 포함, 커밋 금지)
+db-backups/
+
 # Common ignores
 node_modules
 .next/
