@@ -6,12 +6,14 @@ import { formatScheduleDate } from '@/lib/format-date'
 import { programTypeConfig, seatStatusConfig } from '@/lib/program-display'
 import type { ProgramType, SeatStatus } from '@/types/index'
 
-export interface ScheduleCardData {
+export interface ScheduleSession {
   _id: string
   date: string
   time: string
-  venue: string
   seatStatus: SeatStatus
+}
+
+export interface ProgramScheduleGroup {
   program: {
     _id: string
     title: string
@@ -19,58 +21,66 @@ export interface ScheduleCardData {
     company: string
     ticketUrl?: string
   }
+  venue: string
+  sessions: ScheduleSession[]
 }
 
-// 일정 하나를 보여주는 카드. /schedule, /programs/[id] 에서 공통으로 사용
-export function ScheduleCard({ schedule }: { schedule: ScheduleCardData }) {
-  const dateInfo = formatScheduleDate(schedule.date)
-  const type = programTypeConfig[schedule.program.type]
-  const seat = seatStatusConfig[schedule.seatStatus]
+// 공연 하나(프로그램) 기준으로 전체 회차를 모아 보여주는 카드.
+// 실제 예약 페이지가 한 곳에서 회차를 선택하는 방식이라, 회차별 정보만 나열하고
+// 예약 버튼은 공연당 하나만 둔다. /schedule 에서 사용.
+export function ScheduleCard({ group }: { group: ProgramScheduleGroup }) {
+  const type = programTypeConfig[group.program.type]
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 sm:p-6 transition-all hover:border-primary/30">
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-        {/* Date */}
-        <div className="flex sm:flex-col items-center sm:items-start gap-2 sm:gap-0 sm:w-20 flex-shrink-0">
-          <div className="flex items-baseline gap-1 sm:block">
-            <span className="text-2xl sm:text-3xl font-bold text-primary">{dateInfo.day}</span>
-            <span className="text-sm text-muted-foreground sm:block">({dateInfo.dayOfWeek})</span>
-          </div>
-        </div>
-
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <Badge className={`${type.bgClass} ${type.textClass}`}>{type.label}</Badge>
-            <Badge className={seat.className}>{seat.label}</Badge>
           </div>
 
           <Link
-            href={`/programs/${schedule.program._id}`}
+            href={`/programs/${group.program._id}`}
             className="text-lg font-semibold text-card-foreground hover:text-primary transition-colors"
           >
-            {schedule.program.title}
+            {group.program.title}
           </Link>
 
-          <p className="text-sm text-muted-foreground mt-1">{schedule.program.company}</p>
+          <p className="text-sm text-muted-foreground mt-1">{group.program.company}</p>
 
-          <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
-              <span>{schedule.time}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              <span>{schedule.venue}</span>
-            </div>
+          <div className="flex items-center gap-1 mt-3 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>{group.venue}</span>
           </div>
+
+          {/* 회차별 일정: 예약 버튼 없이 정보만 표시 */}
+          <ul className="flex flex-wrap gap-2 mt-3">
+            {group.sessions.map((session, index) => {
+              const dateInfo = formatScheduleDate(session.date)
+              const seat = seatStatusConfig[session.seatStatus]
+              return (
+                <li
+                  key={session._id}
+                  className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs"
+                >
+                  <span className="font-medium text-card-foreground">{index + 1}회차</span>
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    {dateInfo.month}/{dateInfo.day}({dateInfo.dayOfWeek}) {session.time}
+                  </span>
+                  <Badge className={seat.className}>{seat.label}</Badge>
+                </li>
+              )
+            })}
+          </ul>
         </div>
 
-        {/* Action */}
+        {/* Action - 공연당 예약 링크는 하나만 */}
         <div className="flex-shrink-0 self-center">
-          {schedule.program.ticketUrl ? (
+          {group.program.ticketUrl ? (
             <Button asChild size="sm">
-              <a href={schedule.program.ticketUrl} target="_blank" rel="noopener noreferrer">
+              <a href={group.program.ticketUrl} target="_blank" rel="noopener noreferrer">
                 무료 예약
                 <ExternalLink className="ml-1 h-3 w-3" />
               </a>

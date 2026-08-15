@@ -114,12 +114,24 @@ export function Header() {
                 </span>
               </span>
             </div>
+            {/* 모바일 화면: 좌측 주최/후원이 다 숨겨지므로 후원 로고만이라도 축소해서 노출 */}
+            <span className="flex items-center gap-1.5 text-white/70 sm:hidden flex-shrink-0">
+              <span>후원</span>
+              <span className="flex h-6 items-center rounded-md bg-white px-1">
+                <Image
+                  src="/logo/seoul-sponsor.png"
+                  alt="서울특별시"
+                  width={804}
+                  height={217}
+                  unoptimized
+                  className="h-4 w-auto object-contain"
+                />
+              </span>
+            </span>
             <div className="hidden sm:flex items-center gap-4">
-              <Link href="/login" className="text-white/60 hover:text-amber-400 transition-colors">
-                로그인
-              </Link>
-              <Link href="/signup" className="text-white/60 hover:text-amber-400 transition-colors">
-                회원가입
+              {/* 회원가입은 당분간 비공개, 로그인은 관리자 로그인 페이지로 연결 */}
+              <Link href="/admin/login" className="text-white/60 hover:text-amber-400 transition-colors">
+                관리자 로그인
               </Link>
               <Link href="/contact" className="text-white/60 hover:text-amber-400 transition-colors">
                 오시는 길

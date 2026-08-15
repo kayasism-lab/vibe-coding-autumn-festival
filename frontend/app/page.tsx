@@ -6,7 +6,6 @@ import { PerformanceNews } from '@/components/home/performance-news'
 import { NoticeTabs } from '@/components/home/notice-tabs'
 import { GalleryPreview } from '@/components/home/gallery-preview'
 import { QuickMenu } from '@/components/home/quick-menu'
-import { OrganizerBar } from '@/components/shared/organizer-bar'
 
 export default function HomePage() {
   return (
@@ -19,11 +18,7 @@ export default function HomePage() {
         <NoticeTabs />
         <GalleryPreview />
         <QuickMenu />
-        <section className="bg-muted py-10">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <OrganizerBar theme="light" />
-          </div>
-        </section>
+        {/* 주관/후원 로고는 Footer에서 한 번만 표시(중복 노출 방지) */}
       </main>
       <Footer />
     </>

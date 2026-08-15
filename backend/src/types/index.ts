@@ -153,6 +153,8 @@ export interface ITheaterGroup extends Document {
     youtube?: string
     blog?: string
   }
+  videoUrl?: string
+  photos?: string[]
   color: string
   bgGradient: string
   order: number

@@ -25,6 +25,8 @@ interface TheaterGroup {
     youtube?: string
     blog?: string
   }
+  videoUrl?: string
+  photos?: string[]
 }
 
 interface Program {
@@ -199,6 +201,28 @@ export default function MyGroupPage() {
                       rows={3}
                       value={highlightsText}
                       onChange={(e) => setHighlightsText(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="videoUrl">공연 준비 영상 (유튜브 등 URL)</Label>
+                    <Input
+                      id="videoUrl"
+                      value={group.videoUrl || ''}
+                      onChange={(e) => setGroup({ ...group, videoUrl: e.target.value })}
+                      placeholder="https://youtube.com/watch?v=..."
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>공연 준비 사진</Label>
+                    <CloudinaryUpload
+                      value={group.photos || []}
+                      onChange={(urls) => setGroup({ ...group, photos: urls as string[] })}
+                      multiple
+                      maxFiles={10}
+                      folder={`autumn_festival/theater-groups/${group.name}/photos`}
+                      placeholder="공연 준비 사진 업로드"
                     />
                   </div>
 

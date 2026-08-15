@@ -24,6 +24,8 @@ interface TheaterGroup {
   description: string
   highlights?: string[]
   imageUrl?: string
+  videoUrl?: string
+  photos?: string[]
   socialLinks?: {
     website?: string
     instagram?: string
@@ -404,6 +406,33 @@ export function HeroSection() {
                             </li>
                           ))}
                         </ul>
+                      </div>
+                    )}
+
+                    {/* 공연 준비 영상 */}
+                    {selectedGroup.videoUrl && (
+                      <a
+                        href={selectedGroup.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 rounded-xl bg-secondary/50 hover:bg-secondary p-4 text-sm font-medium text-foreground transition-colors"
+                      >
+                        <Play className="h-4 w-4" />
+                        공연 준비 영상 보기
+                      </a>
+                    )}
+
+                    {/* 공연 준비 사진 */}
+                    {selectedGroup.photos && selectedGroup.photos.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3 text-foreground">공연 준비 사진</h4>
+                        <div className="grid grid-cols-3 gap-2">
+                          {selectedGroup.photos.map((url) => (
+                            <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="aspect-square overflow-hidden rounded-lg bg-muted">
+                              <img src={url} alt={`${selectedGroup.name} 공연 준비 사진`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                            </a>
+                          ))}
+                        </div>
                       </div>
                     )}
 

@@ -9,35 +9,57 @@ import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Calendar, Clock, Loader2, MapPin } from 'lucide-react'
-import { ScheduleCard, type ScheduleCardData } from '@/components/schedule/schedule-card'
+import { ScheduleCard, type ProgramScheduleGroup } from '@/components/schedule/schedule-card'
 import { monthLabel } from '@/lib/format-date'
 
-type RawSchedule = Omit<ScheduleCardData, 'program'> & {
-  programId: ScheduleCardData['program'] | null
+type RawSchedule = {
+  _id: string
+  date: string
+  time: string
+  venue: string
+  seatStatus: ProgramScheduleGroup['sessions'][number]['seatStatus']
+  programId: ProgramScheduleGroup['program'] | null
 }
 
-function groupByMonth(schedules: RawSchedule[]) {
-  const groups: Record<string, ScheduleCardData[]> = {}
+// 같은 공연(프로그램)의 여러 회차를 하나로 묶는다.
+// 실제 예약 페이지가 한 곳에서 회차를 선택하는 방식이라, 회차별로 카드를 따로
+// 만들지 않고 회차 정보만 나열한 뒤 예약 링크는 공연당 하나만 남긴다.
+function groupByProgramThenMonth(schedules: RawSchedule[]) {
+  const byProgram = new Map<string, ProgramScheduleGroup>()
 
   for (const schedule of schedules) {
     if (!schedule.programId) continue // 연결된 프로그램이 삭제된 경우 등 방어적 처리
-    const key = monthLabel(schedule.date)
+    const key = schedule.programId._id
+    if (!byProgram.has(key)) {
+      byProgram.set(key, { program: schedule.programId, venue: schedule.venue, sessions: [] })
+    }
+    byProgram.get(key)!.sessions.push({
+      _id: schedule._id,
+      date: schedule.date,
+      time: schedule.time,
+      seatStatus: schedule.seatStatus,
+    })
+  }
+
+  const groups: Record<string, ProgramScheduleGroup[]> = {}
+  for (const group of byProgram.values()) {
+    const key = monthLabel(group.sessions[0].date)
     if (!groups[key]) groups[key] = []
-    groups[key].push({ ...schedule, program: schedule.programId })
+    groups[key].push(group)
   }
 
   return groups
 }
 
 export default function SchedulePage() {
-  const [groups, setGroups] = useState<Record<string, ScheduleCardData[]>>({})
+  const [groups, setGroups] = useState<Record<string, ProgramScheduleGroup[]>>({})
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/schedules')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) setGroups(groupByMonth(data.data))
+        if (data.success) setGroups(groupByProgramThenMonth(data.data))
       })
       .finally(() => setIsLoading(false))
   }, [])
@@ -80,8 +102,8 @@ export default function SchedulePage() {
                 {months.map((month) => (
                   <TabsContent key={month} value={month}>
                     <div className="space-y-4">
-                      {groups[month].map((schedule) => (
-                        <ScheduleCard key={schedule._id} schedule={schedule} />
+                      {groups[month].map((group) => (
+                        <ScheduleCard key={group.program._id} group={group} />
                       ))}
                     </div>
                   </TabsContent>

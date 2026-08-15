@@ -16,6 +16,9 @@ const TheaterGroupSchema = new Schema<ITheaterGroup>(
       youtube: { type: String },
       blog: { type: String },
     },
+    // 극단이 직접 업로드하는 공연 준비 영상(유튜브 등 외부 URL)과 사진들
+    videoUrl: { type: String },
+    photos: [{ type: String }],
     color: { type: String, default: 'bg-primary' },
     bgGradient: { type: String, default: 'from-primary to-primary/80' },
     order: { type: Number, default: 0 },

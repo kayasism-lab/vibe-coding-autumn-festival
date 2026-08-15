@@ -73,16 +73,16 @@ export default function AdminLoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">이메일</Label>
+                <Label htmlFor="email">아이디</Label>
                 <Input
                   id="email"
-                  type="email"
+                  type="text"
                   required
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  placeholder="admin@example.com"
+                  placeholder="관리자 아이디 입력"
                 />
               </div>
 
@@ -115,10 +115,6 @@ export default function AdminLoginPage() {
                 )}
               </Button>
             </form>
-
-            <div className="mt-6 text-center text-xs text-muted-foreground">
-              <p>테스트 계정: admin@festival.com / admin1234</p>
-            </div>
           </CardContent>
         </Card>
       </div>
