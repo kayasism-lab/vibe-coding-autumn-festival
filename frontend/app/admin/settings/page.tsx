@@ -85,11 +85,21 @@ export default function AdminSettingsPage() {
       const heroData = await heroRes.json()
       const siteData = await siteRes.json()
 
+      // 서버에 저장된 값이 예전 스키마 형태라 일부 필드(stats, snsLinks 등)가
+      // 없을 수 있어, 기본값과 병합해 undefined 참조로 화면이 깨지지 않게 함
       if (heroData.data?.value) {
-        setHeroConfig(heroData.data.value)
+        setHeroConfig({
+          ...defaultHeroConfig,
+          ...heroData.data.value,
+          stats: { ...defaultHeroConfig.stats, ...(heroData.data.value.stats || {}) },
+        })
       }
       if (siteData.data?.value) {
-        setSiteInfo(siteData.data.value)
+        setSiteInfo({
+          ...defaultSiteInfo,
+          ...siteData.data.value,
+          snsLinks: { ...defaultSiteInfo.snsLinks, ...(siteData.data.value.snsLinks || {}) },
+        })
       }
     } catch (error) {
       console.error('Failed to fetch configs:', error)
