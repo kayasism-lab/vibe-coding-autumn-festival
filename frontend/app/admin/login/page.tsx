@@ -1,22 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+
+// 아이디만 저장(비밀번호는 브라우저 자체 비밀번호 관리자에 위임)
+const SAVED_ID_KEY = 'admin_saved_id'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [rememberId, setRememberId] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
+
+  useEffect(() => {
+    const savedId = localStorage.getItem(SAVED_ID_KEY)
+    if (savedId) {
+      setFormData((prev) => ({ ...prev, email: savedId }))
+      setRememberId(true)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,6 +51,12 @@ export default function AdminLoginPage() {
           await fetch('/api/auth/logout', { method: 'POST' })
           setError('관리자 권한이 있는 계정만 접근할 수 있습니다.')
           return
+        }
+
+        if (rememberId) {
+          localStorage.setItem(SAVED_ID_KEY, formData.email)
+        } else {
+          localStorage.removeItem(SAVED_ID_KEY)
         }
 
         router.push(role === 'group' ? '/admin/my-group' : '/admin')
@@ -71,12 +90,14 @@ export default function AdminLoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
               <div className="space-y-2">
                 <Label htmlFor="email">아이디</Label>
                 <Input
                   id="email"
+                  name="username"
                   type="text"
+                  autoComplete="username"
                   required
                   value={formData.email}
                   onChange={(e) =>
@@ -90,7 +111,9 @@ export default function AdminLoginPage() {
                 <Label htmlFor="password">비밀번호</Label>
                 <Input
                   id="password"
+                  name="password"
                   type="password"
+                  autoComplete="current-password"
                   required
                   value={formData.password}
                   onChange={(e) =>
@@ -98,6 +121,17 @@ export default function AdminLoginPage() {
                   }
                   placeholder="비밀번호 입력"
                 />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="rememberId"
+                  checked={rememberId}
+                  onCheckedChange={(checked) => setRememberId(Boolean(checked))}
+                />
+                <Label htmlFor="rememberId" className="text-sm font-normal cursor-pointer">
+                  로그인 정보 저장
+                </Label>
               </div>
 
               {error && (
