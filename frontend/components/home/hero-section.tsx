@@ -252,8 +252,7 @@ export function HeroSection() {
                 <Button
                   asChild
                   size="lg"
-                  variant="outline"
-                  className="bg-transparent border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 rounded-full px-8 backdrop-blur-sm"
+                  className="bg-white text-slate-900 hover:bg-white/90 rounded-full px-8 shadow-lg shadow-black/20 border-0"
                 >
                   <Link href="/tickets">
                     <Ticket className="mr-2 h-4 w-4" />
