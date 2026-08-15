@@ -1,0 +1,371 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { AdminSidebar } from '@/components/admin/admin-sidebar'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Edit, Trash2, Calendar, Clock, MapPin, Save, X } from 'lucide-react'
+
+interface Schedule {
+  _id: string
+  programId?: {
+    _id: string
+    title: string
+  }
+  date: string
+  venue: string
+  time: string
+  seatStatus: 'available' | 'limited' | 'soldout'
+  note?: string
+}
+
+interface Program {
+  _id: string
+  title: string
+}
+
+type ScheduleFormData = {
+  programId: string
+  date: string
+  time: string
+  venue: string
+  seatStatus: Schedule['seatStatus']
+  note: string
+}
+
+export default function AdminSchedulesPage() {
+  const [schedules, setSchedules] = useState<Schedule[]>([])
+  const [programs, setPrograms] = useState<Program[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
+  const [formData, setFormData] = useState<ScheduleFormData>({
+    programId: '',
+    date: '',
+    time: '',
+    venue: '',
+    seatStatus: 'available' as const,
+    note: '',
+  })
+
+  useEffect(() => {
+    fetchSchedules()
+    fetchPrograms()
+  }, [])
+
+  const fetchSchedules = async () => {
+    try {
+      const res = await fetch('/api/schedules')
+      const data = await res.json()
+      if (data.success) {
+        setSchedules(data.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch schedules:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const fetchPrograms = async () => {
+    try {
+      const res = await fetch('/api/programs')
+      const data = await res.json()
+      if (data.success) {
+        setPrograms(data.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch programs:', error)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const url = editingSchedule 
+      ? `/api/schedules/${editingSchedule._id}` 
+      : '/api/schedules'
+    const method = editingSchedule ? 'PUT' : 'POST'
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (res.ok) {
+        fetchSchedules()
+        setIsDialogOpen(false)
+        resetForm()
+      }
+    } catch (error) {
+      console.error('Failed to save schedule:', error)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('정말 삭제하시겠습니까?')) return
+
+    try {
+      const res = await fetch(`/api/schedules/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        fetchSchedules()
+      }
+    } catch (error) {
+      console.error('Failed to delete schedule:', error)
+    }
+  }
+
+  const handleEdit = (schedule: Schedule) => {
+    setEditingSchedule(schedule)
+    setFormData({
+      programId: schedule.programId?._id || '',
+      date: schedule.date.split('T')[0],
+      time: schedule.time,
+      venue: schedule.venue,
+      seatStatus: schedule.seatStatus,
+      note: schedule.note || '',
+    })
+    setIsDialogOpen(true)
+  }
+
+  const resetForm = () => {
+    setEditingSchedule(null)
+    setFormData({
+      programId: '',
+      date: '',
+      time: '',
+      venue: '',
+      seatStatus: 'available',
+      note: '',
+    })
+  }
+
+  const statusColors: Record<string, string> = {
+    available: 'bg-green-500',
+    limited: 'bg-yellow-500',
+    soldout: 'bg-red-500',
+  }
+
+  const statusLabels: Record<string, string> = {
+    available: '예매 가능',
+    limited: '매진 임박',
+    soldout: '매진',
+  }
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar />
+      
+      <main className="flex-1 p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">일정 관리</h1>
+              <p className="text-gray-600 mt-1">공연 일정을 추가하고 관리합니다.</p>
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open)
+              if (!open) resetForm()
+            }}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  일정 추가
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingSchedule ? '일정 수정' : '새 일정 추가'}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>연결 프로그램 *</Label>
+                    <Select
+                      value={formData.programId}
+                      onValueChange={(value) => setFormData({ ...formData, programId: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="프로그램 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {programs.map((program) => (
+                          <SelectItem key={program._id} value={program._id}>
+                            {program.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>날짜 *</Label>
+                      <Input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>시간 *</Label>
+                      <Input
+                        type="time"
+                        value={formData.time}
+                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>공연장 *</Label>
+                    <Input
+                      value={formData.venue}
+                      onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+                      placeholder="예: 대학로 ○○소극장"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>좌석 상태</Label>
+                    <Select
+                      value={formData.seatStatus}
+                      onValueChange={(value: 'available' | 'limited' | 'soldout') => 
+                        setFormData({ ...formData, seatStatus: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">예매 가능</SelectItem>
+                        <SelectItem value="limited">매진 임박</SelectItem>
+                        <SelectItem value="soldout">매진</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>메모</Label>
+                    <Textarea
+                      value={formData.note}
+                      onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                      placeholder="추가 메모 (선택)"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      <X className="h-4 w-4 mr-2" />
+                      취소
+                    </Button>
+                    <Button type="submit">
+                      <Save className="h-4 w-4 mr-2" />
+                      {editingSchedule ? '수정' : '저장'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+            </div>
+          ) : schedules.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center text-gray-500">
+                등록된 일정이 없습니다.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {schedules.map((schedule) => (
+                <Card key={schedule._id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Badge className={statusColors[schedule.seatStatus]}>
+                            {statusLabels[schedule.seatStatus]}
+                          </Badge>
+                          <h3 className="font-semibold text-lg">
+                            {schedule.programId?.title || '프로그램 미지정'}
+                          </h3>
+                        </div>
+                        {schedule.programId && (
+                          <p className="text-sm text-primary">
+                            연결 프로그램: {schedule.programId.title}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(schedule.date).toLocaleDateString('ko-KR')}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {schedule.time}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {schedule.venue}
+                          </div>
+                        </div>
+                        {schedule.note && (
+                          <p className="text-sm text-gray-500">{schedule.note}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(schedule)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(schedule._id)}
+                          className="text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}
