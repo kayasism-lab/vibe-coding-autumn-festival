@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Mail, Phone, MapPin, Instagram, Facebook } from 'lucide-react'
+import { Mail, Phone, MapPin, Instagram, Facebook, Globe } from 'lucide-react'
 import { OrganizerBar } from '@/components/shared/organizer-bar'
 
 const footerLinks = {
@@ -67,13 +67,22 @@ export function Footer() {
                 <Instagram className="h-4 w-4" />
               </a>
               <a
+                href="https://www.facebook.com/jikplay/?locale=ko_KR"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 bg-white/10 hover:bg-gradient-to-r hover:from-primary hover:to-pink-500 rounded-full flex items-center justify-center transition-all duration-300"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-4 w-4" />
+              </a>
+              <a
                 href="https://cafe.daum.net/jik"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 bg-white/10 hover:bg-gradient-to-r hover:from-primary hover:to-pink-500 rounded-full flex items-center justify-center transition-all duration-300"
                 aria-label="다음 카페"
               >
-                <Facebook className="h-4 w-4" />
+                <Globe className="h-4 w-4" />
               </a>
             </div>
           </div>
