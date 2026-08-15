@@ -213,7 +213,7 @@ export function HeroSection() {
                     alt=""
                     width={408}
                     height={400}
-                    className="h-9 w-auto sm:h-10 lg:h-12"
+                    className="h-[72px] w-auto sm:h-20 lg:h-24"
                   />
                   <span className="text-lg sm:text-xl lg:text-2xl font-medium text-white/70">
                     직장인들의 <span className="font-bold text-amber-400">이중생활</span>
@@ -223,7 +223,7 @@ export function HeroSection() {
                     alt=""
                     width={413}
                     height={400}
-                    className="h-9 w-auto sm:h-10 lg:h-12"
+                    className="h-[72px] w-auto sm:h-20 lg:h-24"
                   />
                 </span>
               </h1>
