@@ -14,6 +14,9 @@ next.user-config.*
 !.env.example
 !backend/.env.example
 
+# 비밀값 메모 (실수로 만든 로컬 참고 파일, 커밋 금지)
+백엔드환경값.txt
+
 # Common ignores
 node_modules
 .next/

@@ -44,6 +44,7 @@ const theaterGroups = [
     description:
       "극단 [놀이'터']는 직장생활을 하며 연극의 꿈을 찾아가는 직장인 극단입니다. 평범한 일상에서 벗어나, 숨겨 두었던 자신만의 에너지와 열정을 쏟아낼 수 있는 곳으로 만 20세 이상이면 누구나 함께 할 수 있습니다.",
     highlights: ['직장인들의 연극 꿈을 실현하는 공간', '만 20세 이상 누구나 참여 가능', '뜨거운 열정으로 채우는 무대'],
+    socialLinks: { website: 'https://cafe.daum.net/noliter2009', instagram: 'https://www.instagram.com/noliter2009/' },
     order: 1,
   },
   {
@@ -54,6 +55,7 @@ const theaterGroups = [
     description:
       '극단 [아해]는 서울 성북구를 기반으로 활동하고 있으며, 1978년 창단 이후 48년을 이어온 대한민국 대표 직장인 극단입니다.',
     highlights: ['1978년 창단, 48년 역사', '80회 이상의 정기 공연', '각종 연극제 30회 이상 수상'],
+    socialLinks: { website: 'https://cafe.daum.net/ahhai', instagram: 'https://www.instagram.com/ahhai1978/' },
     order: 2,
   },
   {
@@ -64,6 +66,7 @@ const theaterGroups = [
     description:
       '2005년에 창단한 극단 [좋은사람들]은 다양한 직업을 가진 시민들이 모여 연극을 통해 삶을 풍요롭게 가꾸어 가고자 만든 직장인 중심의 연극 공동체입니다.',
     highlights: ['다양한 직업의 시민들이 모인 연극 공동체', '퇴근 후 창작 활동', '시민 참여형 문화 예술 추구'],
+    socialLinks: { website: 'https://cafe.daum.net/qodntmxoq', instagram: 'https://www.instagram.com/goodpeople2005528/' },
     order: 3,
   },
   {
@@ -74,6 +77,7 @@ const theaterGroups = [
     description:
       '영등포구청을 기반으로 활동하는 극단 [연극패청년]은 1990년 창단 이래 30년 넘게 무대를 지켜온 비영리 직장인 극단입니다.',
     highlights: ['1990년 창단, 30년 이상의 역사', '다수 연극제 수상 경력', '자체 연습실 및 제작 시스템 보유'],
+    socialLinks: { website: 'https://cafe.daum.net/now102', instagram: 'https://www.instagram.com/play_youth/' },
     order: 4,
   },
   {
@@ -82,15 +86,8 @@ const theaterGroups = [
     bgGradient: 'from-teal-700 to-cyan-600',
     description: '극단 소개가 준비 중입니다. 곧 업데이트 예정입니다.',
     highlights: ['준비 중'],
+    socialLinks: { website: 'https://cafe.daum.net/playhbg', instagram: 'https://www.instagram.com/playhbg/' },
     order: 5,
-  },
-  {
-    name: '극단 더폼',
-    color: 'bg-slate-600',
-    bgGradient: 'from-slate-700 to-gray-600',
-    description: '극단 소개가 준비 중입니다. 곧 업데이트 예정입니다.',
-    highlights: ['준비 중'],
-    order: 6,
   },
 ]
 

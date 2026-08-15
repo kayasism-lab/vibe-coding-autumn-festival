@@ -72,7 +72,7 @@ export default function AboutPage() {
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">참여 극단</dt>
-                      <dd className="font-medium text-card-foreground">6개 극단 (직연협 회원)</dd>
+                      <dd className="font-medium text-card-foreground">5개 극단 (직연협 회원)</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">주최 / 후원</dt>
@@ -92,7 +92,7 @@ export default function AboutPage() {
                   </p>
                   <p className="text-muted-foreground leading-relaxed">
                     축제는 조직위원장 문성환을 중심으로 사무국장 진주호, 각 극단 대표(놀이터·좋은사람들·아해·
-                    연극패청년·더폼·함바꿈)로 구성된 운영위원회가 기획하고 운영합니다. 모든 참여자가
+                    연극패청년·함바꿈)로 구성된 운영위원회가 기획하고 운영합니다. 모든 참여자가
                     본업과 병행하며 자발적으로 시간과 노력을 기울여 축제를 만들어갑니다.
                   </p>
                 </div>

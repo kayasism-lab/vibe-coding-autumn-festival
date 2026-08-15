@@ -43,46 +43,44 @@ const defaultTheaterGroups: TheaterGroup[] = [
     description: '극단 [놀이\'터\']는 직장생활을 하며 연극의 꿈을 찾아가는 직장인 극단입니다. 평범한 일상에서 벗어나, 숨겨 두었던 자신만의 에너지와 열정을 쏟아낼 수 있는 곳으로 만 20세 이상이면 누구나 함께 할 수 있습니다.',
     highlights: ['직장인들의 연극 꿈을 실현하는 공간', '만 20세 이상 누구나 참여 가능', '뜨거운 열정으로 채우는 무대'],
     imageUrl: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%EB%86%80%EC%9D%B4%ED%84%B0%20%EC%86%8C%EA%B0%9C-WAYkzpntSLql87LtSAL5nCsif2ccot.jpg',
+    socialLinks: { website: 'https://cafe.daum.net/noliter2009', instagram: 'https://www.instagram.com/noliter2009/' },
   },
-  { 
-    name: '극단 아해', 
+  {
+    name: '극단 아해',
     color: 'bg-rose-600',
     bgGradient: 'from-rose-700 to-pink-600',
     founded: '1978년',
     description: '극단 [아해]는 서울 성북구를 기반으로 활동하고 있으며, 1978년 창단 이후 48년을 이어온 대한민국 대표 직장인 극단입니다.',
     highlights: ['1978년 창단, 48년 역사', '80회 이상의 정기 공연', '각종 연극제 30회 이상 수상'],
     imageUrl: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%EC%95%84%ED%95%B4%20%EC%86%8C%EA%B0%9C-4bqamjYlGrcfzfenVmsbmVlNejeyAY.jpg',
+    socialLinks: { website: 'https://cafe.daum.net/ahhai', instagram: 'https://www.instagram.com/ahhai1978/' },
   },
-  { 
-    name: '극단 좋은사람들', 
+  {
+    name: '극단 좋은사람들',
     color: 'bg-violet-600',
     bgGradient: 'from-violet-700 to-purple-600',
     founded: '2005년',
     description: '2005년에 창단한 극단 [좋은사람들]은 다양한 직업을 가진 시민들이 모여 연극을 통해 삶을 풍요롭게 가꾸어 가고자 만든 직장인 중심의 연극 공동체입니다.',
     highlights: ['다양한 직업의 시민들이 모인 연극 공동체', '퇴근 후 창작 활동', '시민 참여형 문화 예술 추구'],
     imageUrl: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%EC%A2%8B%EC%9D%80%EC%82%AC%EB%9E%8C%EB%93%A4%20%EC%86%8C%EA%B0%9C-UxeuOA8ILl3yCznbOdHlOZa9WB6w0X.jpg',
+    socialLinks: { website: 'https://cafe.daum.net/qodntmxoq', instagram: 'https://www.instagram.com/goodpeople2005528/' },
   },
-  { 
-    name: '극단 연극패청년', 
+  {
+    name: '극단 연극패청년',
     color: 'bg-blue-600',
     bgGradient: 'from-blue-700 to-indigo-600',
     founded: '1990년',
     description: '영등포구청을 기반으로 활동하는 극단 [연극패청년]은 1990년 창단 이래 30년 넘게 무대를 지켜온 비영리 직장인 극단입니다.',
     highlights: ['1990년 창단, 30년 이상의 역사', '다수 연극제 수상 경력', '자체 연습실 및 제작 시스템 보유'],
-    imageUrl: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%EC%B2%AD%EB%85%84%20%EC%86%8C%EA%B0%9C-CsJvTDYkAFcAkQQ5RYoMlEVCXmOsle.jpg',
+    imageUrl: 'https://res.cloudinary.com/dcyrw85bi/image/upload/v1786770865/xpuyysil1m1qn7jkmtnd.png',
+    socialLinks: { website: 'https://cafe.daum.net/now102', instagram: 'https://www.instagram.com/play_youth/' },
   },
-  { 
-    name: '극단 함바꿈', 
+  {
+    name: '극단 함바꿈',
     color: 'bg-teal-600',
     bgGradient: 'from-teal-700 to-cyan-600',
     description: '극단 소개가 준비 중입니다. 곧 업데이트 예정입니다.',
-    highlights: ['준비 중'],
-  },
-  { 
-    name: '극단 더폼', 
-    color: 'bg-slate-600',
-    bgGradient: 'from-slate-700 to-gray-600',
-    description: '극단 소개가 준비 중입니다. 곧 업데이트 예정입니다.',
+    socialLinks: { website: 'https://cafe.daum.net/playhbg', instagram: 'https://www.instagram.com/playhbg/' },
     highlights: ['준비 중'],
   },
 ]
@@ -207,6 +205,9 @@ export function HeroSection() {
                 <span className="block bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 bg-clip-text text-transparent">
                   가을연극축제
                 </span>
+                <span className="block text-lg sm:text-xl lg:text-2xl font-medium text-white/70 mt-2">
+                  (직장인들의 이중생활)
+                </span>
               </h1>
 
               <p className="text-lg sm:text-xl text-white/80 leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0">
@@ -250,7 +251,7 @@ export function HeroSection() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 rounded-full px-8 backdrop-blur-sm"
+                  className="bg-transparent border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 rounded-full px-8 backdrop-blur-sm"
                 >
                   <Link href="/tickets">
                     <Ticket className="mr-2 h-4 w-4" />

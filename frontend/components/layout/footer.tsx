@@ -52,7 +52,7 @@ export function Footer() {
             </Link>
             <p className="text-sm text-white/60 leading-relaxed mb-6 max-w-xs">
               전국직장인연극단체협의회 주최, 서울시 후원.
-              놀이터, 아해, 좋은사람들, 연극패청년, 함바꿈, 더폼 극단과 함께합니다.
+              놀이터, 아해, 좋은사람들, 연극패청년, 함바꿈 극단과 함께합니다.
             </p>
 
             {/* Social Links */}
