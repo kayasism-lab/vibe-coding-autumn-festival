@@ -47,7 +47,7 @@ export default function SchedulePage() {
   return (
     <>
       <Header />
-      <main className="pt-[9.5rem]">
+      <main className="pt-[8.25rem]">
         <PageHeader
           subtitle="Schedule"
           title="공연 일정"

@@ -78,38 +78,38 @@ export function Header() {
       {/* Top Bar - 스크롤 시 숨김 */}
       <div className={cn(
         'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white transition-all duration-300 overflow-hidden',
-        isScrolled ? 'h-0 opacity-0' : 'h-16 opacity-100'
+        isScrolled ? 'h-0 opacity-0' : 'h-11 opacity-100'
       )}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between text-sm">
-            <div className="flex items-center gap-4">
+          <div className="flex h-11 items-center justify-between text-xs">
+            <div className="flex items-center gap-3">
               <span className="text-amber-400 font-medium">2026 가을연극축제</span>
               <span className="text-white/60 hidden sm:inline">|</span>
-              <span className="hidden items-center gap-2 text-white/70 sm:flex">
+              <span className="hidden items-center gap-1.5 text-white/70 sm:flex">
                 <span>주최</span>
-                <span className="flex h-12 w-12 items-center justify-center rounded-md bg-white">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white">
                   <Image
                     src="/logo/jikyeonhyeop.gif"
                     alt="전국직장인연극단체협의회"
                     width={253}
                     height={252}
                     unoptimized
-                    className="h-11 w-11 object-contain"
+                    className="h-7 w-7 object-contain"
                   />
                 </span>
                 <span>전국직장인연극단체협의회</span>
               </span>
               <span className="text-white/60 hidden lg:inline">|</span>
-              <span className="hidden items-center gap-2 text-white/70 lg:flex">
+              <span className="hidden items-center gap-1.5 text-white/70 lg:flex">
                 <span>후원</span>
-                <span className="flex h-12 items-center rounded-md bg-white px-2">
+                <span className="flex h-8 items-center rounded-md bg-white px-1.5">
                   <Image
                     src="/logo/seoul-sponsor.png"
                     alt="서울특별시"
                     width={804}
                     height={217}
                     unoptimized
-                    className="h-9 w-auto object-contain"
+                    className="h-6 w-auto object-contain"
                   />
                 </span>
               </span>

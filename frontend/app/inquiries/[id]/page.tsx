@@ -98,7 +98,7 @@ export default function InquiryDetailPage() {
     return (
       <>
         <Header />
-        <main className="pt-[9.5rem]">
+        <main className="pt-[8.25rem]">
           <InquiryHero inquiry={inquiry} isPrivate />
           <section className="bg-background py-12 lg:py-16">
             <div className="mx-auto max-w-md px-4 sm:px-6 lg:px-8">
@@ -145,7 +145,7 @@ export default function InquiryDetailPage() {
   return (
     <>
       <Header />
-      <main className="pt-[9.5rem]">
+      <main className="pt-[8.25rem]">
         <InquiryHero inquiry={inquiry} />
         <section className="bg-background py-12 lg:py-16">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">

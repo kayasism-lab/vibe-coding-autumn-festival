@@ -95,7 +95,7 @@ export default function ApplyStatusPage() {
   return (
     <>
       <Header />
-      <main className="pt-[9.5rem]">
+      <main className="pt-[8.25rem]">
         <PageHeader
           subtitle="Join"
           title="신청 내역 조회"

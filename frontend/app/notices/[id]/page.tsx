@@ -43,7 +43,7 @@ export default function NoticeDetailPage() {
   return (
     <>
       <Header />
-      <main className="pt-[9.5rem]">
+      <main className="pt-[8.25rem]">
         <div className="bg-foreground py-12 text-background lg:py-16">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
             <Link href="/notices" className="mb-6 inline-flex items-center text-sm text-background/70 hover:text-background">

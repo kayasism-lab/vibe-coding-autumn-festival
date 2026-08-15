@@ -39,7 +39,7 @@ export default function TicketsPage() {
   return (
     <>
       <Header />
-      <main className="pt-[9.5rem]">
+      <main className="pt-[8.25rem]">
         <PageHeader
           subtitle="Reservation"
           title="관람 안내"

@@ -63,7 +63,7 @@ export default function ProgramDetailPage() {
   return (
     <>
       <Header />
-      <main className="pt-[9.5rem]">
+      <main className="pt-[8.25rem]">
         <div className="bg-foreground py-12 text-background lg:py-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <Link href="/programs" className="mb-6 inline-flex items-center text-sm text-background/70 hover:text-background">

@@ -47,7 +47,7 @@ export default function NewCommunityPostPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pt-[9.5rem]">
+      <main className="pt-[8.25rem]">
         <section className="mx-auto max-w-2xl px-4 py-12">
           <Card>
             <CardHeader><CardTitle>커뮤니티 글쓰기</CardTitle></CardHeader>

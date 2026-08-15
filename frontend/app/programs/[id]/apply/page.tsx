@@ -112,7 +112,7 @@ export default function ProgramApplyPage() {
     return (
       <>
         <Header />
-        <main className="pt-[9.5rem] min-h-screen">
+        <main className="pt-[8.25rem] min-h-screen">
           <div className="mx-auto max-w-md px-4 py-16 text-center sm:px-6">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <CheckCircle2 className="h-8 w-8 text-green-600" />
@@ -139,7 +139,7 @@ export default function ProgramApplyPage() {
   return (
     <>
       <Header />
-      <main className="pt-[9.5rem]">
+      <main className="pt-[8.25rem]">
         <PageHeader
           subtitle="Join"
           title="시민 참여 신청"
