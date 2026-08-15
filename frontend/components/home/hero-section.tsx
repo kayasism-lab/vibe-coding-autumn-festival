@@ -194,7 +194,9 @@ export function HeroSection() {
               {/* Host Badge - 모바일에서 상단 헤더에 가려지지 않도록 약간 아래로 */}
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full mb-6 mt-4 sm:mt-0">
                 <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                <span className="text-sm font-medium text-white/90">전국직장인연극단체협의회(직연협) 주최</span>
+                <span className="text-sm font-medium text-white/90">
+                  전국직장인연극단체협의회(<span className="text-amber-400">직연협</span>) 주최
+                </span>
                 <a
                   href="https://www.instagram.com/jikplay1997"
                   target="_blank"
