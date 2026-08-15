@@ -17,7 +17,7 @@ export function PageHeader({ title, description, subtitle }: PageHeaderProps) {
           {title}
         </h1>
         {description && (
-          <p className="mt-4 text-lg text-background/70 max-w-2xl">
+          <p className="mt-4 text-lg text-background/70 max-w-2xl whitespace-pre-line">
             {description}
           </p>
         )}

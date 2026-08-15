@@ -17,7 +17,7 @@ export default function AboutPage() {
         <PageHeader
           subtitle="About"
           title="축제 소개"
-          description="시민이 관객에서 창작자로, 마침내 무대의 주체로 성장하는 과정형 생활문화예술축제, 2026 가을연극축제를 소개합니다."
+          description={`시민이 관객에서 창작자로, 마침내 무대의 주체로 성장하는\n과정형 생활문화예술축제, 2026 가을연극축제를 소개합니다.`}
         />
 
         <section className="py-16 lg:py-24 bg-background">
