@@ -86,7 +86,7 @@ export function Header() {
               <span className="text-amber-400 font-medium">2026 가을연극축제</span>
               <span className="text-white/60 hidden sm:inline">|</span>
               <span className="hidden items-center gap-1.5 text-white/70 sm:flex">
-                <span>주최</span>
+                <span>주최·주관</span>
                 <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white">
                   <Image
                     src="/logo/jikyeonhyeop.gif"
