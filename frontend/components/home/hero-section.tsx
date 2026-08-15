@@ -213,17 +213,17 @@ export function HeroSection() {
                     alt=""
                     width={408}
                     height={400}
-                    className="h-6 w-auto sm:h-7 lg:h-8"
+                    className="h-9 w-auto sm:h-10 lg:h-12"
                   />
                   <span className="text-lg sm:text-xl lg:text-2xl font-medium text-white/70">
-                    직장인들의 이중생활
+                    직장인들의 <span className="font-bold text-amber-400">이중생활</span>
                   </span>
                   <Image
                     src="/images/hero-subtitle-actor.png"
                     alt=""
                     width={413}
                     height={400}
-                    className="h-6 w-auto sm:h-7 lg:h-8"
+                    className="h-9 w-auto sm:h-10 lg:h-12"
                   />
                 </span>
               </h1>
