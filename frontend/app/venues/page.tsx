@@ -79,7 +79,7 @@ export default function VenuesPage() {
   return (
     <>
       <Header />
-      <main className="pt-[7.5rem] min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <main className="pt-[9.5rem] min-h-screen bg-gradient-to-b from-background to-muted/30">
         <PageHeader
           title="공연장 안내"
           subtitle="Venues"

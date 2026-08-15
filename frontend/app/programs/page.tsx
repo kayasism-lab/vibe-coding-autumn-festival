@@ -38,7 +38,7 @@ export default function ProgramsPage() {
   return (
     <>
       <Header />
-      <main className="pt-[7.5rem]">
+      <main className="pt-[9.5rem]">
         <PageHeader subtitle="Programs" title="공연 프로그램" description="2026 가을연극축제 공연을 소개합니다." />
         <section className="py-16 lg:py-24 bg-background">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

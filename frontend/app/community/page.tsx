@@ -54,7 +54,7 @@ export default function CommunityPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pt-[7.5rem]">
+      <main className="pt-[9.5rem]">
         <PageHeader subtitle="Community" title="커뮤니티" description="회원들이 축제 사진과 이야기를 공유하는 공간입니다." />
         <section className="mx-auto max-w-5xl px-4 py-12">
           <div className="mb-6 flex justify-end">

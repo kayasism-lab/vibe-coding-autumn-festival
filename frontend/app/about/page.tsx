@@ -13,7 +13,7 @@ export default function AboutPage() {
   return (
     <>
       <Header />
-      <main className="pt-[7.5rem]">
+      <main className="pt-[9.5rem]">
         <PageHeader
           subtitle="About"
           title="축제 소개"

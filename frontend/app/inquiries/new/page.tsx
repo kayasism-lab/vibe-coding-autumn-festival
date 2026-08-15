@@ -55,7 +55,7 @@ export default function NewInquiryPage() {
   return (
     <>
       <Header />
-      <main className="pt-[7.5rem]">
+      <main className="pt-[9.5rem]">
         <PageHeader
           subtitle="Inquiry"
           title="문의 작성"

@@ -53,7 +53,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pt-[7.5rem]">
+      <main className="pt-[9.5rem]">
         <section className="mx-auto max-w-md px-4 py-16">
           <Card>
             <CardHeader>

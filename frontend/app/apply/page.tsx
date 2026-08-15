@@ -74,7 +74,7 @@ export default function ApplyPage() {
     return (
       <>
         <Header />
-        <main className="pt-[7.5rem] min-h-screen bg-gradient-to-b from-background to-muted/30">
+        <main className="pt-[9.5rem] min-h-screen bg-gradient-to-b from-background to-muted/30">
           <div className="container mx-auto px-4 py-16">
             <div className="max-w-xl mx-auto text-center">
               <div className="w-20 h-20 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center">
@@ -99,7 +99,7 @@ export default function ApplyPage() {
   return (
     <>
       <Header />
-      <main className="pt-[7.5rem] min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <main className="pt-[9.5rem] min-h-screen bg-gradient-to-b from-background to-muted/30">
         <PageHeader
           title="참가 신청"
           subtitle="2026 가을연극축제 참가 신청"
