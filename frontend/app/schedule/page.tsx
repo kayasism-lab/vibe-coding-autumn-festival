@@ -121,7 +121,7 @@ export default function SchedulePage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <span>공연 시작 30분 전부터 입장 가능합니다.</span>
+                  <span>공연 시작 10분 전부터 입장 가능합니다.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />

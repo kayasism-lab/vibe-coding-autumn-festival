@@ -16,6 +16,8 @@ export interface IProgram extends Document {
   galleryUrls: string[]
   ticketUrl?: string
   venue: string
+  venueAddress?: string
+  ageRating?: string
   price: {
     regular: number
     discount?: number

@@ -20,7 +20,27 @@ interface Program {
   type: ProgramType
   company: string
   venue: string
+  venueAddress?: string
   ticketUrl?: string
+}
+
+// 주소가 있을 때만 네이버 지도로 연결되는 위치 버튼. 주소가 없으면 비활성(회색) 상태로 표시.
+function VenueMapButton({ address }: { address?: string }) {
+  if (!address) {
+    return <MapPin className="h-4 w-4 text-muted-foreground" />
+  }
+
+  return (
+    <a
+      href={`https://map.naver.com/p/search/${encodeURIComponent(address)}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="네이버 지도에서 위치 보기"
+      className="text-blue-600 hover:text-blue-700 transition-colors"
+    >
+      <MapPin className="h-4 w-4" />
+    </a>
+  )
 }
 
 export default function TicketsPage() {
@@ -83,7 +103,7 @@ export default function TicketsPage() {
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-center gap-2 text-sm mb-6">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <VenueMapButton address={program.venueAddress} />
                           <span className="text-muted-foreground">장소:</span>
                           <span className="font-medium">{program.venue}</span>
                         </div>
@@ -149,7 +169,7 @@ export default function TicketsPage() {
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
                       <Calendar className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      <span>공연 시작 30분 전부터 입장 가능합니다.</span>
+                      <span>공연 시작 10분 전부터 입장 가능합니다.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />

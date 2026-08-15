@@ -18,6 +18,9 @@ const ProgramSchema = new Schema<IProgram>(
     galleryUrls: [{ type: String }],
     ticketUrl: { type: String },
     venue: { type: String, required: true },
+    // 관람안내 페이지에서 지도 연결 버튼을 활성화하기 위한 실제 주소
+    venueAddress: { type: String },
+    ageRating: { type: String },
     price: {
       regular: { type: Number, required: true },
       discount: { type: Number },

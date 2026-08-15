@@ -42,6 +42,8 @@ type Program = {
   runtime: number
   synopsis: string
   venue: string
+  venueAddress?: string
+  ageRating?: string
   isActive: boolean
   openForApplication: boolean
   order: number
@@ -66,6 +68,8 @@ const emptyForm: ProgramForm = {
   runtime: 90,
   synopsis: '',
   venue: '',
+  venueAddress: '',
+  ageRating: '',
   isActive: true,
   openForApplication: false,
   order: 0,
@@ -121,6 +125,8 @@ export default function AdminProgramsPage() {
             runtime: program.runtime,
             synopsis: program.synopsis,
             venue: program.venue,
+            venueAddress: program.venueAddress || '',
+            ageRating: program.ageRating || '',
             isActive: program.isActive,
             openForApplication: program.openForApplication,
             order: program.order,
@@ -143,6 +149,8 @@ export default function AdminProgramsPage() {
     runtime: form.runtime,
     synopsis: form.synopsis,
     venue: form.venue,
+    venueAddress: form.venueAddress || undefined,
+    ageRating: form.ageRating || undefined,
     isActive: form.isActive,
     openForApplication: form.openForApplication,
     order: form.order,
@@ -259,6 +267,22 @@ export default function AdminProgramsPage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="극단"><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></Field>
               <Field label="공연장"><Input value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} /></Field>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="공연장 주소">
+                <Input
+                  value={form.venueAddress}
+                  onChange={(e) => setForm({ ...form, venueAddress: e.target.value })}
+                  placeholder="주소를 입력하면 관람안내 페이지의 위치 버튼이 활성화됩니다"
+                />
+              </Field>
+              <Field label="관람 연령">
+                <Input
+                  value={form.ageRating}
+                  onChange={(e) => setForm({ ...form, ageRating: e.target.value })}
+                  placeholder="예: 12세 이상 관람가"
+                />
+              </Field>
             </div>
             <div className="grid sm:grid-cols-3 gap-4">
               <Field label="러닝타임"><Input type="number" value={form.runtime} onChange={(e) => setForm({ ...form, runtime: Number(e.target.value) })} /></Field>

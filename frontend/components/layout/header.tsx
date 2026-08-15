@@ -148,15 +148,17 @@ export function Header() {
       )}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 lg:h-20 items-center justify-between">
-            {/* Logo */}
+            {/* Logo - 의미 없는 '가' 글자 대신 직연협 로고 아이콘 사용 */}
             <Link href="/" className="flex items-center gap-3">
-              <div className={cn(
-                'w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300',
-                isScrolled 
-                  ? 'bg-gradient-to-br from-primary to-primary/80' 
-                  : 'bg-gradient-to-br from-amber-500 to-orange-500'
-              )}>
-                <span className="text-white font-bold text-lg">가</span>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white p-1 shadow-sm">
+                <Image
+                  src="/logo/jikyeonhyeop.gif"
+                  alt="전국직장인연극단체협의회"
+                  width={253}
+                  height={252}
+                  unoptimized
+                  className="h-full w-full object-contain"
+                />
               </div>
               <div className="flex flex-col">
                 <span className={cn(
@@ -268,6 +270,18 @@ export function Header() {
           isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
         )}
       >
+        {/* 모바일 메뉴 상단에 명확한 닫기 버튼 배치 (헤더 상단 바와 겹쳐 보기 힘든 문제 방지) */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+          <span className="text-sm font-semibold text-foreground">전체 메뉴</span>
+          <button
+            type="button"
+            className="p-2 text-foreground"
+            onClick={() => setIsMenuOpen(false)}
+            aria-label="메뉴 닫기"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
         <nav className="px-4 py-6">
           {navItems.map((item) => (
             <div key={item.href} className="border-b border-border">

@@ -191,8 +191,8 @@ export function HeroSection() {
           <div className="grid lg:grid-cols-5 gap-12 lg:gap-16 items-center">
             {/* Left - Main Content (3 cols) */}
             <div className={`lg:col-span-3 text-center lg:text-left transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              {/* Host Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full mb-6">
+              {/* Host Badge - 모바일에서 상단 헤더에 가려지지 않도록 약간 아래로 */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full mb-6 mt-4 sm:mt-0">
                 <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
                 <span className="text-sm font-medium text-white/90">전국직장인연극단체협의회 주최</span>
               </div>
