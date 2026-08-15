@@ -50,7 +50,7 @@ export default function GalleryPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 pt-[8.25rem]">
         <section className="relative py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl lg:text-5xl font-bold mb-4">갤러리</h1>

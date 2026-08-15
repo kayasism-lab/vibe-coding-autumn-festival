@@ -105,7 +105,7 @@ export default function ContactPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 pt-[8.25rem]">
         {/* Hero */}
         <section className="relative py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
           <div className="container mx-auto px-4 text-center">
