@@ -207,8 +207,24 @@ export function HeroSection() {
                 <span className="block bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 bg-clip-text text-transparent">
                   가을연극축제
                 </span>
-                <span className="block text-lg sm:text-xl lg:text-2xl font-medium text-white/70 mt-2">
-                  (직장인들의 이중생활)
+                <span className="flex items-center justify-center lg:justify-start gap-2 mt-2">
+                  <Image
+                    src="/images/hero-subtitle-worker.png"
+                    alt=""
+                    width={408}
+                    height={400}
+                    className="h-6 w-auto sm:h-7 lg:h-8"
+                  />
+                  <span className="text-lg sm:text-xl lg:text-2xl font-medium text-white/70">
+                    직장인들의 이중생활
+                  </span>
+                  <Image
+                    src="/images/hero-subtitle-actor.png"
+                    alt=""
+                    width={413}
+                    height={400}
+                    className="h-6 w-auto sm:h-7 lg:h-8"
+                  />
                 </span>
               </h1>
 
