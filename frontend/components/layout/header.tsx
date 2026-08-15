@@ -130,11 +130,9 @@ export function Header() {
             </span>
             <div className="hidden sm:flex items-center gap-4">
               {/* 회원가입은 당분간 비공개, 로그인은 관리자 로그인 페이지로 연결 */}
+              {/* 오시는 길은 중요도가 낮아 상단 바에서 제거, 메뉴(축제안내)에서만 접근 */}
               <Link href="/admin/login" className="text-white/60 hover:text-amber-400 transition-colors">
                 관리자 로그인
-              </Link>
-              <Link href="/contact" className="text-white/60 hover:text-amber-400 transition-colors">
-                오시는 길
               </Link>
             </div>
           </div>
