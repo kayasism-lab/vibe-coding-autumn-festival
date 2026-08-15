@@ -1,8 +1,8 @@
 // 프로그램/일정 카드 전반에서 재사용하는 표시용 설정값
 export const programTypeConfig = {
   play: { label: '연극', bgClass: 'bg-primary', textClass: 'text-primary-foreground' },
-  musical: { label: '뮤지컬', bgClass: 'bg-accent', textClass: 'text-accent-foreground' },
   short_play: { label: '단막극', bgClass: 'bg-secondary', textClass: 'text-secondary-foreground' },
+  reading: { label: '낭독극', bgClass: 'bg-accent', textClass: 'text-accent-foreground' },
 } as const
 
 export const seatStatusConfig = {

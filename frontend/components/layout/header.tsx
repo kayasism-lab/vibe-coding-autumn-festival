@@ -25,7 +25,7 @@ const navItems = [
     children: [
       { href: '/programs', label: '전체 프로그램' },
       { href: '/programs?type=play', label: '연극' },
-      { href: '/programs?type=musical', label: '뮤지컬' },
+      { href: '/programs?type=reading', label: '낭독극' },
       { href: '/programs?type=short_play', label: '연합단막극제' },
       { href: '/schedule', label: '공연일정' },
       { href: '/tickets', label: '예매안내' },

@@ -37,7 +37,7 @@ import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 type Program = {
   _id: string
   title: string
-  type: 'play' | 'musical' | 'short_play'
+  type: 'play' | 'short_play' | 'reading'
   company: string
   runtime: number
   synopsis: string
@@ -83,8 +83,8 @@ const emptyForm: ProgramForm = {
 
 const typeLabels = {
   play: '연극',
-  musical: '뮤지컬',
   short_play: '단막극',
+  reading: '낭독극',
 }
 
 export default function AdminProgramsPage() {
@@ -258,8 +258,8 @@ export default function AdminProgramsPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="play">연극</SelectItem>
-                    <SelectItem value="musical">뮤지컬</SelectItem>
                     <SelectItem value="short_play">단막극</SelectItem>
+                    <SelectItem value="reading">낭독극</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>

@@ -48,7 +48,7 @@ export default function ProgramsPage() {
               {[
                 ['all', '전체'],
                 ['play', '연극'],
-                ['musical', '뮤지컬'],
+                ['reading', '낭독극'],
                 ['short_play', '단막극'],
               ].map(([value, label]) => (
                 <button key={value} onClick={() => setType(value as typeof type)}>

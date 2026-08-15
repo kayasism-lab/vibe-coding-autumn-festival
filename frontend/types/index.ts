@@ -1,5 +1,5 @@
 // Program (공연)
-export type ProgramType = 'play' | 'musical' | 'short_play'
+export type ProgramType = 'play' | 'short_play' | 'reading'
 
 export interface IProgram {
   _id: string

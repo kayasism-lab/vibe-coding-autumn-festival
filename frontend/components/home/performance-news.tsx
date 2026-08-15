@@ -10,7 +10,7 @@ import { VenueMapButton } from '@/components/shared/venue-map-button'
 type Program = {
   _id: string
   title: string
-  type: 'play' | 'musical' | 'short_play'
+  type: 'play' | 'short_play' | 'reading'
   company: string
   venue: string
   venueAddress?: string
@@ -19,7 +19,7 @@ type Program = {
 
 const typeLabels: Record<Program['type'], { text: string; style: string }> = {
   play: { text: '연극', style: 'bg-gradient-to-r from-orange-500 to-pink-500' },
-  musical: { text: '뮤지컬', style: 'bg-gradient-to-r from-teal-500 to-emerald-500' },
+  reading: { text: '낭독극', style: 'bg-gradient-to-r from-teal-500 to-emerald-500' },
   short_play: { text: '단막극', style: 'bg-gradient-to-r from-indigo-500 to-purple-500' },
 }
 

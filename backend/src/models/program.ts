@@ -6,7 +6,7 @@ const ProgramSchema = new Schema<IProgram>(
     title: { type: String, required: true },
     type: {
       type: String,
-      enum: ['play', 'musical', 'short_play'],
+      enum: ['play', 'short_play', 'reading'],
       required: true,
     },
     company: { type: String, required: true },
