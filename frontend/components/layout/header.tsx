@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { Menu, X, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -81,10 +82,37 @@ export function Header() {
       )}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-8 items-center justify-between text-xs">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <span className="text-amber-400 font-medium">2026 가을연극축제</span>
               <span className="text-white/60 hidden sm:inline">|</span>
-              <span className="text-white/70 hidden sm:inline">전국직장인연극단체협의회 주최</span>
+              <span className="hidden items-center gap-1.5 text-white/70 sm:flex">
+                <span>주최</span>
+                <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-white">
+                  <Image
+                    src="/logo/jikyeonhyeop.gif"
+                    alt="전국직장인연극단체협의회"
+                    width={253}
+                    height={252}
+                    unoptimized
+                    className="h-3.5 w-3.5 object-contain"
+                  />
+                </span>
+                <span>전국직장인연극단체협의회</span>
+              </span>
+              <span className="text-white/60 hidden lg:inline">|</span>
+              <span className="hidden items-center gap-1.5 text-white/70 lg:flex">
+                <span>후원</span>
+                <span className="flex h-4 items-center rounded-sm bg-white px-1">
+                  <Image
+                    src="/logo/seoul-sponsor.png"
+                    alt="서울특별시"
+                    width={804}
+                    height={217}
+                    unoptimized
+                    className="h-2.5 w-auto object-contain"
+                  />
+                </span>
+              </span>
             </div>
             <div className="hidden sm:flex items-center gap-4">
               <Link href="/login" className="text-white/60 hover:text-amber-400 transition-colors">
