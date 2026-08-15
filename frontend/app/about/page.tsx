@@ -60,7 +60,7 @@ export default function AboutPage() {
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">장소</dt>
-                      <dd className="font-medium text-card-foreground">서울시 소재 공연장 3곳</dd>
+                      <dd className="font-medium text-card-foreground">서울시 소재 공연장 4곳</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">프로그램</dt>

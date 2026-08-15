@@ -225,7 +225,7 @@ export function HeroSection() {
                 </div>
                 <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
                   <MapPin className="h-4 w-4 text-amber-400" />
-                  <span className="text-white/90 text-sm">서울시 소재 공연장 3곳</span>
+                  <span className="text-white/90 text-sm">서울시 소재 공연장 4곳</span>
                 </div>
                 <div className="flex items-center gap-2 bg-amber-500/20 backdrop-blur-sm px-4 py-2 rounded-full border border-amber-400/30">
                   <Ticket className="h-4 w-4 text-amber-400" />
