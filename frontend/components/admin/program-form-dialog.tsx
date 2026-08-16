@@ -21,7 +21,10 @@ export type ProgramFormType = 'play' | 'short_play' | 'reading'
 export interface ProgramForm {
   title: string
   type: ProgramFormType
+  // 표시용 주관처 이름. 소유 극단을 고르면 자동으로 그 이름이 들어간다.
   company: string
+  // 소유 극단 ID. 비어 있으면 협의회 직접 주관 작품으로 취급한다.
+  theaterGroup: string
   runtime: number
   synopsis: string
   detailContent: string
@@ -40,6 +43,10 @@ export interface ProgramForm {
   discountPrice: number
 }
 
+// 협의회가 직접 주관하는 작품(열린 낭독극 등)을 나타내는 선택값.
+// Select는 빈 문자열을 값으로 쓸 수 없어 별도 토큰을 둔다.
+const NO_GROUP = '__none__'
+
 export function ProgramFormDialog({
   isOpen,
   onOpenChange,
@@ -48,6 +55,8 @@ export function ProgramFormDialog({
   onFormChange,
   isSaving,
   onSave,
+  theaterGroups,
+  canChangeOwner,
 }: {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
@@ -56,7 +65,20 @@ export function ProgramFormDialog({
   onFormChange: (form: ProgramForm) => void
   isSaving: boolean
   onSave: () => void
+  theaterGroups: { _id: string; name: string }[]
+  /** 극단 담당자는 소유 극단을 바꿀 수 없으므로 false로 내려온다 */
+  canChangeOwner: boolean
 }) {
+  const handleOwnerChange = (value: string) => {
+    if (value === NO_GROUP) {
+      onFormChange({ ...form, theaterGroup: '', company: '전국직장인연극단체협의회' })
+      return
+    }
+
+    const group = theaterGroups.find((item) => item._id === value)
+    onFormChange({ ...form, theaterGroup: value, company: group?.name ?? form.company })
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -79,7 +101,27 @@ export function ProgramFormDialog({
             </Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="극단"><Input value={form.company} onChange={(e) => onFormChange({ ...form, company: e.target.value })} /></Field>
+            <Field label="주관 극단">
+              {canChangeOwner ? (
+                <>
+                  <Select value={form.theaterGroup || NO_GROUP} onValueChange={handleOwnerChange}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_GROUP}>협의회 직접 주관</SelectItem>
+                      {theaterGroups.map((group) => (
+                        <SelectItem key={group._id} value={group._id}>{group.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    선택한 극단의 담당자 계정이 이 작품을 수정할 수 있게 됩니다.
+                  </p>
+                </>
+              ) : (
+                // 극단 담당자는 본인 극단 작품만 다루므로 읽기 전용으로 보여준다
+                <Input value={form.company} readOnly disabled />
+              )}
+            </Field>
             <Field label="공연장"><Input value={form.venue} onChange={(e) => onFormChange({ ...form, venue: e.target.value })} /></Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">

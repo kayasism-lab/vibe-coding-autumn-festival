@@ -1,7 +1,9 @@
 import { Router } from 'express'
 import { Program, Schedule } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
-import { requireAdmin } from '../middleware/require-admin.js'
+import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
+import { canManageGroupResource } from '../lib/ownership.js'
+import type { AuthPayload } from '../lib/auth.js'
 
 export const schedulesRouter = Router()
 
@@ -46,15 +48,30 @@ schedulesRouter.get(
   })
 )
 
+// 일정은 항상 특정 작품에 딸려 있으므로, 극단 담당자는 본인 극단 작품의 일정만 다룰 수 있다.
+async function canManageProgramSchedule(user: AuthPayload, programId: unknown): Promise<boolean> {
+  const program = await Program.findById(programId).select('company theaterGroup').lean<{
+    company: string
+    theaterGroup?: unknown
+  }>()
+  if (!program) return false
+  return canManageGroupResource(user, program.company, program.theaterGroup as string | null)
+}
+
 schedulesRouter.post(
   '/',
-  requireAdmin,
+  requirePermission('schedules'),
   asyncHandler(async (req, res) => {
     const body = normalizeSchedule(req.body)
     const program = await Program.findById(body.programId)
 
     if (!program) {
       fail(res, '해당 프로그램을 찾을 수 없습니다.', 404)
+      return
+    }
+
+    if (!(await canManageProgramSchedule(res.locals.user, body.programId))) {
+      fail(res, '해당 작품의 일정을 등록할 권한이 없습니다.', 403)
       return
     }
 
@@ -65,18 +82,26 @@ schedulesRouter.post(
 
 schedulesRouter.put(
   '/:id',
-  requireAdmin,
+  requirePermission('schedules'),
   asyncHandler(async (req, res) => {
+    const existing = await Schedule.findById(req.params.id).select('programId').lean<{
+      programId: unknown
+    }>()
+    if (!existing) {
+      fail(res, '일정을 찾을 수 없습니다.', 404)
+      return
+    }
+
+    if (!(await canManageProgramSchedule(res.locals.user, existing.programId))) {
+      fail(res, '해당 작품의 일정을 수정할 권한이 없습니다.', 403)
+      return
+    }
+
     const schedule = await Schedule.findByIdAndUpdate(
       req.params.id,
       normalizeSchedule(req.body),
       { new: true }
     ).lean()
-
-    if (!schedule) {
-      fail(res, '일정을 찾을 수 없습니다.', 404)
-      return
-    }
 
     ok(res, schedule, '일정이 수정되었습니다.')
   })

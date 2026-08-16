@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "seed:admin": "tsx src/scripts/seed-admin.ts",
-    "seed:festival": "tsx src/scripts/seed-festival-data.ts"
+    "seed:festival": "tsx src/scripts/seed-festival-data.ts",
+    "migrate:groups": "tsx src/scripts/link-theater-groups.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

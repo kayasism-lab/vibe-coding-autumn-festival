@@ -11,6 +11,7 @@ import {
   verifyPassword,
 } from '../lib/auth.js'
 import { requireAuth } from '../middleware/require-admin.js'
+import { resolveGroupPermissions } from '../lib/permissions.js'
 
 export const authRouter = Router()
 
@@ -20,6 +21,8 @@ function publicUser(user: {
   name: string
   phone: string
   theaterGroupName: string
+  theaterGroup?: unknown
+  permissions?: string[]
   role: string
 }) {
   return {
@@ -28,6 +31,9 @@ function publicUser(user: {
     name: user.name,
     phone: user.phone,
     theaterGroupName: user.theaterGroupName,
+    theaterGroup: user.theaterGroup ? String(user.theaterGroup) : null,
+    // 관리자 화면에서 메뉴를 그릴 때 쓰도록 최종 권한(기본+부여)을 계산해 내려준다
+    permissions: user.role === 'group' ? resolveGroupPermissions(user.permissions) : [],
     role: user.role,
   }
 }

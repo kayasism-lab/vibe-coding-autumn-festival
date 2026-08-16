@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, Calendar, ExternalLink, Info, Loader2, Ticket, Users } from 'lucide-react'
 import { programTypeConfig } from '@/lib/program-display'
-import { VenueMapButton } from '@/components/shared/venue-map-button'
+import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import type { ProgramType } from '@/types/index'
 
 interface Program {
@@ -43,6 +43,7 @@ export default function TicketsPage() {
       <Header />
       <main className="pt-[8.25rem]">
         <PageHeader
+          hero="chair"
           subtitle="Reservation"
           title="관람 안내"
           description="2026 가을연극축제는 전 프로그램 무료입니다. 사전 예약을 통해 회차별로 입장합니다."
@@ -84,10 +85,16 @@ export default function TicketsPage() {
                         <CardDescription>{program.company}</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="flex items-center gap-2 text-sm mb-6">
-                          <VenueMapButton address={program.venueAddress} />
-                          <span className="text-muted-foreground">장소:</span>
-                          <span className="font-medium">{program.venue}</span>
+                        {/* 장소명 옆에 주소를 함께 노출하고, 아이콘·주소 모두 지도로 연결한다 */}
+                        <div className="mb-6 flex items-start gap-2 text-sm">
+                          <span className="mt-0.5 flex-shrink-0">
+                            <VenueMapButton address={program.venueAddress} />
+                          </span>
+                          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                            <span className="text-muted-foreground">장소:</span>
+                            <span className="font-medium">{program.venue}</span>
+                            <VenueAddressLink address={program.venueAddress} className="text-xs" />
+                          </div>
                         </div>
 
                         <div className="flex gap-3">

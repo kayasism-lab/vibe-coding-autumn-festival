@@ -7,7 +7,11 @@ export interface IProgram extends Document {
   _id: Types.ObjectId
   title: string
   type: ProgramType
+  // 표시용 극단명(협의회 직접 주관 프로그램도 있으므로 문자열은 계속 유지)
   company: string
+  // 이 작품을 소유한 극단. 극단 담당자 계정의 수정 권한 판정 기준이 된다.
+  // 협의회가 직접 주관하는 프로그램(열린 낭독극 등)은 비워 둔다.
+  theaterGroup?: Types.ObjectId
   director?: string
   cast: string[]
   runtime: number
@@ -120,7 +124,12 @@ export interface IUser extends Document {
   name: string
   email: string
   phone: string
+  // 표시용 극단명. 소유권 판정은 theaterGroup(ObjectId)을 우선 사용한다.
   theaterGroupName: string
+  // 담당 극단 참조. 극단명이 바뀌어도 권한이 끊기지 않도록 ID로 연결한다.
+  theaterGroup?: Types.ObjectId
+  // 관리자가 추가로 부여한 메뉴 권한 (기본 권한은 코드 상수로 관리하므로 저장하지 않음)
+  permissions: string[]
   password: string
   role: UserRole
   refreshToken?: string

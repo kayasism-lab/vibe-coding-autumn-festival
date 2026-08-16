@@ -91,6 +91,7 @@ export default function ApplyPage() {
       <Header />
       <main className="pt-[8.25rem] min-h-screen bg-gradient-to-b from-background to-muted/30">
         <PageHeader
+          hero="actor"
           title="참가 신청"
           subtitle="2027 가을연극축제 참가 신청"
           description="2027년 가을연극축제에 참가를 희망하는 아마추어 및 직장인 극단은 아래 양식에 따라 신청해주세요."

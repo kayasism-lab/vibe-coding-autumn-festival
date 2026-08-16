@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
+import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -106,17 +107,12 @@ export default function ContactPage() {
       <Header />
 
       <main className="flex-1 pt-[8.25rem]">
-        {/* Hero */}
-        <section className="relative py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              연락처
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              가을연극축제에 대한 문의사항이 있으시면 언제든지 연락주세요.
-            </p>
-          </div>
-        </section>
+        <PageHeader
+          hero="bulbs"
+          subtitle="Contact"
+          title="연락처"
+          description="가을연극축제에 대한 문의사항이 있으시면 언제든지 연락주세요."
+        />
 
         {/* Contact Section */}
         <section className="py-16">

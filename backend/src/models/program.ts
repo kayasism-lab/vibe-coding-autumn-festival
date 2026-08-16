@@ -10,6 +10,9 @@ const ProgramSchema = new Schema<IProgram>(
       required: true,
     },
     company: { type: String, required: true },
+    // 작품을 소유한 극단. 극단 담당자 계정의 수정 권한 판정 기준.
+    // 협의회가 직접 주관하는 프로그램(열린 낭독극·단막극)은 비워 둔다.
+    theaterGroup: { type: Schema.Types.ObjectId, ref: 'TheaterGroup' },
     director: { type: String },
     cast: [{ type: String }],
     runtime: { type: Number, required: true },
@@ -39,6 +42,7 @@ const ProgramSchema = new Schema<IProgram>(
 )
 
 ProgramSchema.index({ type: 1 })
+ProgramSchema.index({ theaterGroup: 1 })
 ProgramSchema.index({ isActive: 1 })
 ProgramSchema.index({ order: 1 })
 

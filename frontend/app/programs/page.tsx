@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
+import { PosterPlaceholder } from '@/components/shared/poster-placeholder'
 import { Badge } from '@/components/ui/badge'
 import { ArrowRight, Clock, Users } from 'lucide-react'
 import { programTypeConfig as typeConfig } from '@/lib/program-display'
@@ -61,7 +62,7 @@ function ProgramsPageContent() {
     <>
       <Header />
       <main className="pt-[8.25rem]">
-        <PageHeader subtitle="Programs" title="공연 프로그램" description="2026 가을연극축제 공연을 소개합니다." />
+        <PageHeader hero="stage" subtitle="Programs" title="공연 프로그램" description="2026 가을연극축제 공연을 소개합니다." />
         <section className="py-16 lg:py-24 bg-background">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
@@ -81,11 +82,11 @@ function ProgramsPageContent() {
                 <Link key={program._id} href={`/programs/${program._id}`} className="group block">
                   <article className="overflow-hidden rounded-xl border bg-card transition-all hover:border-primary/30 hover:shadow-lg">
                     <div className="flex flex-col lg:flex-row">
-                      <div className="h-48 flex-shrink-0 bg-muted lg:h-auto lg:w-64">
+                      <div className="relative h-48 flex-shrink-0 bg-muted lg:h-auto lg:w-64">
                         {program.posterUrl ? (
-                          <img src={program.posterUrl} alt={program.title} className="h-full w-full object-cover" />
+                          <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-full w-full object-cover" />
                         ) : (
-                          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">포스터 준비 중</div>
+                          <PosterPlaceholder />
                         )}
                       </div>
                       <div className="flex-1 p-6 lg:p-8">

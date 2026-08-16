@@ -58,6 +58,7 @@ function CitizenApplyPageContent() {
       <Header />
       <main className="pt-[8.25rem]">
         <PageHeader
+          hero="actor"
           subtitle="Join"
           title="시민 참여 신청"
           description="연극 경험이 없어도 누구나 열린 낭독극·열린 단막극에 참여를 신청할 수 있습니다."

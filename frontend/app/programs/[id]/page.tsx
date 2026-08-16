@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
@@ -12,6 +13,8 @@ import { programTypeConfig, seatStatusConfig } from '@/lib/program-display'
 import { formatScheduleDate } from '@/lib/format-date'
 import { VenueMapButton } from '@/components/shared/venue-map-button'
 import { ImageLightbox } from '@/components/shared/image-lightbox'
+import { pageHeroImages } from '@/components/shared/page-header'
+import { PosterPlaceholder } from '@/components/shared/poster-placeholder'
 import type { ProgramType, SeatStatus } from '@/types/index'
 
 type Program = {
@@ -70,26 +73,36 @@ export default function ProgramDetailPage() {
     <>
       <Header />
       <main className="pt-[8.25rem]">
-        <div className="bg-foreground py-12 text-background lg:py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <Link href="/programs" className="mb-6 inline-flex items-center text-sm text-background/70 hover:text-background">
+        <div className="relative min-h-[320px] overflow-hidden bg-foreground lg:min-h-[420px]">
+          <div className="absolute inset-0">
+            <Image
+              src={pageHeroImages.bulbs.src}
+              alt=""
+              fill
+              priority
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30" />
+          </div>
+          <div className="relative mx-auto flex min-h-[320px] max-w-7xl flex-col justify-end px-4 py-10 sm:px-6 lg:min-h-[420px] lg:px-8 lg:py-14">
+            <Link href="/programs" className="mb-6 inline-flex items-center text-sm text-white/60 hover:text-white">
               <ArrowLeft className="mr-2 h-4 w-4" />
               프로그램 목록으로
             </Link>
             {program && (
               <>
                 <div className="mb-4 flex flex-wrap items-center gap-3">
-                  <Badge className={`${typeConfig[program.type].bgClass} ${typeConfig[program.type].textClass}`}>
+                  <span className="rounded-full border border-white/25 bg-black/30 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
                     {typeConfig[program.type].label}
-                  </Badge>
-                  {program.createdAt && <span className="text-background/60">{new Date(program.createdAt).toLocaleDateString('ko-KR')}</span>}
+                  </span>
+                  {program.createdAt && <span className="text-sm text-white/50">{new Date(program.createdAt).toLocaleDateString('ko-KR')}</span>}
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">{program.title}</h1>
-                <p className="mt-4 text-xl text-background/70">{program.company}</p>
+                <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">{program.title}</h1>
+                <p className="mt-4 text-xl text-white/70">{program.company}</p>
               </>
             )}
-            {isLoading && <p className="text-background/70">불러오는 중...</p>}
-            {!isLoading && !program && <h1 className="text-2xl font-bold">프로그램을 찾을 수 없습니다.</h1>}
+            {isLoading && <p className="text-white/70">불러오는 중...</p>}
+            {!isLoading && !program && <h1 className="text-2xl font-bold text-white">프로그램을 찾을 수 없습니다.</h1>}
           </div>
         </div>
 
@@ -97,11 +110,11 @@ export default function ProgramDetailPage() {
           <section className="bg-background py-12 lg:py-16">
             <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-3 lg:gap-12 lg:px-8">
               <div className="lg:col-span-2">
-                <div className="mb-8 max-w-md overflow-hidden rounded-xl bg-muted">
+                <div className="relative mb-8 aspect-[3/4] max-w-md overflow-hidden rounded-xl bg-muted">
                   {program.posterUrl ? (
-                    <img src={program.posterUrl} alt={program.title} className="aspect-[3/4] w-full object-cover" />
+                    <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex aspect-[3/4] items-center justify-center text-muted-foreground">포스터 준비 중</div>
+                    <PosterPlaceholder />
                   )}
                 </div>
 
@@ -131,13 +144,7 @@ export default function ProgramDetailPage() {
                 {program.galleryUrls && program.galleryUrls.length > 0 && (
                   <div className="mb-8">
                     <h2 className="mb-4 text-xl font-bold text-foreground">공연 이미지</h2>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {program.galleryUrls.map((url) => (
-                        <div key={url} className="aspect-video overflow-hidden rounded-md bg-muted">
-                          <img src={url} alt={program.title} className="h-full w-full object-cover" />
-                        </div>
-                      ))}
-                    </div>
+                    <ImageLightbox images={program.galleryUrls} altPrefix={`${program.title} 공연 이미지`} />
                   </div>
                 )}
 

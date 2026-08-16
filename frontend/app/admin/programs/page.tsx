@@ -21,6 +21,7 @@ type Program = {
   title: string
   type: 'play' | 'short_play' | 'reading'
   company: string
+  theaterGroup?: string | null
   runtime: number
   synopsis: string
   detailContent?: string
@@ -41,7 +42,8 @@ type Program = {
 const emptyForm: ProgramForm = {
   title: '',
   type: 'play',
-  company: '',
+  company: '전국직장인연극단체협의회',
+  theaterGroup: '',
   runtime: 90,
   synopsis: '',
   detailContent: '',
@@ -74,6 +76,14 @@ export default function AdminProgramsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProgram, setEditingProgram] = useState<Program | null>(null)
   const [form, setForm] = useState<ProgramForm>(emptyForm)
+  const [theaterGroups, setTheaterGroups] = useState<{ _id: string; name: string }[]>([])
+  // 로그인한 계정 정보 — 극단 담당자면 본인 극단 작품만 다루도록 화면을 제한한다
+  const [account, setAccount] = useState<{ role: string; theaterGroup: string | null }>({
+    role: '',
+    theaterGroup: null,
+  })
+
+  const isGroupAccount = account.role === 'group'
 
   const fetchPrograms = async () => {
     try {
@@ -87,11 +97,32 @@ export default function AdminProgramsPage() {
 
   useEffect(() => {
     fetchPrograms()
+
+    fetch('/api/theater-groups')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setTheaterGroups(data.data.map((g: { _id: string; name: string }) => ({ _id: g._id, name: g.name })))
+        }
+      })
+      .catch(() => {})
+
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setAccount({ role: data.data.role, theaterGroup: data.data.theaterGroup ?? null })
+        }
+      })
+      .catch(() => {})
   }, [])
 
-  const filteredPrograms = programs.filter((program) =>
-    `${program.title} ${program.company}`.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredPrograms = programs
+    // 극단 담당자에게는 본인 극단 작품만 노출한다 (수정 권한도 백엔드에서 동일하게 막힌다)
+    .filter((program) => !isGroupAccount || program.theaterGroup === account.theaterGroup)
+    .filter((program) =>
+      `${program.title} ${program.company}`.toLowerCase().includes(searchQuery.toLowerCase())
+    )
 
   const openDialog = (program?: Program) => {
     setEditingProgram(program || null)
@@ -101,6 +132,7 @@ export default function AdminProgramsPage() {
             title: program.title,
             type: program.type,
             company: program.company,
+            theaterGroup: program.theaterGroup || '',
             runtime: program.runtime,
             synopsis: program.synopsis,
             detailContent: program.detailContent || '',
@@ -118,7 +150,18 @@ export default function AdminProgramsPage() {
             regularPrice: program.price?.regular || 0,
             discountPrice: program.price?.discount || 0,
           }
-        : { ...emptyForm, order: programs.length }
+        : {
+            ...emptyForm,
+            order: programs.length,
+            // 극단 담당자가 새 작품을 만들면 본인 극단으로 미리 채워둔다
+            ...(isGroupAccount && account.theaterGroup
+              ? {
+                  theaterGroup: account.theaterGroup,
+                  company:
+                    theaterGroups.find((group) => group._id === account.theaterGroup)?.name ?? '',
+                }
+              : {}),
+          }
     )
     setIsDialogOpen(true)
   }
@@ -127,6 +170,7 @@ export default function AdminProgramsPage() {
     title: form.title,
     type: form.type,
     company: form.company,
+    theaterGroup: form.theaterGroup || null,
     runtime: form.runtime,
     synopsis: form.synopsis,
     detailContent: form.detailContent || undefined,
@@ -177,8 +221,14 @@ export default function AdminProgramsPage() {
         <div className="p-6 lg:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">프로그램 관리</h1>
-              <p className="text-muted-foreground">공연 프로그램을 관리합니다.</p>
+              <h1 className="text-2xl font-bold text-foreground">
+                {isGroupAccount ? '작품 관리' : '프로그램 관리'}
+              </h1>
+              <p className="text-muted-foreground">
+                {isGroupAccount
+                  ? '우리 극단의 작품 정보를 등록하고 수정합니다.'
+                  : '공연 프로그램을 관리합니다.'}
+              </p>
             </div>
             <Button onClick={() => openDialog()}>
               <Plus className="mr-2 h-4 w-4" />
@@ -217,7 +267,10 @@ export default function AdminProgramsPage() {
                     <TableCell><Badge variant={program.isActive ? 'default' : 'secondary'}>{program.isActive ? '공개' : '비공개'}</Badge></TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" onClick={() => openDialog(program)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(program._id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      {/* 작품 삭제는 관리자만 가능 (백엔드도 동일하게 제한) */}
+                      {!isGroupAccount && (
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(program._id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -235,6 +288,8 @@ export default function AdminProgramsPage() {
         onFormChange={setForm}
         isSaving={isSaving}
         onSave={handleSave}
+        theaterGroups={theaterGroups}
+        canChangeOwner={!isGroupAccount}
       />
     </div>
   )

@@ -81,6 +81,7 @@ export default function VenuesPage() {
       <Header />
       <main className="pt-[8.25rem] min-h-screen bg-gradient-to-b from-background to-muted/30">
         <PageHeader
+          hero="stage"
           title="공연장 안내"
           subtitle="Venues"
           description="2026 가을연극축제가 열리는 공연장을 소개합니다."

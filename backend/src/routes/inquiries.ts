@@ -2,7 +2,7 @@ import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { Inquiry } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
-import { requireAdmin } from '../middleware/require-admin.js'
+import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
 
 export const inquiriesRouter = Router()
 
@@ -29,7 +29,7 @@ inquiriesRouter.get(
 
 inquiriesRouter.get(
   '/',
-  requireAdmin,
+  requirePermission('inquiries'),
   asyncHandler(async (req, res) => {
     const page = Number(req.query.page || 1)
     const limit = Number(req.query.limit || 10)
@@ -131,7 +131,7 @@ inquiriesRouter.post(
 
 inquiriesRouter.put(
   '/:id/reply',
-  requireAdmin,
+  requirePermission('inquiries'),
   asyncHandler(async (req, res) => {
     if (!req.body.content) {
       fail(res, '답변 내용을 입력해주세요.', 400)

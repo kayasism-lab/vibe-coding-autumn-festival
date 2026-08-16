@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { Gallery } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
-import { requireAdmin } from '../middleware/require-admin.js'
+import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
 
 export const galleryRouter = Router()
 
@@ -19,7 +19,7 @@ galleryRouter.get(
 
 galleryRouter.post(
   '/',
-  requireAdmin,
+  requirePermission('gallery'),
   asyncHandler(async (req, res) => {
     const item = await Gallery.create(req.body)
     ok(res, item.toObject(), '갤러리 항목이 등록되었습니다.', 201)
@@ -28,7 +28,7 @@ galleryRouter.post(
 
 galleryRouter.put(
   '/:id',
-  requireAdmin,
+  requirePermission('gallery'),
   asyncHandler(async (req, res) => {
     const item = await Gallery.findByIdAndUpdate(req.params.id, req.body, { new: true }).lean()
     if (!item) {

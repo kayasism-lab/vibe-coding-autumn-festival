@@ -40,7 +40,7 @@ export default function InquiriesPage() {
     <>
       <Header />
       <main className="pt-[8.25rem]">
-        <PageHeader subtitle="Inquiry" title="문의하기" description="축제에 관해 궁금한 점이 있으시면 문의해주세요." />
+        <PageHeader hero="bulbs" subtitle="Inquiry" title="문의하기" description="축제에 관해 궁금한 점이 있으시면 문의해주세요." />
         <section className="bg-background py-16 lg:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-6 flex justify-end">

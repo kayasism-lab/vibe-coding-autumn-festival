@@ -155,6 +155,7 @@ export default function ApplyStatusPage() {
       <Header />
       <main className="pt-[8.25rem]">
         <PageHeader
+          hero="actor"
           subtitle="Join"
           title="신청 내역 조회"
           description="전화번호와 비밀번호로 시민 참여 신청 내역을 확인하고 수정할 수 있습니다."

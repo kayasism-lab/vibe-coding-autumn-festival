@@ -57,6 +57,7 @@ export default function NewInquiryPage() {
       <Header />
       <main className="pt-[8.25rem]">
         <PageHeader
+          hero="bulbs"
           subtitle="Inquiry"
           title="문의 작성"
           description="축제에 관해 궁금한 점을 남겨주세요."

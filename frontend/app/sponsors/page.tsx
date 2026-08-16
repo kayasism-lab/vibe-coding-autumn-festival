@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
+import { PageHeader } from '@/components/shared/page-header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Heart, Building2, Award, Handshake } from 'lucide-react'
@@ -45,12 +46,12 @@ export default function SponsorsPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 pt-[8.25rem]">
-        <section className="relative py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl lg:text-5xl font-bold mb-4">후원사 안내</h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">가을연극축제를 함께 만들어가는 소중한 후원사들을 소개합니다.</p>
-          </div>
-        </section>
+        <PageHeader
+          hero="stage"
+          subtitle="Sponsors"
+          title="후원사 안내"
+          description="가을연극축제를 함께 만들어가는 소중한 후원사들을 소개합니다."
+        />
         {(['main', 'gold', 'silver', 'partner'] as const).map((tier) => {
           const tierSponsors = sponsors.filter((sponsor) => sponsor.tier === tier)
           if (tierSponsors.length === 0) return null

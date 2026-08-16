@@ -13,10 +13,12 @@ const footerLinks = {
     { href: '/schedule', label: '공연일정' },
     { href: '/tickets', label: '예매안내' },
   ],
+  // 상단 메뉴와 동일한 라벨·구성을 유지한다 (헤더 navItems의 커뮤니티 항목과 일치)
   community: [
-    { href: '/notices', label: '공지사항' },
+    { href: '/notices', label: '홍보게시판' },
     { href: '/gallery', label: '갤러리' },
-    { href: '/inquiries', label: 'Q&A' },
+    { href: '/community', label: '자유게시판' },
+    { href: '/inquiries', label: '문의하기' },
   ],
   support: [
     { href: '/sponsors', label: '후원사' },
@@ -141,18 +143,15 @@ export function Footer() {
           {/* Contact Info */}
           <div>
             <h3 className="text-sm font-semibold mb-4">연락처</h3>
+            {/* 메일·전화는 안내용 정보라 링크로 걸지 않는다 (클릭·마우스오버 반응 없음) */}
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-sm text-white/60">
                 <Mail className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <a href="mailto:kayasism@naver.com" className="hover:text-background">
-                  kayasism@naver.com
-                </a>
+                <span>kayasism@naver.com</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-white/60">
                 <Phone className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <a href="tel:010-9073-8894" className="hover:text-background">
-                  010-9073-8894
-                </a>
+                <span>010-9073-8894</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-white/60">
                 <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />

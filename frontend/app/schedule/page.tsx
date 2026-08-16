@@ -71,6 +71,7 @@ export default function SchedulePage() {
       <Header />
       <main className="pt-[8.25rem]">
         <PageHeader
+          hero="bulbs"
           subtitle="Schedule"
           title="공연 일정"
           description="2026년 9월 19일부터 11월 29일까지 진행되는 가을연극축제의 전체 공연 일정입니다. 전 프로그램 무료입니다."

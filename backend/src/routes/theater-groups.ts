@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { TheaterGroup } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
-import { requireAdmin, requireAdminOrGroup } from '../middleware/require-admin.js'
+import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
 import { canManageGroupResource } from '../lib/ownership.js'
 
 export const theaterGroupsRouter = Router()
@@ -39,7 +39,7 @@ theaterGroupsRouter.get(
 
 theaterGroupsRouter.put(
   '/:id',
-  requireAdminOrGroup,
+  requirePermission('my-group'),
   asyncHandler(async (req, res) => {
     const existing = await TheaterGroup.findById(req.params.id)
     if (!existing) {
@@ -47,7 +47,8 @@ theaterGroupsRouter.put(
       return
     }
 
-    if (!(await canManageGroupResource(res.locals.user, existing.name))) {
+    // 담당 극단 ID로 대조한다 (극단명이 바뀌어도 권한이 유지되도록)
+    if (!(await canManageGroupResource(res.locals.user, existing.name, existing._id))) {
       fail(res, '해당 극단 정보를 수정할 권한이 없습니다.', 403)
       return
     }

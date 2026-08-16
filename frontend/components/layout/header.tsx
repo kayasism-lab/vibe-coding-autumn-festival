@@ -26,15 +26,15 @@ const navItems = [
     ],
   },
   {
+    // 하위 항목 라벨은 각 페이지의 실제 제목과 동일하게 맞춘다.
+    // (보도자료는 홍보게시판 안의 탭, 사진/영상 구분은 갤러리 안의 필터로 제공하므로 메뉴에서 분리하지 않음)
     label: '커뮤니티',
     href: '/notices',
     children: [
-      { href: '/notices', label: '공지사항' },
-      { href: '/notices?category=press', label: '보도자료' },
-      { href: '/gallery', label: '포토갤러리' },
-      { href: '/gallery?type=video', label: '영상갤러리' },
-      { href: '/community', label: '커뮤니티' },
-      { href: '/inquiries', label: 'Q&A' },
+      { href: '/notices', label: '홍보게시판' },
+      { href: '/gallery', label: '갤러리' },
+      { href: '/community', label: '자유게시판' },
+      { href: '/inquiries', label: '문의하기' },
     ],
   },
   {

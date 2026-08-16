@@ -40,7 +40,7 @@ export default function NoticesPage() {
     <>
       <Header />
       <main className="pt-[8.25rem]">
-        <PageHeader subtitle="Notice" title="홍보게시판" description="축제 관련 공지사항과 소식을 확인하세요." />
+        <PageHeader hero="bulbs" subtitle="Notice" title="홍보게시판" description="축제 관련 공지사항과 소식을 확인하세요." />
         <section className="py-16 lg:py-24 bg-background">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <Tabs defaultValue="all" className="w-full">

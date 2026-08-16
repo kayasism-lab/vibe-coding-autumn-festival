@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from 'express'
 import { fail } from '../lib/http.js'
 import { verifyAccessToken } from '../lib/auth.js'
+import { hasAdminPermission } from '../lib/ownership.js'
+import type { GroupPermission } from '../lib/permissions.js'
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const header = req.header('authorization')
@@ -46,4 +48,19 @@ export async function requireAdminOrGroup(req: Request, res: Response, next: Nex
 
     next()
   })
+}
+
+// 특정 관리자 메뉴 권한을 가진 계정만 통과시킨다.
+// 관리자는 항상 통과하고, 극단 계정은 기본 권한 또는 관리자가 부여한 권한이 있어야 한다.
+export function requirePermission(permission: GroupPermission) {
+  return async function permissionGuard(req: Request, res: Response, next: NextFunction) {
+    await requireAdminOrGroup(req, res, async () => {
+      if (!(await hasAdminPermission(res.locals.user, permission))) {
+        fail(res, '이 기능을 사용할 권한이 없습니다.', 403)
+        return
+      }
+
+      next()
+    })
+  }
 }

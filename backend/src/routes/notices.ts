@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { Notice } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
-import { requireAdmin } from '../middleware/require-admin.js'
+import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
 
 export const noticesRouter = Router()
 
@@ -35,7 +35,7 @@ noticesRouter.get(
 
 noticesRouter.post(
   '/',
-  requireAdmin,
+  requirePermission('notices'),
   asyncHandler(async (req, res) => {
     const notice = await Notice.create(req.body)
     ok(res, notice.toObject(), '공지사항이 등록되었습니다.', 201)
@@ -62,7 +62,7 @@ noticesRouter.get(
 
 noticesRouter.put(
   '/:id',
-  requireAdmin,
+  requirePermission('notices'),
   asyncHandler(async (req, res) => {
     const notice = await Notice.findByIdAndUpdate(
       req.params.id,

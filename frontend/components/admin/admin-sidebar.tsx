@@ -22,6 +22,7 @@ import {
   UserCog,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { GROUP_PERMISSION_META, type GroupPermission } from '@/lib/admin-permissions'
 
 const fullSidebarItems = [
   { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
@@ -39,25 +40,40 @@ const fullSidebarItems = [
   { href: '/admin/settings', icon: Settings, label: '사이트 설정' },
 ]
 
-// 극단 담당자(group) 계정은 본인 소속 정보만 관리하므로 최소 메뉴만 노출
-const groupSidebarItems = [
-  { href: '/admin/my-group', icon: Users, label: '내 극단 관리' },
-]
+// 극단 담당자(group) 계정의 메뉴는 권한 키에 따라 결정된다.
+// 기본 권한(내 극단·작품)은 항상 표시되고, 나머지는 관리자가 부여한 경우에만 나타난다.
+const groupMenuByPermission: Record<GroupPermission, { href: string; icon: typeof Users; label: string }> = {
+  'my-group': { href: '/admin/my-group', icon: Users, label: '내 극단 관리' },
+  programs: { href: '/admin/programs', icon: Film, label: '작품 관리' },
+  schedules: { href: '/admin/schedules', icon: Calendar, label: '공연 일정 관리' },
+  gallery: { href: '/admin/gallery', icon: Images, label: '갤러리 관리' },
+  notices: { href: '/admin/notices', icon: FileText, label: '공지·홍보 관리' },
+  inquiries: { href: '/admin/inquiries', icon: MessageSquare, label: '문의 답변' },
+}
 
 export function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isGroupRole, setIsGroupRole] = useState(false)
+  const [permissions, setPermissions] = useState<GroupPermission[]>([])
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.data?.role === 'group') setIsGroupRole(true)
+        if (data.success && data.data?.role === 'group') {
+          setIsGroupRole(true)
+          setPermissions(data.data.permissions ?? [])
+        }
       })
       .catch(() => {})
   }, [])
+
+  // 권한 목록 순서가 아니라 메뉴 정의 순서대로 노출해 화면 순서가 계정마다 흔들리지 않게 한다
+  const groupSidebarItems = GROUP_PERMISSION_META.filter((meta) => permissions.includes(meta.key)).map(
+    (meta) => groupMenuByPermission[meta.key]
+  )
 
   const sidebarItems = isGroupRole ? groupSidebarItems : fullSidebarItems
   const homeHref = isGroupRole ? '/admin/my-group' : '/admin'

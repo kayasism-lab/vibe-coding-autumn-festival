@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
+import { PageHeader } from '@/components/shared/page-header'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, X, Play } from 'lucide-react'
@@ -19,6 +20,9 @@ type GalleryItem = {
 export default function GalleryPage() {
   const [items, setItems] = useState<GalleryItem[]>([])
   const [selectedYear, setSelectedYear] = useState('전체')
+  // 사진/영상 구분 필터 (기존에는 상단 메뉴가 '포토갤러리·영상갤러리'로 나뉘어 있었으나
+  // 실제로는 같은 페이지였기 때문에, 메뉴를 하나로 합치고 구분은 이 필터로 제공한다)
+  const [selectedType, setSelectedType] = useState<'전체' | 'photo' | 'video'>('전체')
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -31,7 +35,17 @@ export default function GalleryPage() {
   }, [])
 
   const years = ['전체', ...Array.from(new Set(items.map((item) => new Date(item.createdAt).getFullYear().toString()))).sort().reverse()]
-  const filteredItems = selectedYear === '전체' ? items : items.filter((item) => new Date(item.createdAt).getFullYear().toString() === selectedYear)
+  const filteredItems = items.filter((item) => {
+    const matchesYear = selectedYear === '전체' || new Date(item.createdAt).getFullYear().toString() === selectedYear
+    const matchesType = selectedType === '전체' || item.type === selectedType
+    return matchesYear && matchesType
+  })
+
+  const typeFilters = [
+    { value: '전체', label: '전체' },
+    { value: 'photo', label: '사진' },
+    { value: 'video', label: '영상' },
+  ] as const
 
   const openLightbox = (item: GalleryItem) => {
     setCurrentIndex(filteredItems.findIndex((candidate) => candidate._id === item._id))
@@ -51,14 +65,27 @@ export default function GalleryPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 pt-[8.25rem]">
-        <section className="relative py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl lg:text-5xl font-bold mb-4">갤러리</h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">가을연극축제의 순간들을 사진과 영상으로 만나보세요.</p>
-          </div>
-        </section>
+        <PageHeader
+          hero="bulbs"
+          subtitle="Gallery"
+          title="갤러리"
+          description="가을연극축제의 순간들을 사진과 영상으로 만나보세요."
+        />
         <section className="py-16">
           <div className="container mx-auto px-4">
+            {/* 사진/영상 구분 — 종류가 다르므로 연도 필터보다 위에 둔다 */}
+            <div className="mb-4 flex justify-center gap-2">
+              {typeFilters.map(({ value, label }) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={selectedType === value ? 'default' : 'outline'}
+                  onClick={() => setSelectedType(value)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
             <div className="flex justify-center gap-2 mb-10">
               {years.map((year) => <Button key={year} variant={selectedYear === year ? 'default' : 'outline'} onClick={() => setSelectedYear(year)}>{year}</Button>)}
             </div>
