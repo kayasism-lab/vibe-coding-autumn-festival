@@ -7,30 +7,81 @@ import { canManageGroupResource } from '../lib/ownership.js'
 
 export const citizenApplicationsRouter = Router()
 
+// qna 필드 추가 이전에 생성된 구버전 문서는 qna가 없을 수 있어 항상 배열로 보정
 function sanitize(application: Record<string, unknown>) {
   const { password, ...safe } = application
-  return safe
+  return { ...safe, qna: safe.qna ?? [] }
 }
 
 // 시민참여 열린 낭독극/열린 단막극 신청 접수 (공개)
 citizenApplicationsRouter.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { programId, name, phone, email, region, motivation, password } = req.body
+    const {
+      programType,
+      name,
+      phone,
+      email,
+      residence,
+      age,
+      gender,
+      practiceAvailable,
+      respectAgreement,
+      hasExperience,
+      experienceDetail,
+      motivation,
+      password,
+    } = req.body
 
-    if (!programId || !name || !phone || !email || !region?.sido || !region?.gu || !motivation || !password) {
+    if (
+      !['reading', 'short_play'].includes(programType) ||
+      !name ||
+      !phone ||
+      !email ||
+      !residence ||
+      !age ||
+      !gender ||
+      typeof practiceAvailable !== 'boolean' ||
+      typeof respectAgreement !== 'boolean' ||
+      typeof hasExperience !== 'boolean' ||
+      !motivation ||
+      !password
+    ) {
       fail(res, '필수 항목을 모두 입력해주세요.', 400)
       return
     }
 
-    const program = await Program.findById(programId).lean()
-    if (!program || !program.openForApplication) {
-      fail(res, '시민 참여 신청을 받지 않는 프로그램입니다.', 400)
+    if (hasExperience && !experienceDetail) {
+      fail(res, '경험 내용을 입력해주세요.', 400)
+      return
+    }
+
+    if (experienceDetail && experienceDetail.length > 1000) {
+      fail(res, '경험 내용은 1000자 이내로 입력해주세요.', 400)
+      return
+    }
+
+    // 클라이언트가 programId를 직접 지정하지 못하도록 서버에서 해당 유형의 열린 프로그램을 조회
+    const program = await Program.findOne({ type: programType, openForApplication: true }).lean()
+    if (!program) {
+      fail(res, '현재 열린 낭독극/단막극 신청을 받고 있지 않습니다.', 400)
       return
     }
 
     const application = await CitizenApplication.create({
-      ...req.body,
+      programId: program._id,
+      programType,
+      name,
+      phone,
+      email,
+      residence,
+      age,
+      gender,
+      practiceAvailable,
+      respectAgreement,
+      hasExperience,
+      experienceDetail: hasExperience ? experienceDetail : undefined,
+      motivation,
       password: await bcrypt.hash(password, 10),
     })
 
@@ -83,13 +134,50 @@ citizenApplicationsRouter.put(
     }
 
     delete updates.programId
+    delete updates.programType
     delete updates.status
     delete updates.adminNote
+    delete updates.qna
 
     Object.assign(application, updates)
     await application.save()
 
     ok(res, sanitize(application.toObject()), '신청 내역이 수정되었습니다.')
+  })
+)
+
+// 본인 신청 내역에 문의 남기기 (공개, 비밀번호 재확인 필요, 심사중일 때만 가능)
+citizenApplicationsRouter.post(
+  '/:id/qna',
+  asyncHandler(async (req, res) => {
+    const { password, message } = req.body
+    if (!password || !message?.trim()) {
+      fail(res, '비밀번호와 문의 내용을 입력해주세요.', 400)
+      return
+    }
+
+    const application = await CitizenApplication.findById(req.params.id)
+    if (!application) {
+      fail(res, '신청 내역을 찾을 수 없습니다.', 404)
+      return
+    }
+
+    if (!(await bcrypt.compare(password, application.password))) {
+      fail(res, '비밀번호가 일치하지 않습니다.', 401)
+      return
+    }
+
+    if (application.status !== 'pending') {
+      fail(res, '심사가 완료된 신청은 문의를 남길 수 없습니다.', 400)
+      return
+    }
+
+    // qna 필드 추가 이전에 생성된 구버전 문서 대응
+    if (!application.qna) application.qna = []
+    application.qna.push({ author: 'applicant', message: message.trim(), createdAt: new Date() })
+    await application.save()
+
+    ok(res, sanitize(application.toObject()), '문의가 등록되었습니다.')
   })
 )
 
@@ -111,11 +199,49 @@ citizenApplicationsRouter.get(
     for (const application of applications) {
       const company = (application.programId as unknown as { company?: string } | null)?.company
       if (company && (await canManageGroupResource(res.locals.user, company))) {
-        visible.push(application)
+        // lean() 조회는 스키마 default를 적용하지 않으므로 qna 필드를 직접 보정
+        visible.push({ ...application, qna: application.qna ?? [] })
       }
     }
 
     ok(res, visible)
+  })
+)
+
+// 관리자/극단 담당자가 심사중인 신청에 문의·답변 남기기
+citizenApplicationsRouter.post(
+  '/:id/qna/admin',
+  requireAdminOrGroup,
+  asyncHandler(async (req, res) => {
+    const { message } = req.body
+    if (!message?.trim()) {
+      fail(res, '문의 내용을 입력해주세요.', 400)
+      return
+    }
+
+    const application = await CitizenApplication.findById(req.params.id).populate('programId', 'company')
+    if (!application) {
+      fail(res, '신청 내역을 찾을 수 없습니다.', 404)
+      return
+    }
+
+    const company = (application.programId as unknown as { company?: string } | null)?.company
+    if (!company || !(await canManageGroupResource(res.locals.user, company))) {
+      fail(res, '권한이 없습니다.', 403)
+      return
+    }
+
+    if (application.status !== 'pending') {
+      fail(res, '심사가 완료된 신청에는 문의를 남길 수 없습니다.', 400)
+      return
+    }
+
+    // qna 필드 추가 이전에 생성된 구버전 문서 대응
+    if (!application.qna) application.qna = []
+    application.qna.push({ author: 'admin', message: message.trim(), createdAt: new Date() })
+    await application.save()
+
+    ok(res, sanitize(application.toObject()), '문의가 등록되었습니다.')
   })
 )
 

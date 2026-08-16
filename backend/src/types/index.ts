@@ -14,6 +14,10 @@ export interface IProgram extends Document {
   synopsis: string
   posterUrl?: string
   galleryUrls: string[]
+  // 축제 팜플렛(리플렛) 스캔 이미지 - 공연 사진(galleryUrls)과는 별개
+  pamphletUrls: string[]
+  // 시놉시스 외에 관리자가 자유롭게 남기는 추가 안내글(연출의도, 관전 포인트 등)
+  detailContent?: string
   ticketUrl?: string
   venue: string
   venueAddress?: string
@@ -190,10 +194,6 @@ export interface IApplication extends Document {
   representative: string
   email: string
   phone: string
-  playTitle: string
-  playType: 'play' | 'musical' | 'short_play'
-  runtime: number
-  synopsis: string
   memberCount: number
   attachmentUrls: string[]
   status: ApplicationStatus
@@ -204,22 +204,35 @@ export interface IApplication extends Document {
 
 // CitizenApplication (시민참여 열린 낭독극/열린 단막극 개인 신청)
 export type CitizenApplicationStatus = 'pending' | 'approved' | 'rejected'
+export type CitizenApplicationProgramType = 'reading' | 'short_play'
+
+export interface ICitizenApplicationQna {
+  author: 'admin' | 'applicant'
+  message: string
+  createdAt: Date
+}
 
 export interface ICitizenApplication extends Document {
   _id: Types.ObjectId
   programId: Types.ObjectId
+  programType: CitizenApplicationProgramType
   name: string
   phone: string
   email: string
-  region: {
-    sido: string
-    gu: string
-  }
+  residence: string
+  age: number
+  gender: 'male' | 'female'
+  // 낭독극=주2회, 단막극=주3회 연습 참여 가능 여부 (질문 라벨은 programType으로 분기)
+  practiceAvailable: boolean
+  respectAgreement: boolean
+  hasExperience: boolean
+  experienceDetail?: string
   motivation: string
-  experience?: string
   password: string
   status: CitizenApplicationStatus
   adminNote?: string
+  // 심사중 상태에서 관리자-신청자가 주고받는 문의/답변 이력
+  qna: ICitizenApplicationQna[]
   createdAt: Date
   updatedAt: Date
 }

@@ -7,14 +7,6 @@ const ApplicationSchema = new Schema<IApplication>(
     representative: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },
-    playTitle: { type: String, required: true },
-    playType: {
-      type: String,
-      enum: ['play', 'musical', 'short_play'],
-      required: true,
-    },
-    runtime: { type: Number, required: true },
-    synopsis: { type: String, required: true },
     memberCount: { type: Number, required: true },
     attachmentUrls: [{ type: String }],
     status: {

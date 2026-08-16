@@ -30,8 +30,6 @@ import {
   Mail,
   Phone,
   Users,
-  Clock,
-  FileText,
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -41,21 +39,11 @@ interface Application {
   representative: string
   email: string
   phone: string
-  playTitle: string
-  playType: 'play' | 'musical' | 'short_play'
-  runtime: number
-  synopsis: string
   memberCount: number
   attachmentUrls: string[]
   status: 'pending' | 'approved' | 'rejected'
   adminNote?: string
   createdAt: string
-}
-
-const playTypeLabels = {
-  play: '연극',
-  musical: '뮤지컬',
-  short_play: '단막극',
 }
 
 const statusLabels = {
@@ -174,8 +162,8 @@ export default function AdminApplicationsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>극단명</TableHead>
-                      <TableHead>작품명</TableHead>
-                      <TableHead>유형</TableHead>
+                      <TableHead>대표자</TableHead>
+                      <TableHead>연락처</TableHead>
                       <TableHead>신청일</TableHead>
                       <TableHead>상태</TableHead>
                       <TableHead className="w-20">관리</TableHead>
@@ -185,8 +173,8 @@ export default function AdminApplicationsPage() {
                     {applications.map((app) => (
                       <TableRow key={app._id}>
                         <TableCell className="font-medium">{app.groupName}</TableCell>
-                        <TableCell>{app.playTitle}</TableCell>
-                        <TableCell>{playTypeLabels[app.playType]}</TableCell>
+                        <TableCell>{app.representative}</TableCell>
+                        <TableCell>{app.phone}</TableCell>
                         <TableCell>
                           {new Date(app.createdAt).toLocaleDateString('ko-KR')}
                         </TableCell>
@@ -251,34 +239,6 @@ export default function AdminApplicationsPage() {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">단원 {selectedApp.memberCount}명</span>
-                    </div>
-                  </div>
-
-                  {/* 작품 정보 */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      작품 정보
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">작품명</p>
-                        <p className="font-medium">{selectedApp.playTitle}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">유형</p>
-                        <p className="font-medium">{playTypeLabels[selectedApp.playType]}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span>러닝타임: {selectedApp.runtime}분</span>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">시놉시스</p>
-                      <p className="text-sm bg-muted/50 p-4 rounded-lg whitespace-pre-wrap">
-                        {selectedApp.synopsis}
-                      </p>
                     </div>
                   </div>
 

@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { ArrowRight, Calendar, MapPin, Sparkles, Users, Award, ExternalLink, Play, Ticket, Instagram, Facebook, Youtube, Globe, BookOpen } from 'lucide-react'
+import { ArrowRight, Calendar, MapPin, Sparkles, Users, Award, ExternalLink, Play, Ticket, Instagram, Facebook, Youtube, Globe, BookOpen, HeartHandshake } from 'lucide-react'
 
 // 참여 극단 정보 타입
 interface TheaterGroup {
@@ -284,6 +284,16 @@ export function HeroSection() {
                   <Link href="/tickets">
                     <Ticket className="mr-2 h-4 w-4" />
                     무료 관람 안내
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-full px-8 shadow-lg shadow-amber-500/30 border-0"
+                >
+                  <Link href="/apply/citizen?type=reading">
+                    <HeartHandshake className="mr-2 h-4 w-4" />
+                    시민참여 신청
                   </Link>
                 </Button>
               </div>

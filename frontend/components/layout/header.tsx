@@ -13,10 +13,7 @@ const navItems = [
     href: '/about',
     children: [
       { href: '/about', label: '축제소개' },
-      { href: '/about#greeting', label: '인사말' },
-      { href: '/about#history', label: '연혁' },
       { href: '/venues', label: '공연장 안내' },
-      { href: '/contact', label: '오시는 길' },
     ],
   },
   {
@@ -24,9 +21,6 @@ const navItems = [
     href: '/programs',
     children: [
       { href: '/programs', label: '전체 프로그램' },
-      { href: '/programs?type=play', label: '연극' },
-      { href: '/programs?type=reading', label: '낭독극' },
-      { href: '/programs?type=short_play', label: '연합단막극제' },
       { href: '/schedule', label: '공연일정' },
       { href: '/tickets', label: '예매안내' },
     ],
@@ -44,13 +38,13 @@ const navItems = [
     ],
   },
   {
-    label: '참여/후원',
-    href: '/apply',
+    label: '시민참여 신청',
+    href: '/apply/citizen',
     children: [
-      { href: '/apply', label: '극단 참가 신청' },
+      { href: '/apply/citizen?type=reading', label: '열린 낭독극 참여' },
+      { href: '/apply/citizen?type=short_play', label: '열린 단막극 참여' },
       { href: '/apply/status', label: '시민 참여 신청 조회' },
-      { href: '/sponsors', label: '후원사 소개' },
-      { href: '/sponsors#support', label: '후원 안내' },
+      { href: '/apply', label: '극단 참가 신청' },
     ],
   },
 ]

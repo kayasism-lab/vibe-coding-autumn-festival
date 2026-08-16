@@ -6,22 +6,16 @@ import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
-import { CheckCircle2, Loader2, FileText, Users, Clock, Send } from 'lucide-react'
+import { CheckCircle2, Loader2, FileText, Users, Send } from 'lucide-react'
 
 interface FormData {
   groupName: string
   representative: string
   email: string
   phone: string
-  playTitle: string
-  playType: 'play' | 'musical' | 'short_play'
-  runtime: number
-  synopsis: string
   memberCount: number
   attachmentUrls: string[]
 }
@@ -31,10 +25,6 @@ const initialFormData: FormData = {
   representative: '',
   email: '',
   phone: '',
-  playTitle: '',
-  playType: 'play',
-  runtime: 60,
-  synopsis: '',
   memberCount: 10,
   attachmentUrls: [],
 }
@@ -102,8 +92,8 @@ export default function ApplyPage() {
       <main className="pt-[8.25rem] min-h-screen bg-gradient-to-b from-background to-muted/30">
         <PageHeader
           title="참가 신청"
-          subtitle="2026 가을연극축제 참가 신청"
-          description="축제에 참가를 희망하는 극단은 아래 양식을 작성하여 신청해주세요."
+          subtitle="2027 가을연극축제 참가 신청"
+          description="2027년 가을연극축제에 참가를 희망하는 아마추어 및 직장인 극단은 아래 양식에 따라 신청해주세요."
         />
 
         <section className="py-16">
@@ -118,10 +108,10 @@ export default function ApplyPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-muted-foreground">
-                  <p>- 신청 기간: 2026년 5월 1일 ~ 6월 30일</p>
-                  <p>- 참가 자격: 직장인 연극 동호회 또는 극단</p>
-                  <p>- 심사 결과: 7월 중 개별 통보</p>
-                  <p>- 문의: festival@autumn2026.kr</p>
+                  <p>- 신청 기간: 2026년 9월 1일 ~ 12월 31일</p>
+                  <p>- 참가 자격: 직장인 연극 동호회 또는 아마추어 극단</p>
+                  <p>- 심사 결과: 2027년 1월 중 개별 통보</p>
+                  <p>- 문의: kayasism@naver.com</p>
                 </CardContent>
               </Card>
 
@@ -202,90 +192,6 @@ export default function ApplyPage() {
                               setFormData({ ...formData, memberCount: parseInt(e.target.value) || 1 })
                             }
                             required
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 작품 정보 */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        작품 정보
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="playTitle">작품명 *</Label>
-                          <Input
-                            id="playTitle"
-                            value={formData.playTitle}
-                            onChange={(e) =>
-                              setFormData({ ...formData, playTitle: e.target.value })
-                            }
-                            required
-                            placeholder="공연할 작품 제목"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>작품 유형 *</Label>
-                          <RadioGroup
-                            value={formData.playType}
-                            onValueChange={(value) =>
-                              setFormData({ ...formData, playType: value as FormData['playType'] })
-                            }
-                            className="flex gap-6"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="play" id="play" />
-                              <Label htmlFor="play" className="font-normal cursor-pointer">
-                                연극
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="musical" id="musical" />
-                              <Label htmlFor="musical" className="font-normal cursor-pointer">
-                                뮤지컬
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="short_play" id="short_play" />
-                              <Label htmlFor="short_play" className="font-normal cursor-pointer">
-                                단막극
-                              </Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="runtime" className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            러닝타임 (분) *
-                          </Label>
-                          <Input
-                            id="runtime"
-                            type="number"
-                            min={10}
-                            max={180}
-                            value={formData.runtime}
-                            onChange={(e) =>
-                              setFormData({ ...formData, runtime: parseInt(e.target.value) || 60 })
-                            }
-                            required
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="synopsis">작품 시놉시스 *</Label>
-                          <Textarea
-                            id="synopsis"
-                            value={formData.synopsis}
-                            onChange={(e) =>
-                              setFormData({ ...formData, synopsis: e.target.value })
-                            }
-                            required
-                            rows={6}
-                            placeholder="작품의 줄거리와 특징을 설명해주세요"
                           />
                         </div>
                       </div>

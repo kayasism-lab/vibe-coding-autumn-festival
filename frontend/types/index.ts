@@ -12,6 +12,8 @@ export interface IProgram {
   synopsis: string
   posterUrl?: string
   galleryUrls: string[]
+  pamphletUrls: string[]
+  detailContent?: string
   ticketUrl?: string
   venue: string
   price: {
@@ -164,10 +166,6 @@ export interface IApplication {
   representative: string
   email: string
   phone: string
-  playTitle: string
-  playType: 'play' | 'musical' | 'short_play'
-  runtime: number
-  synopsis: string
   memberCount: number
   attachmentUrls: string[]
   status: ApplicationStatus

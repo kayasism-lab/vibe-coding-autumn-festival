@@ -109,7 +109,7 @@ const programs = [
   },
   {
     title: '시민참여 열린 낭독극',
-    type: 'short_play' as const,
+    type: 'reading' as const,
     company: '전국직장인연극단체협의회',
     runtime: 60,
     synopsis:

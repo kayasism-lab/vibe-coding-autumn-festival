@@ -63,7 +63,9 @@ export const viewport: Viewport = {
   ],
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // 저시력 사용자를 배려해 두 손가락 확대/축소(핀치 줌)를 막지 않음
+  maximumScale: 5,
+  userScalable: true,
 }
 
 export default function RootLayout({

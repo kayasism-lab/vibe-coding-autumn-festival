@@ -11,6 +11,7 @@ import { ArrowLeft, Calendar, Clock, ExternalLink, ShieldCheck, Users } from 'lu
 import { programTypeConfig, seatStatusConfig } from '@/lib/program-display'
 import { formatScheduleDate } from '@/lib/format-date'
 import { VenueMapButton } from '@/components/shared/venue-map-button'
+import { ImageLightbox } from '@/components/shared/image-lightbox'
 import type { ProgramType, SeatStatus } from '@/types/index'
 
 type Program = {
@@ -25,8 +26,10 @@ type Program = {
   venueAddress?: string
   ageRating?: string
   synopsis: string
+  detailContent?: string
   posterUrl?: string
   galleryUrls?: string[]
+  pamphletUrls?: string[]
   ticketUrl?: string
   openForApplication?: boolean
   createdAt?: string
@@ -107,6 +110,13 @@ export default function ProgramDetailPage() {
                   <div className="whitespace-pre-line leading-relaxed text-card-foreground/80">{program.synopsis}</div>
                 </div>
 
+                {program.detailContent && (
+                  <div className="mb-8">
+                    <h2 className="mb-4 text-xl font-bold text-foreground">상세 안내</h2>
+                    <div className="whitespace-pre-line leading-relaxed text-card-foreground/80">{program.detailContent}</div>
+                  </div>
+                )}
+
                 {program.cast && program.cast.length > 0 && (
                   <div className="mb-8">
                     <h2 className="mb-4 text-xl font-bold text-foreground">출연진</h2>
@@ -119,7 +129,7 @@ export default function ProgramDetailPage() {
                 )}
 
                 {program.galleryUrls && program.galleryUrls.length > 0 && (
-                  <div>
+                  <div className="mb-8">
                     <h2 className="mb-4 text-xl font-bold text-foreground">공연 이미지</h2>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                       {program.galleryUrls.map((url) => (
@@ -128,6 +138,13 @@ export default function ProgramDetailPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {program.pamphletUrls && program.pamphletUrls.length > 0 && (
+                  <div>
+                    <h2 className="mb-4 text-xl font-bold text-foreground">팜플렛</h2>
+                    <ImageLightbox images={program.pamphletUrls} altPrefix={`${program.title} 팜플렛`} />
                   </div>
                 )}
               </div>
@@ -185,7 +202,7 @@ export default function ProgramDetailPage() {
 
                 {program.openForApplication && (
                   <Button asChild variant="secondary" className="w-full" size="lg">
-                    <Link href={`/programs/${program._id}/apply`}>시민 참여 신청하기</Link>
+                    <Link href={`/apply/citizen?type=${program.type}`}>시민 참여 신청하기</Link>
                   </Button>
                 )}
               </aside>
