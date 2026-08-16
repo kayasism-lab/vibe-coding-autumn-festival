@@ -4,8 +4,10 @@ import type { IUser } from '../types/index.js'
 const UserSchema = new Schema<IUser>(
   {
     name: { type: String, required: true },
+    // 이메일 주소가 아니라 로그인 아이디로 사용한다 (대소문자 구분 없이 저장)
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    phone: { type: String, required: true },
+    // 연락처는 선택 항목 (로그인에 필요한 값이 아님)
+    phone: { type: String, default: '' },
     theaterGroupName: { type: String, required: true, default: '없음' },
     // 극단 담당자 계정이 관리할 극단(ID 참조). 이름이 바뀌어도 연결이 유지된다.
     theaterGroup: { type: Schema.Types.ObjectId, ref: 'TheaterGroup' },

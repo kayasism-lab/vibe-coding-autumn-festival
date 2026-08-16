@@ -58,11 +58,18 @@ export function UserFormDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <Field label="이름">
+          <Field label="이름" required>
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Field>
-          <Field label="이메일">
-            <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          {/* 이메일 주소가 아니라 로그인용 아이디로만 쓰이므로 형식 제한을 두지 않는다 */}
+          <Field label="아이디" required>
+            <Input
+              type="text"
+              autoComplete="off"
+              placeholder="로그인에 사용할 아이디"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
           </Field>
           <Field label="연락처">
             <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
@@ -153,9 +160,11 @@ export function UserFormDialog({
             </>
           )}
 
-          <Field label={isEditing ? '새 비밀번호 (변경할 때만 입력)' : '비밀번호'}>
+          {/* 수정할 때는 비워두면 기존 비밀번호가 유지되므로 필수가 아니다 */}
+          <Field label={isEditing ? '새 비밀번호 (변경할 때만 입력)' : '비밀번호'} required={!isEditing}>
             <Input
               type="password"
+              autoComplete="new-password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
@@ -173,6 +182,22 @@ export function UserFormDialog({
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="space-y-2"><Label>{label}</Label>{children}</div>
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string
+  required?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>
+        {label}
+        {required && <span className="ml-1 text-destructive">*</span>}
+      </Label>
+      {children}
+    </div>
+  )
 }

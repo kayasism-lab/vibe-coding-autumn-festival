@@ -49,8 +49,9 @@ usersRouter.post(
   '/',
   asyncHandler(async (req, res) => {
     const { name, email, phone, theaterGroupName, theaterGroup, permissions, password, role } = req.body
-    if (!name || !email || !phone || !password) {
-      fail(res, '이름, 이메일, 연락처, 비밀번호를 입력해주세요.', 400)
+    // email 필드는 실제로 로그인 아이디로만 쓰인다 (연락처는 선택 항목)
+    if (!name || !email || !password) {
+      fail(res, '이름, 아이디, 비밀번호를 입력해주세요.', 400)
       return
     }
     if (role && !roles.includes(role)) {
@@ -60,7 +61,7 @@ usersRouter.post(
 
     const exists = await User.findOne({ email })
     if (exists) {
-      fail(res, '이미 가입된 이메일입니다.', 409)
+      fail(res, '이미 사용 중인 아이디입니다.', 409)
       return
     }
 
@@ -73,7 +74,7 @@ usersRouter.post(
     const user = await User.create({
       name,
       email,
-      phone,
+      phone: phone || '',
       theaterGroupName: theaterGroupName || '없음',
       password: await bcrypt.hash(password, 12),
       role: role || 'normal',
@@ -90,6 +91,12 @@ usersRouter.put(
   asyncHandler(async (req, res) => {
     if (req.body.role && !roles.includes(req.body.role)) {
       fail(res, '올바르지 않은 사용자 타입입니다.', 400)
+      return
+    }
+
+    // 수정 시에도 로그인에 필요한 이름·아이디는 비울 수 없다 (비밀번호는 비우면 기존 값 유지)
+    if (!req.body.name || !req.body.email) {
+      fail(res, '이름과 아이디를 입력해주세요.', 400)
       return
     }
 

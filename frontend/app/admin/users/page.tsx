@@ -99,6 +99,17 @@ export default function AdminUsersPage() {
   const handleSave = async () => {
     setErrorMessage('')
 
+    // 이름·아이디·비밀번호는 로그인에 반드시 필요한 값 (수정 시 비밀번호는 비워두면 기존 값 유지)
+    if (!form.name.trim() || !form.email.trim()) {
+      setErrorMessage('이름과 아이디를 입력해주세요.')
+      return
+    }
+
+    if (!editingUser && !form.password.trim()) {
+      setErrorMessage('비밀번호를 입력해주세요.')
+      return
+    }
+
     if (form.role === 'group' && !form.theaterGroup) {
       setErrorMessage('극단 담당자 계정은 담당 극단을 선택해야 합니다.')
       return
@@ -146,7 +157,7 @@ export default function AdminUsersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>이름</TableHead>
-                  <TableHead>이메일</TableHead>
+                  <TableHead>아이디</TableHead>
                   <TableHead>담당 극단</TableHead>
                   <TableHead>계정 유형</TableHead>
                   <TableHead>추가 권한</TableHead>
