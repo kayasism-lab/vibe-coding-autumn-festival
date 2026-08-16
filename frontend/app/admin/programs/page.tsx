@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
+import { useAdminAccount } from '@/lib/use-admin-account'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -77,13 +78,8 @@ export default function AdminProgramsPage() {
   const [editingProgram, setEditingProgram] = useState<Program | null>(null)
   const [form, setForm] = useState<ProgramForm>(emptyForm)
   const [theaterGroups, setTheaterGroups] = useState<{ _id: string; name: string }[]>([])
-  // 로그인한 계정 정보 — 극단 담당자면 본인 극단 작품만 다루도록 화면을 제한한다
-  const [account, setAccount] = useState<{ role: string; theaterGroup: string | null }>({
-    role: '',
-    theaterGroup: null,
-  })
-
-  const isGroupAccount = account.role === 'group'
+  // 극단 담당자면 본인 극단 작품만 다루도록 화면을 제한한다
+  const { isGroupAccount, theaterGroup: myGroupId } = useAdminAccount()
 
   const fetchPrograms = async () => {
     try {
@@ -106,20 +102,11 @@ export default function AdminProgramsPage() {
         }
       })
       .catch(() => {})
-
-    fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setAccount({ role: data.data.role, theaterGroup: data.data.theaterGroup ?? null })
-        }
-      })
-      .catch(() => {})
   }, [])
 
   const filteredPrograms = programs
     // 극단 담당자에게는 본인 극단 작품만 노출한다 (수정 권한도 백엔드에서 동일하게 막힌다)
-    .filter((program) => !isGroupAccount || program.theaterGroup === account.theaterGroup)
+    .filter((program) => !isGroupAccount || program.theaterGroup === myGroupId)
     .filter((program) =>
       `${program.title} ${program.company}`.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -154,11 +141,10 @@ export default function AdminProgramsPage() {
             ...emptyForm,
             order: programs.length,
             // 극단 담당자가 새 작품을 만들면 본인 극단으로 미리 채워둔다
-            ...(isGroupAccount && account.theaterGroup
+            ...(isGroupAccount && myGroupId
               ? {
-                  theaterGroup: account.theaterGroup,
-                  company:
-                    theaterGroups.find((group) => group._id === account.theaterGroup)?.name ?? '',
+                  theaterGroup: myGroupId,
+                  company: theaterGroups.find((group) => group._id === myGroupId)?.name ?? '',
                 }
               : {}),
           }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
+import { useAdminAccount } from '@/lib/use-admin-account'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -40,6 +41,7 @@ interface Schedule {
 interface Program {
   _id: string
   title: string
+  theaterGroup?: string | null
 }
 
 type ScheduleFormData = {
@@ -66,10 +68,22 @@ export default function AdminSchedulesPage() {
     note: '',
   })
 
+  // 극단 담당자면 본인 극단 작품의 일정만 다루게 제한한다
+  const { isGroupAccount, theaterGroup } = useAdminAccount()
+
   useEffect(() => {
     fetchSchedules()
     fetchPrograms()
   }, [])
+
+  // 극단 담당자에게 보여줄 작품과 일정 (관리자는 전체)
+  const visiblePrograms = programs.filter(
+    (program) => !isGroupAccount || program.theaterGroup === theaterGroup
+  )
+  const visibleProgramIds = new Set(visiblePrograms.map((program) => program._id))
+  const visibleSchedules = isGroupAccount
+    ? schedules.filter((schedule) => schedule.programId && visibleProgramIds.has(schedule.programId._id))
+    : schedules
 
   const fetchSchedules = async () => {
     try {
@@ -210,7 +224,7 @@ export default function AdminSchedulesPage() {
                         <SelectValue placeholder="프로그램 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        {programs.map((program) => (
+                        {visiblePrograms.map((program) => (
                           <SelectItem key={program._id} value={program._id}>
                             {program.title}
                           </SelectItem>
@@ -297,7 +311,7 @@ export default function AdminSchedulesPage() {
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
             </div>
-          ) : schedules.length === 0 ? (
+          ) : visibleSchedules.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-gray-500">
                 등록된 일정이 없습니다.
@@ -305,7 +319,7 @@ export default function AdminSchedulesPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {schedules.map((schedule) => (
+              {visibleSchedules.map((schedule) => (
                 <Card key={schedule._id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
@@ -349,14 +363,17 @@ export default function AdminSchedulesPage() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(schedule._id)}
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {/* 일정 삭제는 관리자만 가능 (백엔드도 동일하게 제한) */}
+                        {!isGroupAccount && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(schedule._id)}
+                            className="text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>

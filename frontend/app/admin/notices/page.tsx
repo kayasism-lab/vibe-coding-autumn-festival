@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
+import { useAdminAccount } from '@/lib/use-admin-account'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -69,6 +70,8 @@ const categoryLabels = {
 }
 
 export default function AdminNoticesPage() {
+  // 극단 담당자는 작성·수정만 가능하고 삭제는 관리자 몫이다
+  const { isGroupAccount } = useAdminAccount()
   const [notices, setNotices] = useState<Notice[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -189,7 +192,9 @@ export default function AdminNoticesPage() {
                     <TableCell>{new Date(notice.createdAt).toLocaleDateString('ko-KR')}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" onClick={() => openDialog(notice)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(notice._id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      {!isGroupAccount && (
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(notice._id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

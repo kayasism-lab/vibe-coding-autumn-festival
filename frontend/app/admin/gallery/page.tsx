@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
+import { useAdminAccount } from '@/lib/use-admin-account'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -55,6 +56,8 @@ const emptyForm: GalleryForm = {
 }
 
 export default function AdminGalleryPage() {
+  // 극단 담당자는 등록·수정만 가능하고 삭제는 관리자 몫이다
+  const { isGroupAccount } = useAdminAccount()
   const [items, setItems] = useState<GalleryItem[]>([])
   const [yearFilter, setYearFilter] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
@@ -172,7 +175,9 @@ export default function AdminGalleryPage() {
                     </div>
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => openDialog(item)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDelete(item._id)}><Trash2 className="h-4 w-4" /></Button>
+                      {!isGroupAccount && (
+                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDelete(item._id)}><Trash2 className="h-4 w-4" /></Button>
+                      )}
                     </div>
                   </div>
                   <div className="p-3">

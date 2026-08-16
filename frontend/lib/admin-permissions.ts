@@ -64,3 +64,21 @@ export const GRANTABLE_PERMISSION_META = GROUP_PERMISSION_META.filter((meta) => 
 export function isDefaultPermission(key: GroupPermission) {
   return (GROUP_DEFAULT_PERMISSIONS as readonly string[]).includes(key)
 }
+
+// 관리자 페이지 경로 → 필요한 권한.
+// 여기에 없는 /admin 경로는 관리자 전용으로 취급한다(극단 계정 접근 불가).
+const PATH_PERMISSIONS: { prefix: string; permission: GroupPermission }[] = [
+  { prefix: '/admin/my-group', permission: 'my-group' },
+  { prefix: '/admin/programs', permission: 'programs' },
+  { prefix: '/admin/schedules', permission: 'schedules' },
+  { prefix: '/admin/gallery', permission: 'gallery' },
+  { prefix: '/admin/notices', permission: 'notices' },
+  { prefix: '/admin/inquiries', permission: 'inquiries' },
+]
+
+/** 극단 계정이 해당 경로에 들어갈 수 있는지 판단한다 (관리자는 항상 허용) */
+export function canGroupAccessPath(pathname: string, permissions: GroupPermission[]) {
+  const matched = PATH_PERMISSIONS.find((entry) => pathname.startsWith(entry.prefix))
+  if (!matched) return false
+  return permissions.includes(matched.permission)
+}
