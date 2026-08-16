@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowRight, Calendar, Sparkles, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { VenueMapButton } from '@/components/shared/venue-map-button'
+import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 
 type Program = {
   _id: string
@@ -94,9 +94,15 @@ export function PerformanceNews() {
                           <Calendar className="h-4 w-4" />
                           <span>일정 준비 중</span>
                         </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <VenueMapButton address={program.venueAddress} />
-                          <span>{program.venue}</span>
+                        {/* 카드 전체가 링크라 지도 버튼·주소는 클릭 전파를 막고 동작한다 */}
+                        <div className="flex items-start gap-2 text-muted-foreground">
+                          <span className="mt-0.5 flex-shrink-0">
+                            <VenueMapButton address={program.venueAddress} />
+                          </span>
+                          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span>{program.venue}</span>
+                            <VenueAddressLink address={program.venueAddress} className="text-xs" />
+                          </div>
                         </div>
                       </div>
                     </div>

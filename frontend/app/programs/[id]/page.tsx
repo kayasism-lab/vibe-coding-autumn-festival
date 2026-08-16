@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, Clock, ExternalLink, ShieldCheck, Users } from 'lucide-react'
 import { programTypeConfig, seatStatusConfig } from '@/lib/program-display'
 import { formatScheduleDate } from '@/lib/format-date'
-import { VenueMapButton } from '@/components/shared/venue-map-button'
+import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import { ImageLightbox } from '@/components/shared/image-lightbox'
 import { pageHeroImages } from '@/components/shared/page-header'
 import { PosterPlaceholder } from '@/components/shared/poster-placeholder'
@@ -164,7 +164,16 @@ export default function ProgramDetailPage() {
                     <Info
                       icon={<VenueMapButton address={program.venueAddress} iconClassName="h-5 w-5" />}
                       label="공연장"
-                      value={program.venue}
+                      value={
+                        <>
+                          {program.venue}
+                          {/* 주소를 함께 노출해 아이콘 외에 글자로도 지도로 이동할 수 있게 한다 */}
+                          <VenueAddressLink
+                            address={program.venueAddress}
+                            className="mt-0.5 block text-xs font-normal"
+                          />
+                        </>
+                      }
                     />
                     {program.ageRating && <Info icon={<ShieldCheck className="h-5 w-5" />} label="관람 연령" value={program.ageRating} />}
                     {program.director && <Info icon={<Users className="h-5 w-5" />} label="연출" value={program.director} />}
@@ -222,7 +231,7 @@ export default function ProgramDetailPage() {
   )
 }
 
-function Info({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Info({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
       <div className="mt-0.5 text-muted-foreground">{icon}</div>

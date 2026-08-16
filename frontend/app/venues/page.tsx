@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/shared/page-header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MapPin, Users, Phone, ExternalLink, ChevronRight, Loader2 } from 'lucide-react'
+import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import Image from 'next/image'
 
 interface Venue {
@@ -112,9 +113,12 @@ export default function VenuesPage() {
                         <div className="flex items-start justify-between">
                           <div>
                             <h3 className="font-semibold">{venue.name}</h3>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" />
-                              {venue.address}
+                            {/* 카드 전체가 선택 영역이라, 지도 버튼은 클릭 전파를 막고 동작한다 */}
+                            <p className="mt-1 flex items-start gap-1.5 text-sm text-muted-foreground">
+                              <span className="mt-0.5 flex-shrink-0">
+                                <VenueMapButton address={venue.address} iconClassName="h-3.5 w-3.5" />
+                              </span>
+                              <VenueAddressLink address={venue.address} />
                             </p>
                             <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                               <Users className="h-3 w-3" />
@@ -158,9 +162,11 @@ export default function VenuesPage() {
                         {/* 기본 정보 */}
                         <div>
                           <h2 className="text-2xl font-bold mb-2">{selectedVenue.name}</h2>
-                          <p className="text-muted-foreground flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            {selectedVenue.address}
+                          <p className="flex items-start gap-2 text-muted-foreground">
+                            <span className="mt-0.5 flex-shrink-0">
+                              <VenueMapButton address={selectedVenue.address} />
+                            </span>
+                            <VenueAddressLink address={selectedVenue.address} />
                           </p>
                         </div>
 

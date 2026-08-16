@@ -10,7 +10,7 @@ import { PosterPlaceholder } from '@/components/shared/poster-placeholder'
 import { Badge } from '@/components/ui/badge'
 import { ArrowRight, Clock, Users } from 'lucide-react'
 import { programTypeConfig as typeConfig } from '@/lib/program-display'
-import { VenueMapButton } from '@/components/shared/venue-map-button'
+import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import type { ProgramType } from '@/types/index'
 
 type Program = {
@@ -96,9 +96,16 @@ function ProgramsPageContent() {
                         <h2 className="mb-2 text-xl font-bold transition-colors group-hover:text-primary lg:text-2xl">{program.title}</h2>
                         <p className="mb-4 text-muted-foreground">{program.company}</p>
                         <p className="mb-6 line-clamp-2 leading-relaxed text-card-foreground/80">{program.synopsis}</p>
-                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{program.runtime}분</span>
-                          <span className="flex items-center gap-1"><VenueMapButton address={program.venueAddress} />{program.venue}</span>
+                          {/* 장소명 옆에 주소를 함께 노출하고, 아이콘·주소 모두 지도로 연결한다 */}
+                          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="flex items-center gap-1">
+                              <VenueMapButton address={program.venueAddress} />
+                              {program.venue}
+                            </span>
+                            <VenueAddressLink address={program.venueAddress} className="text-xs" />
+                          </span>
                           {program.director && <span className="flex items-center gap-1"><Users className="h-4 w-4" />연출: {program.director}</span>}
                         </div>
                         <div className="mt-6 flex items-center text-sm font-medium text-primary">자세히 보기<ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" /></div>
