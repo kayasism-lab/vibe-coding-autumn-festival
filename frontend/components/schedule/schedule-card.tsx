@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Clock, ExternalLink } from 'lucide-react'
 import { formatScheduleDate } from '@/lib/format-date'
 import { programTypeConfig, seatStatusConfig } from '@/lib/program-display'
-import { VenueMapButton } from '@/components/shared/venue-map-button'
+import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import type { ProgramType, SeatStatus } from '@/types/index'
 
 export interface ScheduleSession {
@@ -51,9 +51,15 @@ export function ScheduleCard({ group }: { group: ProgramScheduleGroup }) {
 
           <p className="text-sm text-muted-foreground mt-1">{group.program.company}</p>
 
-          <div className="flex items-center gap-1 mt-3 text-sm text-muted-foreground">
-            <VenueMapButton address={group.program.venueAddress} />
-            <span>{group.venue}</span>
+          {/* 장소명 옆에 주소를 함께 노출하고, 아이콘·주소 모두 지도로 연결한다 (관람안내와 동일) */}
+          <div className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
+            <span className="mt-0.5 flex-shrink-0">
+              <VenueMapButton address={group.program.venueAddress} />
+            </span>
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span>{group.venue}</span>
+              <VenueAddressLink address={group.program.venueAddress} className="text-xs" />
+            </div>
           </div>
 
           {/* 회차별 일정: 예약 버튼 없이 정보만 표시 */}
