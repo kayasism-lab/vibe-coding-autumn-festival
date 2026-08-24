@@ -9,12 +9,19 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  PrivacyConsent,
+  emptyConsent,
+  validateConsent,
+  type PrivacyConsentValue,
+} from '@/components/shared/privacy-consent'
 import { Loader2 } from 'lucide-react'
 
 export default function SignupPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [consent, setConsent] = useState<PrivacyConsentValue>(emptyConsent)
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -25,14 +32,28 @@ export default function SignupPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    setIsLoading(true)
     setError('')
+
+    // 만 14세 미만 아동은 법정대리인 동의가 필요해 가입을 받지 않는다
+    const consentError = validateConsent(consent, true, '만 14세 이상인지 확인에 체크해주세요.')
+    if (consentError) {
+      setError(consentError)
+      return
+    }
+
+    setIsLoading(true)
 
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          // 동의 사실에 대한 입증 책임이 운영자에게 있어 함께 저장한다
+          privacyAgreed: consent.privacyAgreed,
+          ageConfirmed: consent.ageConfirmed,
+          agreedAt: new Date().toISOString(),
+        }),
       })
       const data = await res.json()
 
@@ -69,6 +90,15 @@ export default function SignupPage() {
                   <Input required value={form.theaterGroupName} onChange={(e) => setForm({ ...form, theaterGroupName: e.target.value })} placeholder="단원이 아니라면 없음이라고 적어주세요" />
                 </Field>
                 <Field label="비밀번호"><Input required type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></Field>
+                <PrivacyConsent
+                  purpose="회원 가입 및 관리, 커뮤니티 게시판 이용에 따른 본인 식별"
+                  items="이름, 이메일주소, 연락처, 소속 극단명"
+                  retention="회원 탈퇴 요청 시까지 (탈퇴 시 지체 없이 파기)"
+                  disadvantage="회원 가입이 제한됩니다."
+                  ageLabel="만 14세 이상입니다."
+                  value={consent}
+                  onChange={setConsent}
+                />
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

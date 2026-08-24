@@ -79,6 +79,11 @@ export interface IInquiry extends Document {
   content: string
   password: string
   isPrivate: boolean
+  // 개인정보 수집·이용 동의 기록.
+  // 동의를 받았다는 사실의 입증 책임이 운영자에게 있어 동의 여부와 시각을 함께 남긴다.
+  privacyAgreed: boolean
+  ageConfirmed: boolean
+  agreedAt?: Date
   status: InquiryStatus
   reply?: {
     content: string
@@ -134,6 +139,10 @@ export interface IUser extends Document {
   role: UserRole
   refreshToken?: string
   lastLoginAt?: Date
+  // 개인정보 수집·이용 동의 기록 (가입 시점에 받은 동의를 입증하기 위해 보관)
+  privacyAgreed: boolean
+  ageConfirmed: boolean
+  agreedAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -238,6 +247,10 @@ export interface ICitizenApplication extends Document {
   experienceDetail?: string
   motivation: string
   password: string
+  // 개인정보 수집·이용 동의 기록.
+  // 연령은 age 필드로 직접 확인하므로 별도의 연령 확인 체크는 두지 않는다.
+  privacyAgreed: boolean
+  agreedAt?: Date
   status: CitizenApplicationStatus
   adminNote?: string
   // 심사중 상태에서 관리자-신청자가 주고받는 문의/답변 이력

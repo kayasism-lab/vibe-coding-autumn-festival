@@ -62,10 +62,22 @@ async function issueAuth(res: Parameters<typeof setAuthCookies>[0], user: {
 authRouter.post(
   '/signup',
   asyncHandler(async (req, res) => {
-    const { name, email, phone, theaterGroupName, password } = req.body
+    const { name, email, phone, theaterGroupName, password, privacyAgreed, ageConfirmed, agreedAt } =
+      req.body
 
     if (!name || !email || !phone || !password) {
       fail(res, '이름, 이메일, 연락처, 비밀번호를 입력해주세요.', 400)
+      return
+    }
+
+    // 화면에서만 막으면 요청을 직접 보내 우회할 수 있어 서버에서도 검증한다
+    if (privacyAgreed !== true) {
+      fail(res, '개인정보 수집·이용에 동의해주세요.', 400)
+      return
+    }
+    // 만 14세 미만 아동은 법정대리인 동의가 필요해 가입을 받지 않는다
+    if (ageConfirmed !== true) {
+      fail(res, '만 14세 이상인지 확인해주세요.', 400)
       return
     }
 
@@ -82,6 +94,10 @@ authRouter.post(
       theaterGroupName: theaterGroupName || '없음',
       password: await bcrypt.hash(password, 12),
       role: 'normal',
+      privacyAgreed: true,
+      ageConfirmed: true,
+      // 동의 시각은 클라이언트 값을 그대로 믿지 않고, 없으면 서버 시각으로 남긴다
+      agreedAt: agreedAt ? new Date(agreedAt) : new Date(),
     })
 
     await issueAuth(res, user)

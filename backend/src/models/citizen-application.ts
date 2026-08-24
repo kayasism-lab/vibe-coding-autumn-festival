@@ -26,6 +26,9 @@ const CitizenApplicationSchema = new Schema<ICitizenApplication>(
     experienceDetail: { type: String, maxlength: 1000 },
     motivation: { type: String, required: true },
     password: { type: String, required: true },
+    // 개인정보 수집·이용 동의 기록. 연령은 age 필드로 확인하므로 연령 확인 항목은 두지 않는다.
+    privacyAgreed: { type: Boolean, default: false },
+    agreedAt: { type: Date },
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],

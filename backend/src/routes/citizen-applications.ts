@@ -7,6 +7,10 @@ import { canManageGroupResource } from '../lib/ownership.js'
 
 export const citizenApplicationsRouter = Router()
 
+// 시민참여 행사(낭독극·단막극)의 신청 가능 최소 연령.
+// 프론트(components/citizen-application-form.tsx)의 MIN_AGE와 같은 값을 유지해야 한다.
+const MIN_APPLICANT_AGE = 20
+
 // qna 필드 추가 이전에 생성된 구버전 문서는 qna가 없을 수 있어 항상 배열로 보정
 function sanitize(application: Record<string, unknown>) {
   const { password, ...safe } = application
@@ -31,6 +35,8 @@ citizenApplicationsRouter.post(
       experienceDetail,
       motivation,
       password,
+      privacyAgreed,
+      agreedAt,
     } = req.body
 
     if (
@@ -48,6 +54,18 @@ citizenApplicationsRouter.post(
       !password
     ) {
       fail(res, '필수 항목을 모두 입력해주세요.', 400)
+      return
+    }
+
+    // 화면에서만 막으면 요청을 직접 보내 우회할 수 있어 서버에서도 검증한다
+    if (privacyAgreed !== true) {
+      fail(res, '개인정보 수집·이용에 동의해주세요.', 400)
+      return
+    }
+
+    // 시민참여 행사(낭독극·단막극)는 만 20세 이상만 신청할 수 있다
+    if (Number(age) < MIN_APPLICANT_AGE) {
+      fail(res, `시민참여 행사는 만 ${MIN_APPLICANT_AGE}세 이상만 신청하실 수 있습니다.`, 400)
       return
     }
 
@@ -83,6 +101,9 @@ citizenApplicationsRouter.post(
       experienceDetail: hasExperience ? experienceDetail : undefined,
       motivation,
       password: await bcrypt.hash(password, 10),
+      // 동의 시각은 클라이언트 값을 그대로 믿지 않고, 없으면 서버 시각으로 남긴다
+      privacyAgreed: true,
+      agreedAt: agreedAt ? new Date(agreedAt) : new Date(),
     })
 
     ok(res, sanitize(application.toObject()), '신청이 접수되었습니다.', 201)

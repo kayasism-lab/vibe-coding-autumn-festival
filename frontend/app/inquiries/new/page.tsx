@@ -10,6 +10,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  PrivacyConsent,
+  emptyConsent,
+  validateConsent,
+  type PrivacyConsentValue,
+} from '@/components/shared/privacy-consent'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 
@@ -25,16 +31,31 @@ export default function NewInquiryPage() {
     password: '',
     isPrivate: false,
   })
+  const [consent, setConsent] = useState<PrivacyConsentValue>(emptyConsent)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // 만 14세 미만 아동은 법정대리인 동의가 필요해 문의를 받지 않는다
+    const consentError = validateConsent(consent, true, '만 14세 이상인지 확인에 체크해주세요.')
+    if (consentError) {
+      alert(consentError)
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          // 동의 사실에 대한 입증 책임이 운영자에게 있어 함께 저장한다
+          privacyAgreed: consent.privacyAgreed,
+          ageConfirmed: consent.ageConfirmed,
+          agreedAt: new Date().toISOString(),
+        }),
       })
 
       const result = await response.json()
@@ -169,6 +190,16 @@ export default function NewInquiryPage() {
                   비공개 문의로 등록
                 </Label>
               </div>
+
+              <PrivacyConsent
+                purpose="문의 내용 확인 및 처리 결과 회신"
+                items="이름, 이메일주소, 연락처"
+                retention="축제 종료일로부터 1년 (기간 경과 후 지체 없이 파기)"
+                disadvantage="문의를 접수할 수 없습니다."
+                ageLabel="만 14세 이상입니다."
+                value={consent}
+                onChange={setConsent}
+              />
 
               <div className="flex gap-4 pt-4">
                 <Button

@@ -7,7 +7,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup } from '@/components/ui/radio-group'
 import { Loader2 } from 'lucide-react'
 import { Field, RadioOption, YesNoField } from '@/components/citizen-application-fields'
+import {
+  PrivacyConsent,
+  emptyConsent,
+  validateConsent,
+  type PrivacyConsentValue,
+} from '@/components/shared/privacy-consent'
 import { formatPhoneInput } from '@/lib/phone'
+
+// 시민참여 행사(낭독극·단막극)는 만 20세 이상만 신청할 수 있다.
+const MIN_AGE = 20
 
 export type CitizenProgramType = 'reading' | 'short_play'
 
@@ -53,6 +62,7 @@ export function CitizenApplicationForm({
   onSuccess: () => void
 }) {
   const [form, setForm] = useState<FormState>(() => emptyForm(initialType))
+  const [consent, setConsent] = useState<PrivacyConsentValue>(emptyConsent)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -75,6 +85,16 @@ export function CitizenApplicationForm({
       setError('어떤 경험이 있으신지 입력해주세요.')
       return
     }
+    // 나이를 숫자로 직접 받으므로 별도 연령 확인 체크박스 없이 입력값으로 검증한다
+    if (Number(form.age) < MIN_AGE) {
+      setError(`시민참여 행사는 만 ${MIN_AGE}세 이상만 신청하실 수 있습니다.`)
+      return
+    }
+    const consentError = validateConsent(consent, false)
+    if (consentError) {
+      setError(consentError)
+      return
+    }
 
     setIsSubmitting(true)
     try {
@@ -95,6 +115,9 @@ export function CitizenApplicationForm({
           experienceDetail: form.hasExperience ? form.experienceDetail : undefined,
           motivation: form.motivation,
           password: form.password,
+          // 동의를 받았다는 입증 책임이 운영자에게 있어 동의 여부와 시각을 함께 남긴다
+          privacyAgreed: consent.privacyAgreed,
+          agreedAt: new Date().toISOString(),
         }),
       })
       const data = await res.json()
@@ -141,8 +164,8 @@ export function CitizenApplicationForm({
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="나이 *">
-          <Input required type="number" min={1} value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} />
+        <Field label={`나이 * (만 ${MIN_AGE}세 이상 신청 가능)`}>
+          <Input required type="number" min={MIN_AGE} value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} />
         </Field>
         <Field label="성별 *">
           <RadioGroup value={form.gender} onValueChange={(value) => setForm({ ...form, gender: value as FormState['gender'] })} className="flex gap-6 pt-2">
@@ -193,6 +216,16 @@ export function CitizenApplicationForm({
       <Field label="비밀번호 * (4자 이상, 문자/특수문자 가능)">
         <Input required minLength={4} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="신청 내역 조회·수정 시 사용합니다" />
       </Field>
+
+      <PrivacyConsent
+        purpose="시민참여 행사 신청 접수, 참가 자격 확인 및 선발, 연습 일정 등 참가자 연락"
+        items="이름, 연락처, 이메일주소, 거주지, 나이, 성별, 연극 관련 경험, 신청 동기"
+        retention="축제 종료일로부터 1년 (기간 경과 후 지체 없이 파기)"
+        disadvantage="신청이 접수되지 않습니다."
+        ageLabel={null}
+        value={consent}
+        onChange={setConsent}
+      />
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

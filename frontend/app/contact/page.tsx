@@ -4,6 +4,12 @@ import { useState } from 'react'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
+import {
+  PrivacyConsent,
+  emptyConsent,
+  validateConsent,
+  type PrivacyConsentValue,
+} from '@/components/shared/privacy-consent'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -66,11 +72,20 @@ export default function ContactPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState(initialForm)
+  const [consent, setConsent] = useState<PrivacyConsentValue>(emptyConsent)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setIsLoading(true)
     setError('')
+
+    // 만 14세 미만 아동은 법정대리인 동의가 필요해 문의를 받지 않는다
+    const consentError = validateConsent(consent, true, '만 14세 이상인지 확인에 체크해주세요.')
+    if (consentError) {
+      setError(consentError)
+      return
+    }
+
+    setIsLoading(true)
 
     const typeLabel = inquiryTypes.find((t) => t.value === form.type)?.label || '일반 문의'
 
@@ -86,6 +101,10 @@ export default function ContactPage() {
           content: form.message,
           password: crypto.randomUUID(),
           isPrivate: false,
+          // 동의 사실에 대한 입증 책임이 운영자에게 있어 함께 저장한다
+          privacyAgreed: consent.privacyAgreed,
+          ageConfirmed: consent.ageConfirmed,
+          agreedAt: new Date().toISOString(),
         }),
       })
       const data = await res.json()
@@ -269,6 +288,16 @@ export default function ContactPage() {
                             onChange={(e) => setForm({ ...form, message: e.target.value })}
                           />
                         </div>
+
+                        <PrivacyConsent
+                          purpose="문의 내용 확인 및 처리 결과 회신"
+                          items="이름, 이메일주소, 연락처"
+                          retention="축제 종료일로부터 1년 (기간 경과 후 지체 없이 파기)"
+                          disadvantage="문의를 접수할 수 없습니다."
+                          ageLabel="만 14세 이상입니다."
+                          value={consent}
+                          onChange={setConsent}
+                        />
 
                         {error && <p className="text-sm text-destructive">{error}</p>}
 

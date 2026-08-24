@@ -53,8 +53,26 @@ inquiriesRouter.get(
 inquiriesRouter.post(
   '/',
   asyncHandler(async (req, res) => {
+    // 화면에서만 막으면 요청을 직접 보내 우회할 수 있어 서버에서도 검증한다
+    if (req.body.privacyAgreed !== true) {
+      fail(res, '개인정보 수집·이용에 동의해주세요.', 400)
+      return
+    }
+    // 만 14세 미만 아동은 법정대리인 동의가 필요해 접수를 받지 않는다
+    if (req.body.ageConfirmed !== true) {
+      fail(res, '만 14세 이상인지 확인해주세요.', 400)
+      return
+    }
+
     const hashedPassword = await bcrypt.hash(req.body.password, 10)
-    const inquiry = await Inquiry.create({ ...req.body, password: hashedPassword })
+    const inquiry = await Inquiry.create({
+      ...req.body,
+      password: hashedPassword,
+      privacyAgreed: true,
+      ageConfirmed: true,
+      // 동의 시각은 클라이언트 값을 그대로 믿지 않고, 없으면 서버 시각으로 남긴다
+      agreedAt: req.body.agreedAt ? new Date(req.body.agreedAt) : new Date(),
+    })
     const result = inquiry.toObject() as Record<string, unknown>
     delete result.password
 

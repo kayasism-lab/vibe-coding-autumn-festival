@@ -21,6 +21,11 @@ const UserSchema = new Schema<IUser>(
     },
     refreshToken: { type: String },
     lastLoginAt: { type: Date },
+    // 개인정보 수집·이용 동의 기록. 관리자가 직접 만든 계정은 동의 절차를 거치지 않으므로
+    // required로 두지 않고 기본값 false로 남긴다.
+    privacyAgreed: { type: Boolean, default: false },
+    ageConfirmed: { type: Boolean, default: false },
+    agreedAt: { type: Date },
   },
   {
     timestamps: true,
