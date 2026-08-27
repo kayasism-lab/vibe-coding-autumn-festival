@@ -1,20 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { ImagePlus, X, Upload, Loader2 } from 'lucide-react'
-import Image from 'next/image'
-
-declare global {
-  interface Window {
-    cloudinary: {
-      createUploadWidget: (
-        options: Record<string, unknown>,
-        callback: (error: Error | null, result: { event: string; info: { secure_url: string } }) => void
-      ) => { open: () => void; destroy: () => void }
-    }
-  }
-}
+import { ImagePlus, Upload, Loader2 } from 'lucide-react'
+import { getConfigError, uploadImage, validateImageFile } from '@/lib/cloudinary'
+import { UploadPreviewGrid } from './upload-preview-grid'
 
 interface CloudinaryUploadProps {
   value?: string | string[]
@@ -36,6 +26,13 @@ const defaultAspectRatios = [
   { label: '2:4', value: 2 / 4 },
 ]
 
+/** 업로드 진행 상황. 여러 장을 올릴 때 "2/5장 · 40%"처럼 보여준다 */
+interface UploadStatus {
+  current: number
+  total: number
+  ratio: number
+}
+
 export function CloudinaryUpload({
   value,
   onChange,
@@ -47,115 +44,85 @@ export function CloudinaryUpload({
   aspectRatios = defaultAspectRatios,
   placeholder = '이미지 업로드',
 }: CloudinaryUploadProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false)
+  const [status, setStatus] = useState<UploadStatus | null>(null)
+  const [error, setError] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
   const [previewRatio, setPreviewRatio] = useState(aspectRatio || aspectRatios[0]?.value || 16 / 9)
-  const widgetRef = useRef<{ open: () => void; destroy: () => void } | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const urls = Array.isArray(value) ? value : value ? [value] : []
+  const isUploading = status !== null
 
-  useEffect(() => {
-    // Load Cloudinary script
-    if (typeof window !== 'undefined' && !window.cloudinary) {
-      const script = document.createElement('script')
-      script.src = 'https://widget.cloudinary.com/v2.0/global/all.js'
-      script.async = true
-      script.onload = () => setIsScriptLoaded(true)
-      document.body.appendChild(script)
-    } else if (window.cloudinary) {
-      setIsScriptLoaded(true)
-    }
+  const handleFiles = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0 || isUploading) return
+    setError('')
 
-    return () => {
-      if (widgetRef.current) {
-        widgetRef.current.destroy()
-      }
-    }
-  }, [])
-
-  const openWidget = () => {
-    if (!isScriptLoaded || !window.cloudinary) {
-      console.error('Cloudinary widget not loaded')
+    const configError = getConfigError()
+    if (configError) {
+      setError(configError)
       return
     }
 
-    setIsLoading(true)
+    // 여러 장 모드가 아니면 한 장만 받고, 여러 장이어도 남은 자리만큼만 받는다
+    const remaining = multiple ? maxFiles - urls.length : 1
+    if (remaining <= 0) {
+      setError(`이미지는 최대 ${maxFiles}개까지 올릴 수 있습니다.`)
+      return
+    }
 
-    const widget = window.cloudinary.createUploadWidget(
-      {
-        cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-        uploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
-        folder: folder,
-        multiple: multiple,
-        maxFiles: multiple ? maxFiles : 1,
-        resourceType: 'image',
-        cropping: true,
-        croppingAspectRatio: previewRatio,
-        croppingShowDimensions: true,
-        showSkipCropButton: true,
-        sources: ['local', 'url', 'camera'],
-        styles: {
-          palette: {
-            window: '#1a1a1a',
-            windowBorder: '#8B1538',
-            tabIcon: '#D4AF37',
-            menuIcons: '#D4AF37',
-            textDark: '#000000',
-            textLight: '#FFFFFF',
-            link: '#D4AF37',
-            action: '#8B1538',
-            inactiveTabIcon: '#666666',
-            error: '#F44235',
-            inProgress: '#D4AF37',
-            complete: '#20B832',
-            sourceBg: '#2a2a2a',
-          },
-          fonts: {
-            default: null,
-          },
-        },
-        language: 'ko',
-        text: {
-          ko: {
-            or: '또는',
-            menu: {
-              files: '파일',
-              web: 'URL',
-              camera: '카메라',
-            },
-            local: {
-              browse: '파일 선택',
-              dd_title_single: '여기에 파일을 드래그하세요',
-              dd_title_multi: '여기에 파일들을 드래그하세요',
-            },
-          },
-        },
-      },
-      (error, result) => {
-        setIsLoading(false)
-        if (error) {
-          console.error('Upload error:', error)
-          return
-        }
-        if (result.event === 'success') {
-          const newUrl = result.info.secure_url
-          if (multiple) {
-            onChange([...urls, newUrl])
-          } else {
-            onChange(newUrl)
-          }
-        }
+    const selected = Array.from(fileList)
+    const targets = selected.slice(0, remaining)
+    let notice = selected.length > remaining ? `최대 ${maxFiles}개까지만 올릴 수 있어 ${targets.length}개만 업로드했습니다.` : ''
+
+    for (const file of targets) {
+      const fileError = validateImageFile(file)
+      if (fileError) {
+        setError(fileError)
+        return
       }
-    )
+    }
 
-    widgetRef.current = widget
-    widget.open()
+    // 한 장씩 순서대로 올린다. 중간에 실패해도 그때까지 성공한 것은 살린다
+    const uploaded: string[] = []
+    try {
+      for (let i = 0; i < targets.length; i++) {
+        setStatus({ current: i + 1, total: targets.length, ratio: 0 })
+        const url = await uploadImage(targets[i], {
+          folder,
+          onProgress: (ratio) => setStatus({ current: i + 1, total: targets.length, ratio }),
+        })
+        uploaded.push(url)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '업로드에 실패했습니다.'
+      notice = uploaded.length > 0 ? `${uploaded.length}개만 업로드했습니다. ${message}` : message
+    } finally {
+      setStatus(null)
+    }
+
+    if (uploaded.length > 0) {
+      onChange(multiple ? [...urls, ...uploaded] : uploaded[0])
+    }
+    setError(notice)
+  }
+
+  const openFilePicker = () => {
+    if (isUploading) return
+    // 같은 파일을 연속으로 고를 수 있도록 값을 비운 뒤 연다
+    if (inputRef.current) inputRef.current.value = ''
+    inputRef.current?.click()
+  }
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault()
+    setIsDragging(false)
+    void handleFiles(event.dataTransfer.files)
   }
 
   const removeImage = (index: number) => {
+    setError('')
     if (multiple) {
-      const newUrls = urls.filter((_, i) => i !== index)
-      onChange(newUrls)
+      onChange(urls.filter((_, i) => i !== index))
     } else {
       onChange('')
     }
@@ -180,64 +147,67 @@ export function CloudinaryUpload({
         </div>
       )}
 
-      {/* Image Preview Grid */}
-      {urls.length > 0 && (
-        <div className={`grid gap-3 mb-4 ${multiple ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4' : 'grid-cols-1'}`}>
-          {urls.map((url, index) => (
-            <div
-              key={index}
-              className="relative group w-full max-w-[220px] overflow-hidden rounded-md border border-border bg-muted sm:max-w-[260px]"
-              style={{ aspectRatio: previewRatio }}
-            >
-              <Image
-                src={url}
-                alt={`Uploaded image ${index + 1}`}
-                fill
-                className="object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+      <UploadPreviewGrid
+        urls={urls}
+        ratio={previewRatio}
+        multiple={multiple}
+        onRemove={removeImage}
+      />
+
+      {(multiple || urls.length === 0) && (
+        <>
+          {/* 실제 파일 선택 입력. 화면에는 안 보이지만 팝업 내부 요소라 정상 동작한다 */}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            multiple={multiple}
+            className="hidden"
+            onChange={(e) => void handleFiles(e.target.files)}
+          />
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={openFilePicker}
+            disabled={isUploading}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setIsDragging(true)
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            className={`h-28 w-full max-w-[320px] border-2 border-dashed transition-colors hover:border-primary hover:bg-primary/5 sm:h-32 ${
+              isDragging ? 'border-primary bg-primary/5' : ''
+            }`}
+          >
+            {isUploading ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">
+                  {status.total > 1
+                    ? `${status.current}/${status.total}장 업로드 중 · ${Math.round(status.ratio * 100)}%`
+                    : `업로드 중 · ${Math.round(status.ratio * 100)}%`}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                {urls.length > 0 ? (
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                ) : (
+                  <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                )}
+                <span className="text-sm text-muted-foreground">{placeholder}</span>
+                <span className="text-xs text-muted-foreground/70">
+                  {multiple ? `클릭 또는 드래그 · 최대 ${maxFiles}개` : '클릭 또는 드래그해서 올리기'}
+                </span>
+              </div>
+            )}
+          </Button>
+        </>
       )}
 
-      {/* Upload Button */}
-      {(multiple || urls.length === 0) && (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={openWidget}
-          disabled={isLoading || !isScriptLoaded}
-          className="h-28 w-full max-w-[320px] border-2 border-dashed transition-colors hover:border-primary hover:bg-primary/5 sm:h-32"
-        >
-          {isLoading ? (
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">업로드 중...</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              {urls.length > 0 ? (
-                <Upload className="h-8 w-8 text-muted-foreground" />
-              ) : (
-                <ImagePlus className="h-8 w-8 text-muted-foreground" />
-              )}
-              <span className="text-sm text-muted-foreground">{placeholder}</span>
-              {multiple && (
-                <span className="text-xs text-muted-foreground/70">
-                  최대 {maxFiles}개 업로드 가능
-                </span>
-              )}
-            </div>
-          )}
-        </Button>
-      )}
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </div>
   )
 }
