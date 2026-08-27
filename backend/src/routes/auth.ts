@@ -2,6 +2,7 @@ import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { User } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
+import { validatePassword } from '../lib/password-policy.js'
 import {
   clearAuthCookies,
   generateAccessToken,
@@ -67,6 +68,13 @@ authRouter.post(
 
     if (!name || !email || !phone || !password) {
       fail(res, '이름, 이메일, 연락처, 비밀번호를 입력해주세요.', 400)
+      return
+    }
+
+    // 기존 회원의 비밀번호는 그대로 두고, 새로 가입하는 계정에만 적용된다
+    const passwordError = validatePassword(password)
+    if (passwordError) {
+      fail(res, passwordError, 400)
       return
     }
 

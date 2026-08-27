@@ -4,12 +4,17 @@ import { CitizenApplication, Program } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin, requireAdminOrGroup } from '../middleware/require-admin.js'
 import { canManageGroupResource } from '../lib/ownership.js'
+import { clearFailures, getBlockedMinutes, recordFailure } from '../lib/attempt-limiter.js'
+import { validatePassword } from '../lib/password-policy.js'
 
 export const citizenApplicationsRouter = Router()
 
 // 시민참여 행사(낭독극·단막극)의 신청 가능 최소 연령.
 // 프론트(components/citizen-application-form.tsx)의 MIN_AGE와 같은 값을 유지해야 한다.
 const MIN_APPLICANT_AGE = 20
+
+// 무차별 대입 차단용 키. 신청 건마다가 아니라 대상 전화번호 기준으로 센다.
+const attemptKey = (phone: string) => `citizen:${phone}`
 
 // qna 필드 추가 이전에 생성된 구버전 문서는 qna가 없을 수 있어 항상 배열로 보정
 function sanitize(application: Record<string, unknown>) {
@@ -54,6 +59,12 @@ citizenApplicationsRouter.post(
       !password
     ) {
       fail(res, '필수 항목을 모두 입력해주세요.', 400)
+      return
+    }
+
+    const passwordError = validatePassword(password)
+    if (passwordError) {
+      fail(res, passwordError, 400)
       return
     }
 
@@ -120,15 +131,25 @@ citizenApplicationsRouter.post(
       return
     }
 
+    // 전화번호는 비밀 값이 아니라, 시도 제한이 없으면 비밀번호를 반복 대입해
+    // 남의 개인정보를 열람할 수 있다. 실패가 쌓이면 일정 시간 막는다.
+    const blockedMinutes = getBlockedMinutes(attemptKey(phone))
+    if (blockedMinutes !== null) {
+      fail(res, `비밀번호를 여러 번 잘못 입력했습니다. ${blockedMinutes}분 후에 다시 시도해주세요.`, 429)
+      return
+    }
+
     const candidates = await CitizenApplication.find({ phone }).populate('programId', 'title')
 
     for (const candidate of candidates) {
       if (await bcrypt.compare(password, candidate.password)) {
+        clearFailures(attemptKey(phone))
         ok(res, sanitize(candidate.toObject()))
         return
       }
     }
 
+    recordFailure(attemptKey(phone))
     fail(res, '일치하는 신청 내역을 찾을 수 없습니다.', 404)
   })
 )
@@ -143,6 +164,14 @@ citizenApplicationsRouter.put(
       return
     }
 
+    // 조회와 마찬가지로 비밀번호 반복 대입을 막는다 (여기서는 신청 건 기준)
+    const key = attemptKey(req.params.id)
+    const blockedMinutes = getBlockedMinutes(key)
+    if (blockedMinutes !== null) {
+      fail(res, `비밀번호를 여러 번 잘못 입력했습니다. ${blockedMinutes}분 후에 다시 시도해주세요.`, 429)
+      return
+    }
+
     const application = await CitizenApplication.findById(req.params.id)
     if (!application) {
       fail(res, '신청 내역을 찾을 수 없습니다.', 404)
@@ -150,9 +179,11 @@ citizenApplicationsRouter.put(
     }
 
     if (!(await bcrypt.compare(password, application.password))) {
+      recordFailure(key)
       fail(res, '비밀번호가 일치하지 않습니다.', 401)
       return
     }
+    clearFailures(key)
 
     delete updates.programId
     delete updates.programType
@@ -177,6 +208,14 @@ citizenApplicationsRouter.post(
       return
     }
 
+    // 여기도 비밀번호를 확인하므로 같은 방식으로 반복 대입을 막는다
+    const key = attemptKey(req.params.id)
+    const blockedMinutes = getBlockedMinutes(key)
+    if (blockedMinutes !== null) {
+      fail(res, `비밀번호를 여러 번 잘못 입력했습니다. ${blockedMinutes}분 후에 다시 시도해주세요.`, 429)
+      return
+    }
+
     const application = await CitizenApplication.findById(req.params.id)
     if (!application) {
       fail(res, '신청 내역을 찾을 수 없습니다.', 404)
@@ -184,9 +223,11 @@ citizenApplicationsRouter.post(
     }
 
     if (!(await bcrypt.compare(password, application.password))) {
+      recordFailure(key)
       fail(res, '비밀번호가 일치하지 않습니다.', 401)
       return
     }
+    clearFailures(key)
 
     if (application.status !== 'pending') {
       fail(res, '심사가 완료된 신청은 문의를 남길 수 없습니다.', 400)

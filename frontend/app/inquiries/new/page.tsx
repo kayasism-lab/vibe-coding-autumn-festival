@@ -16,6 +16,7 @@ import {
   validateConsent,
   type PrivacyConsentValue,
 } from '@/components/shared/privacy-consent'
+import { PASSWORD_HINT, PASSWORD_MIN_LENGTH, validatePassword } from '@/lib/password-policy'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 
@@ -35,6 +36,12 @@ export default function NewInquiryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const passwordError = validatePassword(formData.password)
+    if (passwordError) {
+      alert(passwordError)
+      return
+    }
 
     // 만 14세 미만 아동은 법정대리인 동의가 필요해 문의를 받지 않는다
     const consentError = validateConsent(consent, true, '만 14세 이상인지 확인에 체크해주세요.')
@@ -142,12 +149,14 @@ export default function NewInquiryPage() {
                     id="password"
                     type="password"
                     required
+                    minLength={PASSWORD_MIN_LENGTH}
                     value={formData.password}
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
                     placeholder="문의 확인용 비밀번호"
                   />
+                  <p className="text-xs text-muted-foreground">{PASSWORD_HINT}</p>
                 </div>
               </div>
 

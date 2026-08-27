@@ -15,6 +15,7 @@ import {
   validateConsent,
   type PrivacyConsentValue,
 } from '@/components/shared/privacy-consent'
+import { PASSWORD_HINT, PASSWORD_MIN_LENGTH, validatePassword } from '@/lib/password-policy'
 import { Loader2 } from 'lucide-react'
 
 export default function SignupPage() {
@@ -33,6 +34,12 @@ export default function SignupPage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError('')
+
+    const passwordError = validatePassword(form.password)
+    if (passwordError) {
+      setError(passwordError)
+      return
+    }
 
     // 만 14세 미만 아동은 법정대리인 동의가 필요해 가입을 받지 않는다
     const consentError = validateConsent(consent, true, '만 14세 이상인지 확인에 체크해주세요.')
@@ -89,7 +96,7 @@ export default function SignupPage() {
                 <Field label="소속 극단명">
                   <Input required value={form.theaterGroupName} onChange={(e) => setForm({ ...form, theaterGroupName: e.target.value })} placeholder="단원이 아니라면 없음이라고 적어주세요" />
                 </Field>
-                <Field label="비밀번호"><Input required type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></Field>
+                <Field label="비밀번호" hint={PASSWORD_HINT}><Input required minLength={PASSWORD_MIN_LENGTH} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></Field>
                 <PrivacyConsent
                   purpose="회원 가입 및 관리, 커뮤니티 게시판 이용에 따른 본인 식별"
                   items="이름, 이메일주소, 연락처, 소속 극단명"
@@ -117,11 +124,21 @@ export default function SignupPage() {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string
+  /** 입력 칸 아래에 덧붙일 안내 문구 (비밀번호 규칙 등) */
+  hint?: string
+  children: React.ReactNode
+}) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
       {children}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   )
 }

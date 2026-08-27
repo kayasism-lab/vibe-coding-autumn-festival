@@ -3,8 +3,13 @@ import bcrypt from 'bcryptjs'
 import { Inquiry } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
+import { clearFailures, getBlockedMinutes, recordFailure } from '../lib/attempt-limiter.js'
+import { validatePassword } from '../lib/password-policy.js'
 
 export const inquiriesRouter = Router()
+
+// 무차별 대입 차단용 키. 문의 건 기준으로 실패 횟수를 센다.
+const attemptKey = (inquiryId: string) => `inquiry:${inquiryId}`
 
 inquiriesRouter.get(
   '/public',
@@ -53,6 +58,12 @@ inquiriesRouter.get(
 inquiriesRouter.post(
   '/',
   asyncHandler(async (req, res) => {
+    const passwordError = validatePassword(req.body.password)
+    if (passwordError) {
+      fail(res, passwordError, 400)
+      return
+    }
+
     // 화면에서만 막으면 요청을 직접 보내 우회할 수 있어 서버에서도 검증한다
     if (req.body.privacyAgreed !== true) {
       fail(res, '개인정보 수집·이용에 동의해주세요.', 400)
@@ -129,6 +140,14 @@ inquiriesRouter.post(
       return
     }
 
+    // 비밀번호 반복 대입으로 남의 문의 내용을 열람하지 못하도록 시도 횟수를 제한한다
+    const key = attemptKey(req.params.id)
+    const blockedMinutes = getBlockedMinutes(key)
+    if (blockedMinutes !== null) {
+      fail(res, `비밀번호를 여러 번 잘못 입력했습니다. ${blockedMinutes}분 후에 다시 시도해주세요.`, 429)
+      return
+    }
+
     const inquiry = await Inquiry.findById(req.params.id).lean()
     if (!inquiry) {
       fail(res, '문의를 찾을 수 없습니다.', 404)
@@ -137,9 +156,11 @@ inquiriesRouter.post(
 
     const isValid = await bcrypt.compare(req.body.password, inquiry.password)
     if (!isValid) {
+      recordFailure(key)
       fail(res, '비밀번호가 일치하지 않습니다.', 401)
       return
     }
+    clearFailures(key)
 
     const result = { ...inquiry } as Record<string, unknown>
     delete result.password

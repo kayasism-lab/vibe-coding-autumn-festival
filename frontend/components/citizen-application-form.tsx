@@ -14,6 +14,7 @@ import {
   type PrivacyConsentValue,
 } from '@/components/shared/privacy-consent'
 import { formatPhoneInput } from '@/lib/phone'
+import { PASSWORD_HINT, PASSWORD_MIN_LENGTH, validatePassword } from '@/lib/password-policy'
 
 // 시민참여 행사(낭독극·단막극)는 만 20세 이상만 신청할 수 있다.
 const MIN_AGE = 20
@@ -77,8 +78,9 @@ export function CitizenApplicationForm({
       setError('필수 항목을 모두 선택해주세요.')
       return
     }
-    if (form.password.length < 4) {
-      setError('비밀번호는 4자 이상 입력해주세요.')
+    const passwordError = validatePassword(form.password)
+    if (passwordError) {
+      setError(passwordError)
       return
     }
     if (form.hasExperience && !form.experienceDetail.trim()) {
@@ -213,8 +215,8 @@ export function CitizenApplicationForm({
         <Textarea required rows={4} value={form.motivation} onChange={(e) => setForm({ ...form, motivation: e.target.value })} placeholder="참여하고 싶은 이유와 각오를 작성해주세요." />
       </Field>
 
-      <Field label="비밀번호 * (4자 이상, 문자/특수문자 가능)">
-        <Input required minLength={4} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="신청 내역 조회·수정 시 사용합니다" />
+      <Field label="비밀번호 *" hint={PASSWORD_HINT}>
+        <Input required minLength={PASSWORD_MIN_LENGTH} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="신청 내역 조회·수정 시 사용합니다" />
       </Field>
 
       <PrivacyConsent
