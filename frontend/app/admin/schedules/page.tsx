@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { useAdminAccount } from '@/lib/use-admin-account'
+import {
+  resolveSeatStatus,
+  seatStatusConfig,
+  seatStatusOptions,
+  type SeatStatusKey,
+} from '@/lib/program-display'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -34,7 +40,7 @@ interface Schedule {
   date: string
   venue: string
   time: string
-  seatStatus: 'available' | 'limited' | 'soldout'
+  seatStatus: SeatStatusKey
   note?: string
 }
 
@@ -64,7 +70,8 @@ export default function AdminSchedulesPage() {
     date: '',
     time: '',
     venue: '',
-    seatStatus: 'available' as const,
+    // 새 회차는 '예매대기'로 시작한다 (서버 기본값과 같음)
+    seatStatus: 'pending' as SeatStatusKey,
     note: '',
   })
 
@@ -169,21 +176,9 @@ export default function AdminSchedulesPage() {
       date: '',
       time: '',
       venue: '',
-      seatStatus: 'available',
+      seatStatus: 'pending',
       note: '',
     })
-  }
-
-  const statusColors: Record<string, string> = {
-    available: 'bg-green-500',
-    limited: 'bg-yellow-500',
-    soldout: 'bg-red-500',
-  }
-
-  const statusLabels: Record<string, string> = {
-    available: '예매 가능',
-    limited: '매진 임박',
-    soldout: '매진',
   }
 
   return (
@@ -265,19 +260,21 @@ export default function AdminSchedulesPage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>좌석 상태</Label>
+                    <Label>예매 상태</Label>
                     <Select
                       value={formData.seatStatus}
-                      onValueChange={(value: 'available' | 'limited' | 'soldout') => 
+                      onValueChange={(value: SeatStatusKey) =>
                         setFormData({ ...formData, seatStatus: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="available">예매 가능</SelectItem>
-                        <SelectItem value="limited">매진 임박</SelectItem>
-                        <SelectItem value="soldout">매진</SelectItem>
+                        {seatStatusOptions.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {seatStatusConfig[status].label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -325,8 +322,8 @@ export default function AdminSchedulesPage() {
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <Badge className={statusColors[schedule.seatStatus]}>
-                            {statusLabels[schedule.seatStatus]}
+                          <Badge className={seatStatusConfig[resolveSeatStatus(schedule.seatStatus)].className}>
+                            {seatStatusConfig[resolveSeatStatus(schedule.seatStatus)].label}
                           </Badge>
                           <h3 className="font-semibold text-lg">
                             {schedule.programId?.title || '프로그램 미지정'}

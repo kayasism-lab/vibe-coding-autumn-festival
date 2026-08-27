@@ -13,7 +13,8 @@ function normalizeSchedule(body: Record<string, unknown>) {
     date: body.date,
     time: body.time || body.startTime,
     venue: body.venue,
-    seatStatus: body.seatStatus || 'available',
+    // 상태를 안 보내오면 '예매대기'로 둔다 (모델 기본값과 같은 값)
+    seatStatus: body.seatStatus || 'pending',
     note: body.note || body.description,
   }
 }

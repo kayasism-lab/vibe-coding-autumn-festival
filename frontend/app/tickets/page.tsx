@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, Calendar, ExternalLink, Info, Loader2, Ticket, Users } from 'lucide-react'
-import { programTypeConfig } from '@/lib/program-display'
+import { programTypeConfig, resolveTicketButtonMode, ticketButtonLabel } from '@/lib/program-display'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import type { ProgramType } from '@/types/index'
 
@@ -25,17 +25,44 @@ interface Program {
   ticketUrl?: string
 }
 
+/** /api/schedules 응답 중 예약 버튼 판단에 필요한 부분만 */
+type RawSchedule = {
+  seatStatus: string
+  programId: { _id: string } | null
+}
+
 export default function TicketsPage() {
   const [programs, setPrograms] = useState<Program[]>([])
+  // 예약 버튼 문구를 회차 상태에 맞추려면 회차도 있어야 해서 함께 불러온다.
+  // 키는 프로그램 id, 값은 그 공연의 회차 상태 목록.
+  const [statusesByProgram, setStatusesByProgram] = useState<Record<string, string[]>>({})
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    // 회차를 못 불러와도 프로그램 목록은 보여야 하므로 각각 따로 처리한다
     fetch('/api/programs')
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setPrograms(data.data)
       })
       .finally(() => setIsLoading(false))
+
+    fetch('/api/schedules')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) return
+        const grouped: Record<string, string[]> = {}
+        for (const schedule of data.data as RawSchedule[]) {
+          const programId = schedule.programId?._id
+          if (!programId) continue // 연결된 프로그램이 지워진 경우 방어
+          if (!grouped[programId]) grouped[programId] = []
+          grouped[programId].push(schedule.seatStatus)
+        }
+        setStatusesByProgram(grouped)
+      })
+      .catch(() => {
+        // 회차를 못 받으면 예매 링크 유무로만 버튼이 정해진다 (예전과 같은 동작)
+      })
   }, [])
 
   return (
@@ -74,6 +101,10 @@ export default function TicketsPage() {
               <div className="grid md:grid-cols-2 gap-6 mb-12">
                 {programs.map((program) => {
                   const type = programTypeConfig[program.type]
+                  const ticketMode = resolveTicketButtonMode(
+                    statusesByProgram[program._id] ?? [],
+                    Boolean(program.ticketUrl)
+                  )
                   return (
                     <Card key={program._id}>
                       <CardHeader>
@@ -98,7 +129,7 @@ export default function TicketsPage() {
                         </div>
 
                         <div className="flex gap-3">
-                          {program.ticketUrl ? (
+                          {ticketMode === 'open' ? (
                             <Button asChild className="flex-1">
                               <a href={program.ticketUrl} target="_blank" rel="noopener noreferrer">
                                 무료 예약하기
@@ -107,7 +138,7 @@ export default function TicketsPage() {
                             </Button>
                           ) : (
                             <Button variant="secondary" className="flex-1" disabled>
-                              예약 오픈 예정
+                              {ticketButtonLabel[ticketMode]}
                             </Button>
                           )}
                           <Button variant="outline" asChild>

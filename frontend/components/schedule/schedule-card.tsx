@@ -3,7 +3,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Clock, ExternalLink } from 'lucide-react'
 import { formatScheduleDate } from '@/lib/format-date'
-import { programTypeConfig, seatStatusConfig } from '@/lib/program-display'
+import {
+  programTypeConfig,
+  resolveSeatStatus,
+  resolveTicketButtonMode,
+  seatStatusConfig,
+  ticketButtonLabel,
+} from '@/lib/program-display'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import type { ProgramType, SeatStatus } from '@/types/index'
 
@@ -32,6 +38,10 @@ export interface ProgramScheduleGroup {
 // 예약 버튼은 공연당 하나만 둔다. /schedule 에서 사용.
 export function ScheduleCard({ group }: { group: ProgramScheduleGroup }) {
   const type = programTypeConfig[group.program.type]
+  const ticketMode = resolveTicketButtonMode(
+    group.sessions.map((session) => session.seatStatus),
+    Boolean(group.program.ticketUrl)
+  )
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 sm:p-6 transition-all hover:border-primary/30">
@@ -66,7 +76,7 @@ export function ScheduleCard({ group }: { group: ProgramScheduleGroup }) {
           <ul className="flex flex-wrap gap-2 mt-3">
             {group.sessions.map((session, index) => {
               const dateInfo = formatScheduleDate(session.date)
-              const seat = seatStatusConfig[session.seatStatus]
+              const seat = seatStatusConfig[resolveSeatStatus(session.seatStatus)]
               return (
                 <li
                   key={session._id}
@@ -84,9 +94,9 @@ export function ScheduleCard({ group }: { group: ProgramScheduleGroup }) {
           </ul>
         </div>
 
-        {/* Action - 공연당 예약 링크는 하나만 */}
+        {/* Action - 공연당 예약 링크는 하나만. 문구는 회차 상태를 종합해서 정한다 */}
         <div className="flex-shrink-0 self-center">
-          {group.program.ticketUrl ? (
+          {ticketMode === 'open' ? (
             <Button asChild size="sm">
               <a href={group.program.ticketUrl} target="_blank" rel="noopener noreferrer">
                 무료 예약
@@ -95,7 +105,7 @@ export function ScheduleCard({ group }: { group: ProgramScheduleGroup }) {
             </Button>
           ) : (
             <Button variant="outline" size="sm" disabled>
-              예약 오픈 예정
+              {ticketButtonLabel[ticketMode]}
             </Button>
           )}
         </div>

@@ -9,7 +9,7 @@ import { Footer } from '@/components/layout/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, Clock, ExternalLink, ShieldCheck, Users } from 'lucide-react'
-import { programTypeConfig, seatStatusConfig } from '@/lib/program-display'
+import { programTypeConfig, resolveSeatStatus, seatStatusConfig } from '@/lib/program-display'
 import { formatScheduleDate } from '@/lib/format-date'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import { ImageLightbox } from '@/components/shared/image-lightbox'
@@ -189,7 +189,7 @@ export default function ProgramDetailPage() {
                     <ul className="space-y-3">
                       {schedules.map((schedule) => {
                         const dateInfo = formatScheduleDate(schedule.date)
-                        const seat = seatStatusConfig[schedule.seatStatus]
+                        const seat = seatStatusConfig[resolveSeatStatus(schedule.seatStatus)]
                         return (
                           <li key={schedule._id} className="flex items-center justify-between gap-3 text-sm">
                             <span className="font-medium text-card-foreground">

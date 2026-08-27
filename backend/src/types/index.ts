@@ -39,7 +39,9 @@ export interface IProgram extends Document {
 }
 
 // Schedule (일정)
-export type SeatStatus = 'available' | 'limited' | 'soldout'
+// 회차별 예매 상태. 'limited'(잔여석 적음)는 2026-08-28에 없앴다.
+// 예전 값이 남은 문서를 막지 않으려고 모델 enum에는 'limited'를 남겨둔다.
+export type SeatStatus = 'available' | 'pending' | 'soldout' | 'ended'
 
 export interface ISchedule extends Document {
   _id: Types.ObjectId

@@ -27,7 +27,10 @@ export interface IProgram {
 }
 
 // Schedule (일정)
-export type SeatStatus = 'available' | 'limited' | 'soldout'
+// 회차별 예매 상태. 관리자 화면에서 회차마다 직접 고른다.
+// 'limited'(잔여석 적음)는 2026-08-28에 없앴지만, 예전에 저장된 값이 남아 있을 수 있어
+// 화면에서는 resolveSeatStatus()로 걸러 쓴다. (lib/program-display.ts)
+export type SeatStatus = 'available' | 'pending' | 'soldout' | 'ended'
 
 export interface ISchedule {
   _id: string
