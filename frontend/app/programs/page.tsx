@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowRight, Clock, Users } from 'lucide-react'
 import { programTypeConfig as typeConfig } from '@/lib/program-display'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
+import { ProgramPeriod } from '@/components/shared/program-period'
 import type { ProgramType } from '@/types/index'
 
 type Program = {
@@ -26,6 +27,12 @@ type Program = {
   posterUrl?: string
 }
 
+/** /api/schedules 응답 중 공연 기간 계산에 필요한 부분만 */
+type RawSchedule = {
+  date: string
+  programId: { _id: string } | null
+}
+
 const validTypes: Program['type'][] = ['play', 'reading', 'short_play']
 
 export default function ProgramsPage() {
@@ -39,6 +46,8 @@ export default function ProgramsPage() {
 function ProgramsPageContent() {
   const searchParams = useSearchParams()
   const [programs, setPrograms] = useState<Program[]>([])
+  // 키는 프로그램 id, 값은 그 공연의 회차 날짜 목록
+  const [datesByProgram, setDatesByProgram] = useState<Record<string, string[]>>({})
   const [type, setType] = useState<'all' | Program['type']>('all')
 
   // 헤더 메뉴/홈 통계 카드 등 ?type=xxx 링크로 들어왔을 때 해당 필터를 바로 적용
@@ -57,6 +66,27 @@ function ProgramsPageContent() {
         if (data.success) setPrograms(data.data)
       })
   }, [type])
+
+  // 공연 기간은 프로그램이 아니라 회차에 들어 있어 따로 불러와 묶는다.
+  // 필터(type)와 무관하게 전체를 한 번만 받아 두고 프로그램 id로 찾아 쓴다.
+  useEffect(() => {
+    fetch('/api/schedules')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) return
+        const grouped: Record<string, string[]> = {}
+        for (const schedule of data.data as RawSchedule[]) {
+          const programId = schedule.programId?._id
+          if (!programId) continue // 연결된 프로그램이 지워진 경우 방어
+          if (!grouped[programId]) grouped[programId] = []
+          grouped[programId].push(schedule.date)
+        }
+        setDatesByProgram(grouped)
+      })
+      .catch(() => {
+        // 회차를 못 받으면 기간만 안 보이고 목록은 그대로 나온다
+      })
+  }, [])
 
   return (
     <>
@@ -93,7 +123,11 @@ function ProgramsPageContent() {
                         <div className="mb-3 flex flex-wrap items-center gap-2">
                           <Badge className={`${typeConfig[program.type].bgClass} ${typeConfig[program.type].textClass}`}>{typeConfig[program.type].label}</Badge>
                         </div>
-                        <h2 className="mb-2 text-xl font-bold transition-colors group-hover:text-primary lg:text-2xl">{program.title}</h2>
+                        {/* 공연명 오른쪽에 회차에서 계산한 공연 기간을 붙인다 */}
+                        <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                          <h2 className="text-xl font-bold transition-colors group-hover:text-primary lg:text-2xl">{program.title}</h2>
+                          <ProgramPeriod dates={datesByProgram[program._id] ?? []} />
+                        </div>
                         <p className="mb-4 text-muted-foreground">{program.company}</p>
                         <p className="mb-6 line-clamp-2 leading-relaxed text-card-foreground/80">{program.synopsis}</p>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">

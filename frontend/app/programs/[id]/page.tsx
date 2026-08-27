@@ -13,6 +13,7 @@ import { programTypeConfig, resolveSeatStatus, seatStatusConfig } from '@/lib/pr
 import { formatScheduleDate } from '@/lib/format-date'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import { ImageLightbox } from '@/components/shared/image-lightbox'
+import { ProgramPeriod } from '@/components/shared/program-period'
 import { pageHeroImages } from '@/components/shared/page-header'
 import { PosterPlaceholder } from '@/components/shared/poster-placeholder'
 import type { ProgramType, SeatStatus } from '@/types/index'
@@ -97,7 +98,14 @@ export default function ProgramDetailPage() {
                   </span>
                   {program.createdAt && <span className="text-sm text-white/50">{new Date(program.createdAt).toLocaleDateString('ko-KR')}</span>}
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">{program.title}</h1>
+                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+                  <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">{program.title}</h1>
+                  {/* 공연 기간은 등록된 회차에서 계산한다 (아래 회차 목록과 같은 자료) */}
+                  <ProgramPeriod
+                    dates={schedules.map((schedule) => schedule.date)}
+                    className="text-base text-white/70"
+                  />
+                </div>
                 <p className="mt-4 text-xl text-white/70">{program.company}</p>
               </>
             )}

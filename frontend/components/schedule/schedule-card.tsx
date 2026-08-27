@@ -11,6 +11,7 @@ import {
   ticketButtonLabel,
 } from '@/lib/program-display'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
+import { ProgramPeriod } from '@/components/shared/program-period'
 import type { ProgramType, SeatStatus } from '@/types/index'
 
 export interface ScheduleSession {
@@ -52,12 +53,16 @@ export function ScheduleCard({ group }: { group: ProgramScheduleGroup }) {
             <Badge className={`${type.bgClass} ${type.textClass}`}>{type.label}</Badge>
           </div>
 
-          <Link
-            href={`/programs/${group.program._id}`}
-            className="text-lg font-semibold text-card-foreground hover:text-primary transition-colors"
-          >
-            {group.program.title}
-          </Link>
+          {/* 공연명 오른쪽에 전체 공연 기간을 요약해 둔다 (아래 회차 목록과 별개) */}
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <Link
+              href={`/programs/${group.program._id}`}
+              className="text-lg font-semibold text-card-foreground hover:text-primary transition-colors"
+            >
+              {group.program.title}
+            </Link>
+            <ProgramPeriod dates={group.sessions.map((session) => session.date)} />
+          </div>
 
           <p className="text-sm text-muted-foreground mt-1">{group.program.company}</p>
 
