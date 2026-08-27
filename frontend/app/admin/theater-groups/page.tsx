@@ -38,6 +38,8 @@ import {
   GripVertical,
 } from 'lucide-react'
 import Image from 'next/image'
+import { UpcomingShowFields } from '@/components/admin/upcoming-show-fields'
+import type { UpcomingShow } from '@/types/index'
 
 interface TheaterGroup {
   _id: string
@@ -54,6 +56,7 @@ interface TheaterGroup {
     youtube?: string
     blog?: string
   }
+  upcomingShow?: UpcomingShow
   color: string
   bgGradient: string
   order: number
@@ -131,6 +134,9 @@ export default function AdminTheaterGroupsPage() {
       const groupData = {
         ...editingGroup,
         highlights: highlightsText.split('\n').filter((h) => h.trim()),
+        // undefined는 JSON에서 아예 빠져 서버가 기존 값을 그대로 두므로,
+        // "등록 안 함"으로 되돌렸을 때 지워지도록 null을 명시해서 보낸다
+        upcomingShow: editingGroup.upcomingShow ?? null,
       }
 
       const isEditing = '_id' in editingGroup && editingGroup._id
@@ -500,6 +506,14 @@ export default function AdminTheaterGroupsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* 앞으로의 공연정보 */}
+                <UpcomingShowFields
+                  value={editingGroup.upcomingShow}
+                  onChange={(upcomingShow) =>
+                    setEditingGroup({ ...editingGroup, upcomingShow })
+                  }
+                />
 
                 {/* 활성 상태 */}
                 <div className="flex items-center justify-between">

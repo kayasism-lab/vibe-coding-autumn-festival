@@ -12,6 +12,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { ArrowRight, Calendar, MapPin, Sparkles, Users, Award, ExternalLink, Play, Ticket, Instagram, Facebook, Youtube, Globe, BookOpen, HeartHandshake } from 'lucide-react'
+import { UpcomingShowInfo } from '@/components/home/upcoming-show-info'
+import type { UpcomingShow } from '@/types/index'
 
 // 참여 극단 정보 타입
 interface TheaterGroup {
@@ -26,6 +28,7 @@ interface TheaterGroup {
   imageUrl?: string
   videoUrl?: string
   photos?: string[]
+  upcomingShow?: UpcomingShow
   socialLinks?: {
     website?: string
     instagram?: string
@@ -120,8 +123,9 @@ export function HeroSection() {
     const hasLinks = links.website || links.instagram || links.facebook || links.youtube || links.blog
     if (!hasLinks) return null
 
+    // 바깥 줄에서 공연정보와 나란히 놓으므로 위 여백·구분선은 감싸는 쪽이 갖는다
     return (
-      <div className="flex items-center gap-2 pt-4 border-t border-border">
+      <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground mr-2">SNS</span>
         {links.website && (
           <a href={links.website} target="_blank" rel="noopener noreferrer" 
@@ -344,6 +348,16 @@ export function HeroSection() {
                       <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
                         {group.name.replace('극단 ', '')}
                       </span>
+                      {/* 공연을 앞둔 극단은 팝업을 열기 전에도 알 수 있게 표시한다 */}
+                      {group.upcomingShow?.kind && (
+                        <span className="ml-auto flex items-center gap-1 text-[10px] font-medium text-amber-300">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400" />
+                          </span>
+                          공연정보
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -481,8 +495,12 @@ export function HeroSection() {
                       </div>
                     )}
 
-                    {/* SNS 링크 */}
-                    <SocialLinks links={selectedGroup.socialLinks} />
+                    {/* SNS 링크와 앞으로의 공연정보를 한 줄에 나란히 둔다.
+                        SNS가 없는 극단도 공연정보는 보여야 해서 바깥에서 감싼다 */}
+                    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 pt-4 border-t border-border">
+                      <SocialLinks links={selectedGroup.socialLinks} />
+                      <UpcomingShowInfo show={selectedGroup.upcomingShow} />
+                    </div>
                   </div>
                 </DialogDescription>
                 

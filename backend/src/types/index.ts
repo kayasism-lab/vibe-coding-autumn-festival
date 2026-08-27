@@ -164,6 +164,19 @@ export interface IAdmin extends Document {
 }
 
 // TheaterGroup (참여 극단)
+// 극단이 앞두고 있는 공연 한 건. 극단 소개 팝업에 노출된다.
+// 'festival'은 이 사이트에 등록된 축제 프로그램을 가리키고(공연일은 회차에서 계산),
+// 'external'은 축제와 무관한 자체 공연이라 공연일과 예약 주소를 직접 받는다.
+export interface IUpcomingShow {
+  kind: 'festival' | 'external'
+  /** kind가 'festival'일 때 가리키는 축제 프로그램 */
+  programId?: Types.ObjectId
+  /** kind가 'external'일 때 직접 입력하는 공연일 */
+  date?: Date
+  /** kind가 'external'일 때 이동할 예약/안내 주소 */
+  url?: string
+}
+
 export interface ITheaterGroup extends Document {
   _id: Types.ObjectId
   name: string
@@ -181,6 +194,7 @@ export interface ITheaterGroup extends Document {
   }
   videoUrl?: string
   photos?: string[]
+  upcomingShow?: IUpcomingShow
   color: string
   bgGradient: string
   order: number

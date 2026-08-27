@@ -120,6 +120,21 @@ export interface IAdmin {
   createdAt: Date
 }
 
+// 극단이 앞두고 있는 공연 한 건. 극단 소개 팝업에 노출된다.
+// 'festival'은 사이트에 등록된 축제 프로그램을 가리키고(공연일은 회차에서 계산),
+// 'external'은 축제와 무관한 자체 공연이라 공연일·예약 주소를 직접 받는다.
+export type UpcomingShowKind = 'festival' | 'external'
+
+export interface UpcomingShow {
+  kind: UpcomingShowKind
+  /** kind가 'festival'일 때 가리키는 축제 프로그램 id */
+  programId?: string
+  /** kind가 'external'일 때 직접 입력한 공연일 */
+  date?: string
+  /** kind가 'external'일 때 이동할 예약/안내 주소 */
+  url?: string
+}
+
 // TheaterGroup (참여 극단)
 export interface ITheaterGroup {
   _id: string
@@ -136,6 +151,7 @@ export interface ITheaterGroup {
     youtube?: string
     blog?: string
   }
+  upcomingShow?: UpcomingShow
   color: string
   bgGradient: string
   order: number
