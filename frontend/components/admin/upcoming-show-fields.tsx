@@ -136,13 +136,28 @@ export function UpcomingShowFields({ value, onChange }: UpcomingShowFieldsProps)
 
       {kind === 'external' && (
         <>
-          <div className="space-y-2">
-            <Label>공연일</Label>
-            <Input
-              type="date"
-              value={value?.date?.slice(0, 10) ?? ''}
-              onChange={(e) => onChange({ ...value, kind: 'external', date: e.target.value })}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>공연 시작일</Label>
+              <Input
+                type="date"
+                value={value?.date?.slice(0, 10) ?? ''}
+                onChange={(e) => onChange({ ...value, kind: 'external', date: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>공연 종료일</Label>
+              <Input
+                type="date"
+                // 시작일보다 앞선 날짜를 고르지 못하게 막는다
+                min={value?.date?.slice(0, 10) || undefined}
+                value={value?.endDate?.slice(0, 10) ?? ''}
+                onChange={(e) => onChange({ ...value, kind: 'external', endDate: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                하루만 하는 공연이면 비워 두세요.
+              </p>
+            </div>
           </div>
           <div className="space-y-2">
             <Label>예약 URL</Label>

@@ -26,6 +26,8 @@ const TheaterGroupSchema = new Schema<ITheaterGroup>(
       kind: { type: String, enum: ['festival', 'external'] },
       programId: { type: Schema.Types.ObjectId, ref: 'Program' },
       date: { type: Date },
+      // 하루만 하는 공연이면 비어 있다 (시작일만으로 표시)
+      endDate: { type: Date },
       url: { type: String },
     },
     color: { type: String, default: 'bg-primary' },

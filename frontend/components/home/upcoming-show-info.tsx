@@ -44,9 +44,10 @@ export function UpcomingShowInfo({ show }: { show?: UpcomingShow }) {
   const href = isFestival ? (programId ? `/programs/${programId}` : undefined) : show.url
   if (!href) return null
 
+  // 시작일과 종료일이 같거나 종료일이 비어 있으면 formatProgramPeriod가 하루로 줄여준다
   const period = isFestival
     ? formatProgramPeriod(festivalDates)
-    : formatProgramPeriod(show.date ? [show.date] : [])
+    : formatProgramPeriod([show.date, show.endDate].filter(Boolean) as string[])
 
   return (
     <div className="text-sm">

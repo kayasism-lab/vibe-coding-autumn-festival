@@ -171,8 +171,10 @@ export interface IUpcomingShow {
   kind: 'festival' | 'external'
   /** kind가 'festival'일 때 가리키는 축제 프로그램 */
   programId?: Types.ObjectId
-  /** kind가 'external'일 때 직접 입력하는 공연일 */
+  /** kind가 'external'일 때 직접 입력하는 공연 시작일 */
   date?: Date
+  /** kind가 'external'일 때의 공연 종료일. 하루만 하는 공연이면 비워 둔다 */
+  endDate?: Date
   /** kind가 'external'일 때 이동할 예약/안내 주소 */
   url?: string
 }

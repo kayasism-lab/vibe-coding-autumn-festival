@@ -129,8 +129,10 @@ export interface UpcomingShow {
   kind: UpcomingShowKind
   /** kind가 'festival'일 때 가리키는 축제 프로그램 id */
   programId?: string
-  /** kind가 'external'일 때 직접 입력한 공연일 */
+  /** kind가 'external'일 때 직접 입력한 공연 시작일 */
   date?: string
+  /** kind가 'external'일 때의 공연 종료일. 하루만 하는 공연이면 비워 둔다 */
+  endDate?: string
   /** kind가 'external'일 때 이동할 예약/안내 주소 */
   url?: string
 }
