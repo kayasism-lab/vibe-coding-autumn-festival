@@ -11,6 +11,7 @@ import {
   getGalleryCategoryLabel,
   getTheaterGroupId,
   getTheaterGroupName,
+  sortGalleryLatestFirst,
   type GalleryTheaterGroup,
 } from '@/lib/gallery-taxonomy'
 import type { GalleryCategory } from '@/types'
@@ -82,6 +83,10 @@ export default function AdminGalleryPage() {
   const { isGroupAccount, theaterGroup: myGroupId } = useAdminAccount()
   const [items, setItems] = useState<GalleryItem[]>([])
   const [yearFilter, setYearFilter] = useState('all')
+  // 자료가 쌓이면 연도만으로는 원하는 것을 찾기 어려워 분류 조건을 함께 둔다
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [groupFilter, setGroupFilter] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -93,7 +98,8 @@ export default function AdminGalleryPage() {
     try {
       const res = await fetch('/api/gallery')
       const data = await res.json()
-      if (data.success) setItems(data.data)
+      // 최근에 올린 자료가 위에 오도록 화면에서도 한 번 더 맞춰둔다
+      if (data.success) setItems(sortGalleryLatestFirst(data.data))
     } finally {
       setIsLoading(false)
     }
@@ -111,9 +117,25 @@ export default function AdminGalleryPage() {
   }, [])
 
   const years = Array.from(new Set(items.map((item) => new Date(item.createdAt).getFullYear().toString()))).sort().reverse()
-  const filteredItems = yearFilter === 'all'
-    ? items
-    : items.filter((item) => new Date(item.createdAt).getFullYear().toString() === yearFilter)
+
+  // 등록된 자료에 실제로 쓰인 극단만 고를 수 있게 한다
+  const usedGroups = Array.from(
+    new Map(
+      items
+        .map((item) => [getTheaterGroupId(item.theaterGroup), getTheaterGroupName(item.theaterGroup)])
+        .filter(([id, name]) => id && name) as [string, string][]
+    )
+  )
+
+  const filteredItems = items.filter((item) => {
+    const year = new Date(item.createdAt).getFullYear().toString()
+    return (
+      (typeFilter === 'all' || item.type === typeFilter) &&
+      (categoryFilter === 'all' || (item.category ?? 'etc') === categoryFilter) &&
+      (groupFilter === 'all' || getTheaterGroupId(item.theaterGroup) === groupFilter) &&
+      (yearFilter === 'all' || year === yearFilter)
+    )
+  })
 
   const openDialog = (item?: GalleryItem) => {
     setEditingItem(item || null)
@@ -186,14 +208,51 @@ export default function AdminGalleryPage() {
             </Button>
           </div>
 
-          <div className="mb-6">
-            <Select value={yearFilter} onValueChange={setYearFilter}>
-              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+          {/* 분류별로 골라서 관리할 수 있게 한다. 좁은 화면에서는 아래로 접힌다 */}
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-28"><SelectValue placeholder="종류" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="all">종류 전체</SelectItem>
+                <SelectItem value="photo">사진</SelectItem>
+                <SelectItem value="video">영상</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-36"><SelectValue placeholder="구분" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">구분 전체</SelectItem>
+                {GALLERY_CATEGORIES.map(({ value, label }) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* 극단이 지정된 자료가 없으면 조건 자체를 보여주지 않는다 */}
+            {usedGroups.length > 0 && (
+              <Select value={groupFilter} onValueChange={setGroupFilter}>
+                <SelectTrigger className="w-40"><SelectValue placeholder="극단" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">극단 전체</SelectItem>
+                  {usedGroups.map(([id, name]) => (
+                    <SelectItem key={id} value={id}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <Select value={yearFilter} onValueChange={setYearFilter}>
+              <SelectTrigger className="w-32"><SelectValue placeholder="연도" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">연도 전체</SelectItem>
                 {years.map((year) => <SelectItem key={year} value={year}>{year}</SelectItem>)}
               </SelectContent>
             </Select>
+
+            <span className="ml-auto text-sm text-muted-foreground">
+              총 {filteredItems.length}개
+            </span>
           </div>
 
           {isLoading ? (

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { sortGalleryLatestFirst } from '@/lib/gallery-taxonomy'
 
 type GalleryItem = {
   _id: string
@@ -11,6 +12,8 @@ type GalleryItem = {
   type: 'photo' | 'video'
   url: string
   thumbnailUrl?: string
+  order?: number
+  createdAt: string
 }
 
 const categories = [
@@ -27,7 +30,9 @@ export function GalleryPreview() {
     fetch('/api/gallery')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) setItems(data.data.slice(0, 6))
+        // 여기서 미리 자르지 않는다. 사진·영상 탭을 고른 뒤에 잘라야
+        // "영상만 보기"에서 앞쪽 몇 개 안에 든 영상만 나오는 일이 없다
+        if (data.success) setItems(sortGalleryLatestFirst(data.data))
       })
   }, [])
 

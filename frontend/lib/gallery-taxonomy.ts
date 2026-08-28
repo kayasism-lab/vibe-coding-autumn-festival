@@ -40,3 +40,23 @@ export function getTheaterGroupName(value: GalleryTheaterGroup): string {
   if (!value || typeof value === 'string') return ''
   return value.name
 }
+
+/**
+ * 최근에 올린 자료가 앞에 오도록 정렬한다.
+ *
+ * 서버도 같은 순서로 내려주지만, 화면에서 한 번 더 맞춰둔다.
+ * 서버가 아직 예전 순서로 응답하더라도(배포 시점 차이) 보는 사람에게는
+ * 늘 최신순으로 보이게 하기 위해서다.
+ *
+ * 새 자료일수록 order 값이 커지므로 order를 내림차순으로 본다.
+ */
+export function sortGalleryLatestFirst<T extends { order?: number; createdAt: string }>(
+  items: T[]
+): T[] {
+  return [...items].sort((a, b) => {
+    const byOrder = (b.order ?? 0) - (a.order ?? 0)
+    if (byOrder !== 0) return byOrder
+    // order가 같으면 나중에 올린 것을 앞에 둔다
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
+}

@@ -17,6 +17,7 @@ export type LightboxItem = {
   url: string
   thumbnailUrl?: string
   theaterGroup?: GalleryTheaterGroup
+  order?: number
   createdAt: string
 }
 

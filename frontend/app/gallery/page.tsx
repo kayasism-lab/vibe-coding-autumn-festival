@@ -14,7 +14,13 @@ import {
 import { GalleryGrid } from '@/components/gallery/gallery-grid'
 import { GalleryPagination } from '@/components/gallery/gallery-pagination'
 import { GalleryLightbox, type LightboxItem } from '@/components/gallery/gallery-lightbox'
-import { GALLERY_CATEGORIES, GALLERY_TYPES, getTheaterGroupId, getTheaterGroupName } from '@/lib/gallery-taxonomy'
+import {
+  GALLERY_CATEGORIES,
+  GALLERY_TYPES,
+  getTheaterGroupId,
+  getTheaterGroupName,
+  sortGalleryLatestFirst,
+} from '@/lib/gallery-taxonomy'
 
 /** 한 장에 보여줄 개수 (3열 기준 네 줄) */
 const ITEMS_PER_PAGE = 12
@@ -32,7 +38,8 @@ export default function GalleryPage() {
     fetch('/api/gallery')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) setItems(data.data)
+        // 최신이 앞에 오도록 화면에서도 한 번 더 맞춰둔다
+        if (data.success) setItems(sortGalleryLatestFirst(data.data))
       })
   }, [])
 
