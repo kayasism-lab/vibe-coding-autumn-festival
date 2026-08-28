@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { useAdminAccount } from '@/lib/use-admin-account'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { VideoThumbnailPicker } from '@/components/admin/video-thumbnail-picker'
 import { VideoUrlHint } from '@/components/admin/video-url-hint'
@@ -98,6 +99,8 @@ export default function AdminGalleryPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<GalleryItem | null>(null)
   const [form, setForm] = useState<GalleryForm>(emptyForm)
+  /** 저장에 실패한 이유. 지금까지는 실패해도 아무 말이 없어 눌러도 반응이 없어 보였다 */
+  const [saveError, setSaveError] = useState('')
   const [groups, setGroups] = useState<TheaterGroupOption[]>([])
 
   const fetchItems = async () => {
@@ -145,6 +148,8 @@ export default function AdminGalleryPage() {
 
   const openDialog = (item?: GalleryItem) => {
     setEditingItem(item || null)
+    // 지난번 실패 안내가 새 창에 남아 있으면 헷갈린다
+    setSaveError('')
     setForm(
       item
         ? {
@@ -167,8 +172,9 @@ export default function AdminGalleryPage() {
 
   const handleSave = async () => {
     setIsSaving(true)
+    setSaveError('')
     try {
-      const res = await fetch(editingItem ? `/api/gallery/${editingItem._id}` : '/api/gallery', {
+      const res = await adminFetch(editingItem ? `/api/gallery/${editingItem._id}` : '/api/gallery', {
         method: editingItem ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -191,7 +197,13 @@ export default function AdminGalleryPage() {
       if (res.ok) {
         await fetchItems()
         setIsDialogOpen(false)
+        return
       }
+
+      // 실패했으면 창을 닫지 않는다. 올려둔 사진을 다시 고르지 않아도 되도록
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsSaving(false)
     }
@@ -199,8 +211,12 @@ export default function AdminGalleryPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
-    const res = await fetch(`/api/gallery/${id}`, { method: 'DELETE' })
-    if (res.ok) fetchItems()
+    const res = await adminFetch(`/api/gallery/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      fetchItems()
+      return
+    }
+    alert(await getErrorMessage(res))
   }
 
   return (
@@ -407,9 +423,16 @@ export default function AdminGalleryPage() {
               </p>
             </Field>
           </div>
+          {saveError && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {saveError}
+            </p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
-            <Button onClick={handleSave} disabled={isSaving}>{editingItem ? '수정' : '추가'}</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? '저장 중…' : editingItem ? '수정' : '추가'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

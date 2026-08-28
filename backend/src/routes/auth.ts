@@ -7,9 +7,11 @@ import {
   clearAuthCookies,
   generateAccessToken,
   generateRefreshToken,
+  setAccessCookie,
   setAuthCookies,
   verifyAccessToken,
   verifyPassword,
+  verifyRefreshToken,
 } from '../lib/auth.js'
 import { requireAuth } from '../middleware/require-admin.js'
 import { resolveGroupPermissions } from '../lib/permissions.js'
@@ -131,6 +133,49 @@ authRouter.post(
 
     await issueAuth(res, user)
     ok(res, { user: publicUser(user) }, '로그인되었습니다.')
+  })
+)
+
+/**
+ * 끊긴 세션을 이어준다.
+ *
+ * 액세스 토큰은 15분이면 만료된다. 지금까지는 그것으로 끝이라 관리 화면에서
+ * 사진을 여러 장 올리는 것처럼 시간이 걸리는 일을 하면 저장할 때 로그인이
+ * 풀려 있었다. 로그인할 때 함께 발급한 리프레시 토큰(7일)이 있으면
+ * 다시 로그인하지 않고 액세스 토큰만 새로 받는다.
+ */
+authRouter.post(
+  '/refresh',
+  asyncHandler(async (req, res) => {
+    const token = req.cookies?.admin_refresh_token
+    if (!token) {
+      fail(res, '인증이 필요합니다.', 401)
+      return
+    }
+
+    const payload = await verifyRefreshToken(token)
+    if (!payload) {
+      clearAuthCookies(res)
+      fail(res, '다시 로그인해주세요.', 401)
+      return
+    }
+
+    // 로그아웃하면 저장된 값이 비워지므로, 훔친 토큰으로는 세션을 이어갈 수 없다
+    const user = await User.findById(payload.userId)
+    if (!user || user.refreshToken !== token) {
+      clearAuthCookies(res)
+      fail(res, '다시 로그인해주세요.', 401)
+      return
+    }
+
+    const accessToken = await generateAccessToken({
+      userId: String(user._id),
+      email: user.email,
+      role: user.role,
+    })
+    setAccessCookie(res, accessToken)
+
+    ok(res, { user: publicUser(user) }, '세션이 연장되었습니다.')
   })
 )
 

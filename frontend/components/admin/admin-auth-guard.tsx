@@ -4,6 +4,14 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { canGroupAccessPath, type GroupPermission } from '@/lib/admin-permissions'
+import { refreshSession } from '@/lib/admin-fetch'
+
+/**
+ * 세션을 이어주는 간격.
+ * 로그인 토큰이 15분이라 그 전에 미리 늘려둔다. 관리 화면을 열어두고 작업하는
+ * 동안에는 저절로 유지되고, 창을 닫으면 더 이상 늘어나지 않는다.
+ */
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000
 
 type MeResponse = {
   success: boolean
@@ -56,6 +64,15 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
       mounted = false
     }
   }, [pathname, router])
+
+  // 관리 화면에 머무는 동안 로그인이 풀리지 않게 주기적으로 세션을 연장한다.
+  // 화면 이동과 무관하게 한 번만 걸어두면 되므로 의존성을 비워 둔다
+  useEffect(() => {
+    const timer = setInterval(() => {
+      void refreshSession()
+    }, REFRESH_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [])
 
   if (state === 'checking') {
     return (
