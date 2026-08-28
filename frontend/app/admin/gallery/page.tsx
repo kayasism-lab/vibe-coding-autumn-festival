@@ -8,12 +8,15 @@ import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { VideoThumbnailPicker } from '@/components/admin/video-thumbnail-picker'
 import { VideoUrlHint } from '@/components/admin/video-url-hint'
 import {
+  GALLERY_CARD_RATIOS,
   GALLERY_CATEGORIES,
   getGalleryCategoryLabel,
   getGalleryImages,
   getTheaterGroupId,
   getTheaterGroupName,
   sortGalleryLatestFirst,
+  toRatioNumber,
+  type GalleryCardRatio,
   type GalleryTheaterGroup,
 } from '@/lib/gallery-taxonomy'
 import type { GalleryCategory } from '@/types'
@@ -47,6 +50,7 @@ type GalleryItem = {
   category?: GalleryCategory
   url: string
   images?: string[]
+  cardRatio?: GalleryCardRatio
   thumbnailUrl?: string
   theaterGroup?: GalleryTheaterGroup
   order: number
@@ -64,6 +68,10 @@ type GalleryForm = {
   url: string
   /** 사진 여러 장 */
   images: string[]
+  /** 목록에 보일 대표 사진의 순번 */
+  coverIndex: number
+  /** 목록에서 이 자료가 차지할 칸 모양 */
+  cardRatio: GalleryCardRatio
   thumbnailUrl: string
   /** 빈 문자열이면 '지정 안 함' */
   theaterGroupId: string
@@ -77,6 +85,8 @@ const emptyForm: GalleryForm = {
   category: 'festival',
   url: '',
   images: [],
+  coverIndex: 0,
+  cardRatio: '4:3',
   thumbnailUrl: '',
   theaterGroupId: '',
   order: 0,
@@ -160,6 +170,9 @@ export default function AdminGalleryPage() {
             url: item.url,
             // 예전 자료는 url 하나뿐이라 그 값을 한 장짜리 목록으로 본다
             images: getGalleryImages(item),
+            // 저장된 대표 사진(url)이 몇 번째인지 찾아 되살린다. 못 찾으면 첫 장
+            coverIndex: Math.max(0, getGalleryImages(item).indexOf(item.url)),
+            cardRatio: item.cardRatio || '4:3',
             thumbnailUrl: item.thumbnailUrl || '',
             theaterGroupId: getTheaterGroupId(item.theaterGroup),
             order: item.order,
@@ -184,10 +197,11 @@ export default function AdminGalleryPage() {
           category: form.category,
           // '지정 안 함'으로 되돌린 것을 서버에 전하려면 null을 명시해야 한다
           theaterGroup: form.theaterGroupId || null,
-          // 사진은 첫 장을 대표(url)로 함께 저장한다.
+          // 사진은 대표로 고른 한 장을 url로 함께 저장한다.
           // 목록·미리보기 등 예전부터 url을 보던 화면이 그대로 동작하도록
-          url: form.type === 'photo' ? form.images[0] ?? '' : form.url,
+          url: form.type === 'photo' ? form.images[form.coverIndex] ?? form.images[0] ?? '' : form.url,
           images: form.type === 'photo' ? form.images : [],
+          cardRatio: form.cardRatio,
           // 사진은 올린 이미지를 그대로 쓰므로 썸네일을 비운다.
           // undefined로 보내면 JSON에서 아예 빠져 서버가 기존 값을 유지하므로 null을 명시해야 지워진다
           thumbnailUrl: form.type === 'video' ? form.thumbnailUrl || null : null,
@@ -380,6 +394,8 @@ export default function AdminGalleryPage() {
                 영상은 이미지가 없으므로 영상 주소에서 뽑아낸 후보 중에서 고르게 한다 */}
             {form.type === 'photo' ? (
               <Field label="사진">
+                {/* 비율 버튼은 미리보기용이 아니라 실제 목록 칸 모양을 정한다.
+                    aspectRatio를 함께 넘겨야 바깥에서 정한 값이 미리보기에 반영된다 */}
                 <CloudinaryUpload
                   value={form.images}
                   onChange={(images) => setForm({ ...form, images: images as string[] })}
@@ -387,11 +403,24 @@ export default function AdminGalleryPage() {
                   maxFiles={20}
                   folder="autumn_festival/gallery"
                   placeholder="갤러리 사진 업로드"
+                  aspectRatio={toRatioNumber(form.cardRatio)}
+                  aspectRatios={GALLERY_CARD_RATIOS.map((item) => ({
+                    label: item.label,
+                    value: toRatioNumber(item.value),
+                  }))}
+                  onRatioChange={(value) => {
+                    const picked = GALLERY_CARD_RATIOS.find(
+                      (item) => Math.abs(toRatioNumber(item.value) - value) < 0.001
+                    )
+                    if (picked) setForm((prev) => ({ ...prev, cardRatio: picked.value }))
+                  }}
+                  coverIndex={form.coverIndex}
+                  onSelectCover={(coverIndex) => setForm((prev) => ({ ...prev, coverIndex }))}
                 />
                 <p className="text-xs text-muted-foreground">
-                  여러 장을 올리면 목록에는 <strong className="font-medium">첫 번째 사진</strong>만
-                  보이고, 눌러서 크게 보면 나머지를 넘겨볼 수 있습니다. 큰 사진은 올릴 때 자동으로
-                  줄여 저장합니다.
+                  위 비율 버튼은 <strong className="font-medium">목록에서 이 자료가 차지할 칸 모양</strong>입니다.
+                  세로로 긴 사진은 3:4, 넓은 무대 사진은 16:9가 덜 잘립니다. 크게 보기에서는
+                  비율과 상관없이 사진 전체가 보입니다. 큰 사진은 올릴 때 자동으로 줄여 저장합니다.
                 </p>
               </Field>
             ) : (

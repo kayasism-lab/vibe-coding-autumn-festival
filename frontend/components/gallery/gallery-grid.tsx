@@ -5,6 +5,7 @@ import {
   getGalleryCategoryLabel,
   getGalleryImages,
   getTheaterGroupName,
+  toAspectRatio,
 } from '@/lib/gallery-taxonomy'
 import { toThumbnailUrl } from '@/lib/cloudinary-url'
 import type { LightboxItem } from './gallery-lightbox'
@@ -23,7 +24,9 @@ interface GalleryGridProps {
  */
 export function GalleryGrid({ items, onSelect }: GalleryGridProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+    // 칸 모양이 자료마다 다르므로 위쪽을 맞춰 세운다.
+    // items-stretch(기본)로 두면 한 줄에서 가장 큰 칸에 맞춰 늘어나 비율이 깨진다
+    <div className="grid items-start gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
       {items.map((item) => {
         const groupName = getTheaterGroupName(item.theaterGroup)
         const photoCount = getGalleryImages(item).length
@@ -31,7 +34,9 @@ export function GalleryGrid({ items, onSelect }: GalleryGridProps) {
           <button
             key={item._id}
             onClick={() => onSelect(item)}
-            className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-muted text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            // 자료마다 정해둔 칸 모양. 값이 없는 예전 자료는 4:3으로 본다
+            style={{ aspectRatio: toAspectRatio(item.cardRatio) }}
+            className="group relative w-full overflow-hidden rounded-xl bg-muted text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             {/* 영상은 주소가 이미지가 아니라서, 썸네일을 안 올렸으면 그림 대신 자리 표시를 둔다.
                 (인스타그램처럼 썸네일을 자동으로 가져올 수 없는 곳이 있다) */}

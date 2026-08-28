@@ -76,3 +76,32 @@ export function sortGalleryLatestFirst<T extends { order?: number; createdAt: st
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   })
 }
+
+/**
+ * 목록에서 자료 하나가 차지하는 칸 모양.
+ *
+ * 전부 4:3으로 고정하면 세로 사진은 위아래가 크게 잘리고, 가로로 넓은 무대 사진은
+ * 좌우가 답답해진다. 자료마다 어울리는 모양을 고를 수 있게 한다.
+ */
+export type GalleryCardRatio = '4:3' | '16:9' | '1:1' | '3:4'
+
+export const GALLERY_CARD_RATIOS: { value: GalleryCardRatio; label: string; hint: string }[] = [
+  { value: '4:3', label: '4:3', hint: '기본' },
+  { value: '16:9', label: '16:9', hint: '가로로 넓게' },
+  { value: '1:1', label: '1:1', hint: '정사각형' },
+  { value: '3:4', label: '3:4', hint: '세로로 길게' },
+]
+
+/** 값이 없는 예전 자료는 지금까지의 모습(4:3) 그대로 본다 */
+export const DEFAULT_CARD_RATIO: GalleryCardRatio = '4:3'
+
+/** CSS aspect-ratio 값으로 바꾼다 ('4:3' → '4 / 3') */
+export function toAspectRatio(ratio?: GalleryCardRatio): string {
+  return (ratio ?? DEFAULT_CARD_RATIO).replace(':', ' / ')
+}
+
+/** 미리보기 계산에 쓸 숫자 비율 ('16:9' → 1.777…) */
+export function toRatioNumber(ratio?: GalleryCardRatio): number {
+  const [width, height] = (ratio ?? DEFAULT_CARD_RATIO).split(':').map(Number)
+  return width / height
+}

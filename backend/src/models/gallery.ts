@@ -22,6 +22,13 @@ const GallerySchema = new Schema<IGallery>(
     // 사진 여러 장을 한 항목으로 묶는다. 목록에는 첫 장만 보이고,
     // 눌러서 크게 보면 나머지를 넘겨볼 수 있다
     images: [{ type: String }],
+    // 목록에서 이 자료가 차지할 칸 모양. 사진마다 어울리는 비율이 달라
+    // 전부 4:3으로 고정하면 세로 사진의 위아래가 크게 잘린다
+    cardRatio: {
+      type: String,
+      enum: ['4:3', '16:9', '1:1', '3:4'],
+      default: '4:3',
+    },
     thumbnailUrl: { type: String },
     programId: {
       type: Schema.Types.ObjectId,

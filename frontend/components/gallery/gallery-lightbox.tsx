@@ -11,7 +11,7 @@ import {
 } from '@/lib/gallery-taxonomy'
 import { toLargeUrl, toMiniUrl } from '@/lib/cloudinary-url'
 import type { GalleryCategory } from '@/types'
-import type { GalleryTheaterGroup } from '@/lib/gallery-taxonomy'
+import type { GalleryCardRatio, GalleryTheaterGroup } from '@/lib/gallery-taxonomy'
 
 export type LightboxItem = {
   _id: string
@@ -21,6 +21,8 @@ export type LightboxItem = {
   category?: GalleryCategory
   url: string
   images?: string[]
+  /** 목록에서 차지할 칸 모양. 크게 보기는 이와 무관하게 원래 비율로 보여준다 */
+  cardRatio?: GalleryCardRatio
   thumbnailUrl?: string
   theaterGroup?: GalleryTheaterGroup
   order?: number

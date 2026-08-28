@@ -108,15 +108,20 @@ export type GalleryType = 'photo' | 'video'
 // 어떤 자리에서 찍은 것인지 구분한다. 극단 구분(theaterGroup)과는 축이 다르므로 따로 둔다
 export type GalleryCategory = 'festival' | 'general' | 'etc'
 
+export type GalleryCardRatio = '4:3' | '16:9' | '1:1' | '3:4'
+
 export interface IGallery extends Document {
   _id: Types.ObjectId
   title: string
   description?: string
   type: GalleryType
   category: GalleryCategory
+  /** 목록에 보이는 대표 사진. images 중 관리자가 고른 한 장이다 */
   url: string
-  /** 사진 여러 장을 한 항목으로 묶는다 (첫 장이 대표) */
+  /** 사진 여러 장을 한 항목으로 묶는다 */
   images?: string[]
+  /** 목록에서 이 자료가 차지할 칸 모양 */
+  cardRatio?: GalleryCardRatio
   thumbnailUrl?: string
   programId?: Types.ObjectId
   // 어느 극단의 기록인지. 협의회 공동 행사처럼 특정 극단이 없는 것도 있어 선택 항목이다

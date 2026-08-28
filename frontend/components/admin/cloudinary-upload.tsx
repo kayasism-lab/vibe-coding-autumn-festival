@@ -17,6 +17,11 @@ interface CloudinaryUploadProps {
   aspectRatio?: number
   aspectRatios?: { label: string; value: number }[]
   placeholder?: string
+  /** 대표 사진 고르기를 쓸 때만 준다 (갤러리처럼 여러 장을 한 자료로 묶는 곳) */
+  coverIndex?: number
+  onSelectCover?: (index: number) => void
+  /** 비율 버튼을 눌렀을 때 바깥에 알린다. 미리보기로만 쓰는 곳은 주지 않아도 된다 */
+  onRatioChange?: (ratio: number) => void
 }
 
 const defaultAspectRatios = [
@@ -44,6 +49,9 @@ export function CloudinaryUpload({
   aspectRatio,
   aspectRatios = defaultAspectRatios,
   placeholder = '이미지 업로드',
+  coverIndex,
+  onSelectCover,
+  onRatioChange,
 }: CloudinaryUploadProps) {
   const [status, setStatus] = useState<UploadStatus | null>(null)
   const [error, setError] = useState('')
@@ -51,6 +59,8 @@ export function CloudinaryUpload({
   const [savedNotice, setSavedNotice] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const [previewRatio, setPreviewRatio] = useState(aspectRatio || aspectRatios[0]?.value || 16 / 9)
+  // 바깥에서 비율을 관리하면(갤러리 칸 모양) 그 값이 우선이다
+  const activeRatio = onRatioChange && aspectRatio ? aspectRatio : previewRatio
   const inputRef = useRef<HTMLInputElement>(null)
 
   const urls = Array.isArray(value) ? value : value ? [value] : []
@@ -132,10 +142,17 @@ export function CloudinaryUpload({
 
   const removeImage = (index: number) => {
     setError('')
-    if (multiple) {
-      onChange(urls.filter((_, i) => i !== index))
-    } else {
+    if (!multiple) {
       onChange('')
+      return
+    }
+
+    onChange(urls.filter((_, i) => i !== index))
+
+    // 대표 사진이 지워지거나 앞의 사진이 빠져 순번이 밀리면 대표가 엉뚱한 사진이 된다
+    if (onSelectCover && coverIndex !== undefined) {
+      if (index === coverIndex) onSelectCover(0)
+      else if (index < coverIndex) onSelectCover(coverIndex - 1)
     }
   }
 
@@ -148,9 +165,12 @@ export function CloudinaryUpload({
               key={ratio.label}
               type="button"
               size="sm"
-              variant={Math.abs(previewRatio - ratio.value) < 0.001 ? 'default' : 'outline'}
+              variant={Math.abs(activeRatio - ratio.value) < 0.001 ? 'default' : 'outline'}
               className="h-8 px-2 text-xs"
-              onClick={() => setPreviewRatio(ratio.value)}
+              onClick={() => {
+                setPreviewRatio(ratio.value)
+                onRatioChange?.(ratio.value)
+              }}
             >
               {ratio.label}
             </Button>
@@ -160,9 +180,11 @@ export function CloudinaryUpload({
 
       <UploadPreviewGrid
         urls={urls}
-        ratio={previewRatio}
+        ratio={activeRatio}
         multiple={multiple}
         onRemove={removeImage}
+        coverIndex={coverIndex}
+        onSelectCover={onSelectCover}
       />
 
       {/* 실제 파일 선택 입력. 화면에는 안 보이지만 팝업 내부 요소라 정상 동작한다.
