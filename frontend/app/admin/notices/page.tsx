@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import { Eye, Pencil, Pin, Plus, Search, Trash2 } from 'lucide-react'
+import { looksLikeHtml } from '@/lib/notice-board'
 
 type Notice = {
   _id: string
@@ -110,6 +111,8 @@ export default function AdminNoticesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  // HTML로 쓴 공지가 어떻게 보일지 저장 전에 확인하는 창
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null)
   const [form, setForm] = useState<NoticeForm>(emptyForm)
 
@@ -133,6 +136,8 @@ export default function AdminNoticesPage() {
 
   const openDialog = (notice?: Notice) => {
     setEditingNotice(notice || null)
+    // 다른 글을 열 때 이전 글의 미리보기가 펼쳐진 채로 남지 않게 한다
+    setIsPreviewOpen(false)
     setForm(
       notice
         ? {
@@ -300,7 +305,45 @@ export default function AdminNoticesPage() {
                 보도된 날짜로 바꿔주세요.
               </p>
             </Field>
-            <Field label="내용"><Textarea rows={8} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} /></Field>
+            <Field label="내용">
+              <Textarea
+                rows={10}
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                className="font-mono text-xs"
+              />
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                  일반 글은 그대로 쓰시면 됩니다. 꾸민 공지를 만들었다면 HTML을 붙여넣어도
+                  그 모양대로 보입니다.
+                </p>
+                {/* 붙여넣은 HTML이 어떻게 보일지 저장 전에 확인할 수 있어야 한다 */}
+                {looksLikeHtml(form.content) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => setIsPreviewOpen((prev) => !prev)}
+                  >
+                    <Eye className="mr-2 h-3.5 w-3.5" />
+                    {isPreviewOpen ? '미리보기 닫기' : '미리보기'}
+                  </Button>
+                )}
+              </div>
+
+              {isPreviewOpen && looksLikeHtml(form.content) && (
+                <div className="rounded-lg border bg-background p-4">
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    아래는 대략적인 모습입니다. 저장할 때 위험한 태그는 자동으로 걸러집니다.
+                  </p>
+                  <div
+                    className="notice-html"
+                    dangerouslySetInnerHTML={{ __html: form.content }}
+                  />
+                </div>
+              )}
+            </Field>
             <Field label="첨부 이미지">
               <CloudinaryUpload
                 value={form.imageUrls}

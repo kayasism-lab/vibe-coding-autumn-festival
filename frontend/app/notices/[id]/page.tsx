@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, ExternalLink, Eye } from 'lucide-react'
+import { looksLikeHtml } from '@/lib/notice-board'
 
 type Notice = {
   _id: string
@@ -90,7 +91,18 @@ export default function NoticeDetailPage() {
                   ))}
                 </div>
               )}
-              <article className="whitespace-pre-line leading-relaxed text-card-foreground">{notice.content}</article>
+              {/* HTML로 작성한 공지는 꾸민 모양 그대로 보여준다.
+                  서버가 저장할 때 위험한 태그를 걸러내므로 여기서는 그대로 그려도 된다 */}
+              {looksLikeHtml(notice.content) ? (
+                <div
+                  className="notice-html leading-relaxed text-card-foreground"
+                  dangerouslySetInnerHTML={{ __html: notice.content }}
+                />
+              ) : (
+                <article className="whitespace-pre-line leading-relaxed text-card-foreground">
+                  {notice.content}
+                </article>
+              )}
 
               {/* 기사 본문은 언론사 저작물이라 옮겨 담지 않는다. 원문으로 보내주는 것이 원칙 */}
               {notice.sourceUrl && (

@@ -236,3 +236,30 @@
 .animate-fade-up {
   animation: fade-up 0.6s ease-out forwards;
 }
+
+/*
+ * HTML로 작성한 공지 본문.
+ * Tailwind가 기본 여백과 목록 점을 없애기 때문에, 붙여넣은 HTML이
+ * 작성한 모양 그대로 보이도록 이 영역 안에서만 되살린다.
+ */
+.notice-html ul {
+  list-style: disc;
+}
+
+.notice-html ol {
+  list-style: decimal;
+}
+
+.notice-html a {
+  text-decoration: underline;
+}
+
+/* 넓은 표나 이미지가 화면을 넘겨 가로 스크롤을 만들지 않도록 */
+.notice-html img {
+  max-width: 100%;
+  height: auto;
+}
+
+.notice-html table {
+  max-width: 100%;
+}

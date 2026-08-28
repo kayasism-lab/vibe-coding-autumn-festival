@@ -48,6 +48,16 @@ export function formatNoticeDate(notice: { publishedAt?: string; createdAt: stri
   }).format(getNoticeDate(notice))
 }
 
+/**
+ * 본문이 HTML로 작성됐는지.
+ *
+ * 꾸민 공지는 HTML로 붙여넣을 수 있다. 저장할 때 서버가 위험한 태그를 걸러내므로
+ * 화면에서는 그대로 그려도 된다. 평범한 글은 줄바꿈만 살려 보여준다.
+ */
+export function looksLikeHtml(content: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(content)
+}
+
 /** 한국 시각 기준 올해. 해가 바뀌면 저절로 따라가도록 계산해서 쓴다 */
 export function getCurrentKstYear(): number {
   return Number(

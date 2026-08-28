@@ -3,6 +3,7 @@ import { Notice } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
 import { fetchLinkPreview } from '../lib/link-preview.js'
+import { sanitizeNoticeContent } from '../lib/sanitize-content.js'
 
 export const noticesRouter = Router()
 
@@ -134,7 +135,11 @@ noticesRouter.post(
   '/',
   requirePermission('notices'),
   asyncHandler(async (req, res) => {
-    const notice = await Notice.create(req.body)
+    // 꾸민 공지를 HTML로 올릴 수 있게 하되, 저장 전에 위험한 태그를 걸러낸다
+    const notice = await Notice.create({
+      ...req.body,
+      content: sanitizeNoticeContent(req.body?.content),
+    })
     ok(res, notice.toObject(), '공지사항이 등록되었습니다.', 201)
   })
 )
@@ -163,7 +168,14 @@ noticesRouter.put(
   asyncHandler(async (req, res) => {
     const notice = await Notice.findByIdAndUpdate(
       req.params.id,
-      { ...req.body, updatedAt: new Date() },
+      {
+        ...req.body,
+        // 등록 때와 같은 기준으로 걸러낸다 (수정으로 우회하지 못하도록)
+        ...(req.body?.content !== undefined
+          ? { content: sanitizeNoticeContent(req.body.content) }
+          : {}),
+        updatedAt: new Date(),
+      },
       { new: true }
     ).lean()
 
