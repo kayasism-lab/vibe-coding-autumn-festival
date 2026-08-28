@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/shared/page-header'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, X, Play } from 'lucide-react'
+import { getVideoEmbedUrl } from '@/lib/video-thumbnail'
 
 type GalleryItem = {
   _id: string
@@ -113,7 +114,20 @@ export default function GalleryPage() {
             <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"><X className="h-5 w-5" /></button>
             <button onClick={() => navigateLightbox('prev')} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"><ChevronLeft className="h-5 w-5" /></button>
             <button onClick={() => navigateLightbox('next')} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"><ChevronRight className="h-5 w-5" /></button>
-            <div className="aspect-video">{selectedItem && <img src={selectedItem.url} alt={selectedItem.title} className="w-full h-full object-contain" />}</div>
+            {/* 영상은 주소를 이미지로 그릴 수 없으므로 재생용 임베드로 띄운다 */}
+            <div className="aspect-video">
+              {selectedItem && (selectedItem.type === 'video' && getVideoEmbedUrl(selectedItem.url) ? (
+                <iframe
+                  src={getVideoEmbedUrl(selectedItem.url) as string}
+                  title={selectedItem.title}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <img src={selectedItem.url} alt={selectedItem.title} className="w-full h-full object-contain" />
+              ))}
+            </div>
             <div className="p-4 text-center"><p className="text-white font-medium">{selectedItem?.title}</p></div>
           </div>
         </DialogContent>

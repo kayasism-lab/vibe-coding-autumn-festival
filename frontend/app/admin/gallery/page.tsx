@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { useAdminAccount } from '@/lib/use-admin-account'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
+import { VideoThumbnailPicker } from '@/components/admin/video-thumbnail-picker'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -113,7 +114,9 @@ export default function AdminGalleryPage() {
           description: form.description || undefined,
           type: form.type,
           url: form.url,
-          thumbnailUrl: form.thumbnailUrl || undefined,
+          // 사진은 올린 이미지를 그대로 쓰므로 썸네일을 비운다.
+          // undefined로 보내면 JSON에서 아예 빠져 서버가 기존 값을 유지하므로 null을 명시해야 지워진다
+          thumbnailUrl: form.type === 'video' ? form.thumbnailUrl || null : null,
           order: form.order,
         }),
       })
@@ -208,6 +211,8 @@ export default function AdminGalleryPage() {
               </Select>
             </Field>
             <Field label="제목"><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
+            {/* 사진은 올린 이미지가 곧 썸네일이라 따로 받지 않는다.
+                영상은 이미지가 없으므로 영상 주소에서 뽑아낸 후보 중에서 고르게 한다 */}
             {form.type === 'photo' ? (
               <Field label="사진 이미지">
                 <CloudinaryUpload
@@ -218,18 +223,23 @@ export default function AdminGalleryPage() {
                 />
               </Field>
             ) : (
-              <Field label="영상 URL">
-                <Input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
-              </Field>
+              <>
+                <Field label="영상 URL">
+                  <Input
+                    value={form.url}
+                    onChange={(e) => setForm({ ...form, url: e.target.value })}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                  />
+                </Field>
+                <Field label="썸네일 이미지">
+                  <VideoThumbnailPicker
+                    videoUrl={form.url}
+                    value={form.thumbnailUrl}
+                    onChange={(thumbnailUrl) => setForm({ ...form, thumbnailUrl })}
+                  />
+                </Field>
+              </>
             )}
-            <Field label="썸네일 이미지">
-              <CloudinaryUpload
-                value={form.thumbnailUrl}
-                onChange={(thumbnailUrl) => setForm({ ...form, thumbnailUrl: thumbnailUrl as string })}
-                folder="autumn_festival/gallery/thumbnails"
-                placeholder="썸네일 이미지 업로드"
-              />
-            </Field>
             <Field label="설명"><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
             <Field label="정렬"><Input type="number" value={form.order} onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} /></Field>
           </div>

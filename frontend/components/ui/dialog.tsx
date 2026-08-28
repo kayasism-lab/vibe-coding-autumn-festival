@@ -61,6 +61,10 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
+          // 내용이 길면 팝업 안에서 스크롤되게 한다. 이 값이 없으면 화면 밖으로 넘친
+          // 부분(주로 하단 저장 버튼)을 누를 수 없다 - 팝업이 열려 있는 동안 배경 스크롤이 잠기기 때문.
+          // vh가 아니라 dvh를 쓰는 이유: 모바일 브라우저는 주소창 때문에 100vh가 실제 보이는 높이보다 크다.
+          'max-h-[calc(100dvh-2rem)] overflow-y-auto',
           className,
         )}
         {...props}

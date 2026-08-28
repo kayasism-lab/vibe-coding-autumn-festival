@@ -81,7 +81,7 @@ export function ProgramFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? '프로그램 수정' : '프로그램 추가'}</DialogTitle>
           <DialogDescription>프로그램 정보를 입력하세요.</DialogDescription>

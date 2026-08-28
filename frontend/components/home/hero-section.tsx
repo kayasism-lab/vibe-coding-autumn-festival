@@ -397,7 +397,7 @@ export function HeroSection() {
 
       {/* Theater Group Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0" showCloseButton={false}>
+        <DialogContent className="sm:max-w-2xl max-h-[90dvh] overflow-y-auto p-0" showCloseButton={false}>
           {selectedGroup && (
             <div className="flex flex-col">
               {/* 이미지 영역 */}
