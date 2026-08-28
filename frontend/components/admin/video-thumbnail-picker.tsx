@@ -119,7 +119,7 @@ export function VideoThumbnailPicker({ videoUrl, value, onChange }: VideoThumbna
       {!isLoading && videoUrl.trim() && visibleCandidates.length === 0 && (
         <p className="rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
           {provider === 'instagram'
-            ? '인스타그램 영상은 사이트 안에서 재생할 수 없어, 눌렀을 때 인스타그램으로 연결됩니다. 썸네일도 자동으로 가져올 수 없으니 대표 이미지를 아래에서 꼭 올려주세요 (없으면 빈 화면이 보입니다).'
+            ? '인스타그램은 썸네일을 자동으로 가져올 수 없습니다. 올리지 않으면 목록에 빈 화면이 보이니 아래에서 직접 올려주세요.'
             : '이 영상 주소에서는 썸네일을 자동으로 가져올 수 없습니다. 아래에서 직접 지정해주세요.'}
         </p>
       )}

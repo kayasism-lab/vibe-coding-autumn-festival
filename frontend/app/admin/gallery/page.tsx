@@ -5,6 +5,7 @@ import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { useAdminAccount } from '@/lib/use-admin-account'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { VideoThumbnailPicker } from '@/components/admin/video-thumbnail-picker'
+import { VideoUrlHint } from '@/components/admin/video-url-hint'
 import {
   GALLERY_CATEGORIES,
   getGalleryCategoryLabel,
@@ -306,8 +307,10 @@ export default function AdminGalleryPage() {
                   <Input
                     value={form.url}
                     onChange={(e) => setForm({ ...form, url: e.target.value })}
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    placeholder="유튜브 · 비메오 · 인스타그램 주소"
                   />
+                  {/* 어떤 곳을 넣을 수 있고 어떻게 동작하는지 등록 전에 알려준다 */}
+                  <VideoUrlHint url={form.url} />
                 </Field>
                 <Field label="썸네일 이미지">
                   <VideoThumbnailPicker
