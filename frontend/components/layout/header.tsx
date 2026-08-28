@@ -121,7 +121,7 @@ export function Header() {
                 </span>
               </span>
             </div>
-            {/* 모바일 화면: 좌측 주최/후원이 다 숨겨지므로 후원 로고만이라도 축소해서 노출 */}
+            {/* 모바일 화면: 좌측 주최·주관/후원이 다 숨겨지므로 후원 로고만이라도 축소해서 노출 */}
             <span className="flex items-center gap-1.5 text-white/70 sm:hidden flex-shrink-0">
               <span>후원</span>
               <span className="flex h-6 items-center rounded-md bg-white px-1">

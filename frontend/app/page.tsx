@@ -21,7 +21,7 @@ export default function HomePage() {
         <PerformanceNews />
         <NoticeTabs />
         <QuickMenu />
-        {/* 주관/후원 로고는 Footer에서 한 번만 표시(중복 노출 방지) */}
+        {/* 주최·주관/후원 로고는 Footer에서 한 번만 표시(중복 노출 방지) */}
       </main>
       <Footer />
     </>

@@ -13,7 +13,7 @@ export function OrganizerBar({ theme = 'dark', className = '' }: OrganizerBarPro
   return (
     <div className={`flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 ${className}`}>
       <div className="flex items-center gap-3">
-        <span className={`text-xs font-medium tracking-wider uppercase ${labelClass}`}>주관</span>
+        <span className={`text-xs font-medium tracking-wider uppercase ${labelClass}`}>주최·주관</span>
         <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2">
           <Image
             src="/logo/jikyeonhyeop.gif"

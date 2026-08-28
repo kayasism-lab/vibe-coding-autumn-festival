@@ -42,7 +42,7 @@ const defaultHeroConfig: HeroConfig = {
   backgroundImage: '/images/hero-bg.jpg',
   title: '2026 가을연극축제',
   subtitle: '직장인들이 만들어가는 특별한 무대',
-  description: '전국직장인연극단체협의회가 주최하는 제X회 가을연극축제에 여러분을 초대합니다.',
+  description: '전국직장인연극단체협의회가 주최·주관하는 제X회 가을연극축제에 여러분을 초대합니다.',
   stats: {
     programs: 6,
     groups: 6,
@@ -342,7 +342,7 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="organizer">주최 단체</Label>
+                      <Label htmlFor="organizer">주최·주관 단체</Label>
                       <Input
                         id="organizer"
                         value={siteInfo.organizer}
