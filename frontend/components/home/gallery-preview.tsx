@@ -36,6 +36,10 @@ export function GalleryPreview() {
     [activeCategory, items]
   )
 
+  const shownItems = filteredItems.slice(0, 6)
+  // 4장 이상일 때만 첫 칸을 크게 쓰는 잡지식 배치를 쓴다
+  const isFeatureLayout = shownItems.length >= 4
+
   return (
     <section className="bg-foreground py-16 text-background lg:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -69,14 +73,16 @@ export function GalleryPreview() {
         {filteredItems.length === 0 ? (
           <div className="rounded-xl border border-background/10 bg-background/10 p-10 text-center text-background/70">등록된 갤러리가 없습니다.</div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-            {filteredItems.slice(0, 6).map((item, index) => (
+          <div className={cn('grid grid-cols-2 gap-4', shownItems.length >= 3 ? 'md:grid-cols-3' : 'md:grid-cols-2')}>
+            {shownItems.map((item, index) => (
               <Link
                 key={item._id}
                 href="/gallery"
                 className={cn(
                   'group relative aspect-[4/3] overflow-hidden rounded-xl',
-                  index === 0 && 'md:col-span-2 md:row-span-2 md:aspect-square'
+                  // 첫 칸을 크게 쓰는 배치는 자료가 넉넉할 때만 쓴다.
+                  // 몇 장 없을 때 쓰면 옆자리가 비어 오히려 허전해 보인다
+                  index === 0 && isFeatureLayout && 'md:col-span-2 md:row-span-2 md:aspect-square'
                 )}
               >
                 <img src={item.thumbnailUrl || item.url} alt={item.title} className="h-full w-full object-cover" />

@@ -7,7 +7,14 @@ import { Menu, X, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
-const navItems = [
+type NavItem = {
+  label: string
+  href: string
+  /** 하위 항목이 없으면 드롭다운 없이 바로 이동하는 단독 메뉴가 된다 */
+  children?: { href: string; label: string }[]
+}
+
+const navItems: NavItem[] = [
   {
     label: '축제안내',
     href: '/about',
@@ -26,13 +33,18 @@ const navItems = [
     ],
   },
   {
+    // 축제 사진·영상은 홍보 효과가 큰데 커뮤니티 안에 묻혀 있었다.
+    // 읽는 곳(게시판·문의)과 성격도 달라서 최상위 단독 메뉴로 뺐다
+    label: '갤러리',
+    href: '/gallery',
+  },
+  {
     // 하위 항목 라벨은 각 페이지의 실제 제목과 동일하게 맞춘다.
-    // (보도자료는 홍보게시판 안의 탭, 사진/영상 구분은 갤러리 안의 필터로 제공하므로 메뉴에서 분리하지 않음)
+    // (보도자료는 홍보게시판 안의 탭으로 제공하므로 메뉴에서 분리하지 않음)
     label: '커뮤니티',
     href: '/notices',
     children: [
       { href: '/notices', label: '홍보게시판' },
-      { href: '/gallery', label: '갤러리' },
       { href: '/community', label: '자유게시판' },
       { href: '/inquiries', label: '문의하기' },
     ],
@@ -191,34 +203,39 @@ export function Header() {
                     )}
                   >
                     {item.label}
-                    <ChevronDown className={cn(
-                      'h-3 w-3 transition-transform',
-                      activeDropdown === item.label && 'rotate-180'
-                    )} />
+                    {/* 하위 항목이 있을 때만 펼침 표시를 붙인다 */}
+                    {item.children && (
+                      <ChevronDown className={cn(
+                        'h-3 w-3 transition-transform',
+                        activeDropdown === item.label && 'rotate-180'
+                      )} />
+                    )}
                   </Link>
 
                   {/* Dropdown */}
-                  <div
-                    className={cn(
-                      'absolute top-full left-0 w-48 bg-white border border-border rounded-lg shadow-xl transition-all duration-200',
-                      activeDropdown === item.label
-                        ? 'opacity-100 visible translate-y-0'
-                        : 'opacity-0 invisible -translate-y-2'
-                    )}
-                  >
-                    <ul className="py-2">
-                      {item.children.map((child) => (
-                        <li key={child.href}>
-                          <Link
-                            href={child.href}
-                            className="block px-4 py-2.5 text-sm text-foreground/80 hover:text-primary hover:bg-primary/5 transition-colors"
-                          >
-                            {child.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {item.children && (
+                    <div
+                      className={cn(
+                        'absolute top-full left-0 w-48 bg-white border border-border rounded-lg shadow-xl transition-all duration-200',
+                        activeDropdown === item.label
+                          ? 'opacity-100 visible translate-y-0'
+                          : 'opacity-0 invisible -translate-y-2'
+                      )}
+                    >
+                      <ul className="py-2">
+                        {item.children.map((child) => (
+                          <li key={child.href}>
+                            <Link
+                              href={child.href}
+                              className="block px-4 py-2.5 text-sm text-foreground/80 hover:text-primary hover:bg-primary/5 transition-colors"
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               ))}
             </nav>
@@ -277,22 +294,35 @@ export function Header() {
         <nav className="px-4 py-6">
           {navItems.map((item) => (
             <div key={item.href} className="border-b border-border">
-              <div className="py-3">
-                <span className="text-sm font-semibold text-foreground">{item.label}</span>
-              </div>
-              <ul className="pb-4 pl-4">
-                {item.children.map((child) => (
-                  <li key={child.href}>
-                    <Link
-                      href={child.href}
-                      className="block py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {child.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              {/* 하위 항목이 없는 메뉴는 제목 자체가 링크가 된다 (한 번에 이동) */}
+              {item.children ? (
+                <>
+                  <div className="py-3">
+                    <span className="text-sm font-semibold text-foreground">{item.label}</span>
+                  </div>
+                  <ul className="pb-4 pl-4">
+                    {item.children.map((child) => (
+                      <li key={child.href}>
+                        <Link
+                          href={child.href}
+                          className="block py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {child.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <Link
+                  href={item.href}
+                  className="block py-3 text-sm font-semibold text-foreground transition-colors hover:text-primary"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              )}
             </div>
           ))}
           <div className="mt-6">

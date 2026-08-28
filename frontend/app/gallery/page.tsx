@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
@@ -12,15 +12,21 @@ import {
   type GalleryFilterState,
 } from '@/components/gallery/gallery-filters'
 import { GalleryGrid } from '@/components/gallery/gallery-grid'
+import { GalleryPagination } from '@/components/gallery/gallery-pagination'
 import { GalleryLightbox, type LightboxItem } from '@/components/gallery/gallery-lightbox'
 import { GALLERY_CATEGORIES, GALLERY_TYPES, getTheaterGroupId, getTheaterGroupName } from '@/lib/gallery-taxonomy'
+
+/** 한 장에 보여줄 개수 (3열 기준 네 줄) */
+const ITEMS_PER_PAGE = 12
 
 export default function GalleryPage() {
   const [items, setItems] = useState<LightboxItem[]>([])
   // 사진·영상을 포함해 모든 조건은 '전체'로 시작한다. 먼저 다 보여주고 좁혀가는 방식
   const [filters, setFilters] = useState<GalleryFilterState>(emptyFilterState)
+  const [page, setPage] = useState(1)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+  const gridTopRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch('/api/gallery')
@@ -78,18 +84,35 @@ export default function GalleryPage() {
     [items, filters]
   )
 
+  // 한 화면에 너무 많이 깔리지 않도록 나눠 보여준다 (3열 기준 네 줄)
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE))
+  const pageItems = filteredItems.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+
+  // 조건을 바꾸면 결과가 달라지므로 첫 장으로 돌린다.
+  // 안 그러면 3페이지를 보던 중 조건을 바꿨을 때 빈 화면이 나온다
+  useEffect(() => {
+    setPage(1)
+  }, [filters])
+
+  const changePage = (next: number) => {
+    setPage(Math.min(Math.max(next, 1), totalPages))
+    setIsOpen(false)
+    // 페이지를 넘기면 목록 맨 위부터 보게 한다
+    gridTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const openLightbox = (item: LightboxItem) => {
-    setCurrentIndex(filteredItems.findIndex((candidate) => candidate._id === item._id))
+    setCurrentIndex(pageItems.findIndex((candidate) => candidate._id === item._id))
     setIsOpen(true)
   }
 
-  // 목록 끝에서 한 번 더 넘기면 처음으로 돌아간다
+  // 지금 보고 있는 페이지 안에서만 넘긴다. 끝에서 한 번 더 넘기면 처음으로 돌아간다
   const navigateLightbox = (direction: 'prev' | 'next') => {
-    if (filteredItems.length === 0) return
+    if (pageItems.length === 0) return
     setCurrentIndex((prev) => {
       const next = direction === 'prev' ? prev - 1 : prev + 1
-      if (next < 0) return filteredItems.length - 1
-      if (next >= filteredItems.length) return 0
+      if (next < 0) return pageItems.length - 1
+      if (next >= pageItems.length) return 0
       return next
     })
   }
@@ -106,6 +129,8 @@ export default function GalleryPage() {
         />
         <section className="py-16">
           <div className="container mx-auto px-4">
+            {/* 페이지를 넘겼을 때 되돌아올 기준점 */}
+            <div ref={gridTopRef} className="scroll-mt-36" />
             <GalleryFilters
               value={filters}
               onChange={(next) => {
@@ -125,7 +150,14 @@ export default function GalleryPage() {
                 {items.length === 0 ? '등록된 갤러리가 없습니다.' : '조건에 맞는 자료가 없습니다.'}
               </div>
             ) : (
-              <GalleryGrid items={filteredItems} onSelect={openLightbox} />
+              <>
+                <GalleryGrid items={pageItems} onSelect={openLightbox} />
+                <GalleryPagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onChange={changePage}
+                />
+              </>
             )}
           </div>
         </section>
@@ -133,9 +165,9 @@ export default function GalleryPage() {
       <Footer />
 
       <GalleryLightbox
-        item={isOpen ? filteredItems[currentIndex] ?? null : null}
+        item={isOpen ? pageItems[currentIndex] ?? null : null}
         index={currentIndex}
-        total={filteredItems.length}
+        total={pageItems.length}
         onClose={() => setIsOpen(false)}
         onNavigate={navigateLightbox}
       />

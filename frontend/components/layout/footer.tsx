@@ -13,7 +13,8 @@ const footerLinks = {
     { href: '/schedule', label: '공연일정' },
     { href: '/tickets', label: '예매안내' },
   ],
-  // 상단 메뉴와 동일한 라벨·구성을 유지한다 (헤더 navItems의 커뮤니티 항목과 일치)
+  // 갤러리는 상단 메뉴에서 단독 항목으로 뺐지만, 푸터는 전체 사이트맵 역할이라
+  // 링크를 빠뜨리지 않도록 여기에는 그대로 둔다
   community: [
     { href: '/notices', label: '홍보게시판' },
     { href: '/gallery', label: '갤러리' },
