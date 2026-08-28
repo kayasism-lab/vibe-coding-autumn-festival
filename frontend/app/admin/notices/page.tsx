@@ -200,18 +200,18 @@ export default function AdminNoticesPage() {
         <div className="p-6 lg:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">공지 관리</h1>
-              <p className="text-muted-foreground">공지사항을 관리합니다.</p>
+              <h1 className="text-2xl font-bold text-foreground">게시판 관리</h1>
+              <p className="text-muted-foreground">공지·이벤트·보도자료·미디어를 관리합니다.</p>
             </div>
             <Button onClick={() => openDialog()}>
               <Plus className="mr-2 h-4 w-4" />
-              공지 작성
+              글 작성
             </Button>
           </div>
 
           <div className="relative max-w-sm mb-6">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="공지사항 검색..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+            <Input placeholder="제목 검색..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
           </div>
 
           <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -230,7 +230,7 @@ export default function AdminNoticesPage() {
                 {isLoading ? (
                   <TableRow><TableCell colSpan={6} className="text-center py-8">불러오는 중...</TableCell></TableRow>
                 ) : filteredNotices.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8">등록된 공지가 없습니다.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-8">등록된 글이 없습니다.</TableCell></TableRow>
                 ) : filteredNotices.map((notice) => (
                   <TableRow key={notice._id}>
                     <TableCell>{notice.isPinned && <Pin className="h-4 w-4 text-primary" />}</TableCell>
@@ -256,8 +256,8 @@ export default function AdminNoticesPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingNotice ? '공지 수정' : '공지 작성'}</DialogTitle>
-            <DialogDescription>공지사항 정보를 입력하세요.</DialogDescription>
+            <DialogTitle>{editingNotice ? '글 수정' : '글 작성'}</DialogTitle>
+            <DialogDescription>게시글 정보를 입력하세요.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {/* 보도자료·미디어를 올릴 때만 쓰는 기능이라 그 종류에서만 보여준다 */}
@@ -351,7 +351,7 @@ export default function AdminNoticesPage() {
                 multiple
                 maxFiles={8}
                 folder="autumn_festival/notices"
-                placeholder="공지 이미지 업로드"
+                placeholder="이미지 업로드"
               />
             </Field>
             {/* 불러오기로 채워지지만, 손으로 고치거나 지울 수 있어야 한다 */}

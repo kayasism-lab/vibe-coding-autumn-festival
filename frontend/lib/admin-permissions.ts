@@ -47,8 +47,8 @@ export const GROUP_PERMISSION_META: PermissionMeta[] = [
   },
   {
     key: 'notices',
-    label: '공지·홍보 관리',
-    description: '홍보게시판 글을 작성하고 수정합니다. (삭제는 관리자만)',
+    label: '게시판 관리',
+    description: '공지·이벤트·보도자료·미디어 글을 작성하고 수정합니다. (삭제는 관리자만)',
     grantable: true,
   },
   {

@@ -32,7 +32,7 @@ const fullSidebarItems = [
   { href: '/admin/venues', icon: MapPin, label: '공연장 관리' },
   { href: '/admin/applications', icon: ClipboardList, label: '참가 신청 관리' },
   { href: '/admin/citizen-applications', icon: ClipboardList, label: '시민 참여 신청 관리' },
-  { href: '/admin/notices', icon: FileText, label: '공지 관리' },
+  { href: '/admin/notices', icon: FileText, label: '게시판 관리' },
   { href: '/admin/inquiries', icon: MessageSquare, label: '문의 관리' },
   { href: '/admin/gallery', icon: Images, label: '갤러리 관리' },
   { href: '/admin/sponsors', icon: Building2, label: '후원사 관리' },
@@ -47,7 +47,7 @@ const groupMenuByPermission: Record<GroupPermission, { href: string; icon: typeo
   programs: { href: '/admin/programs', icon: Film, label: '작품 관리' },
   schedules: { href: '/admin/schedules', icon: Calendar, label: '공연 일정 관리' },
   gallery: { href: '/admin/gallery', icon: Images, label: '갤러리 관리' },
-  notices: { href: '/admin/notices', icon: FileText, label: '공지·홍보 관리' },
+  notices: { href: '/admin/notices', icon: FileText, label: '게시판 관리' },
   inquiries: { href: '/admin/inquiries', icon: MessageSquare, label: '문의 답변' },
 }
 

@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
       const [programs, schedules, notices, inquiries, pendingInquiries] = await Promise.all([
         getData<{ _id: string }[]>('/api/programs'),
         getData<FestivalSchedule[]>('/api/schedules'),
-        // 관리자 공지 화면이 종류를 가리지 않고 전부 다루므로 여기서도 같은 기준으로 센다
+        // 게시판 관리 화면이 종류를 가리지 않고 전부 다루므로 여기서도 같은 기준으로 센다
         getData<{ items: RecentNotice[]; total: number }>('/api/notices?limit=3'),
         getData<{ items: RecentInquiry[]; total: number }>('/api/inquiries?limit=3'),
         getData<{ total: number }>('/api/inquiries?status=pending&limit=1'),
@@ -95,7 +95,7 @@ export default function AdminDashboardPage() {
   const stats = [
     { label: '전체 프로그램', value: data.programCount, icon: Film, href: '/admin/programs' },
     { label: '예정된 공연', value: data.upcomingCount, icon: Calendar, href: '/admin/schedules' },
-    { label: '공지사항', value: data.noticeCount, icon: FileText, href: '/admin/notices' },
+    { label: '게시글', value: data.noticeCount, icon: FileText, href: '/admin/notices' },
     {
       label: '문의 (미답변)',
       value: data.pendingInquiryCount,
@@ -198,16 +198,16 @@ export default function AdminDashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  최근 공지
+                  최근 게시글
                 </CardTitle>
-                <CardDescription>최근 등록된 공지사항입니다.</CardDescription>
+                <CardDescription>공지·보도 게시판에 최근 올라온 글입니다.</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
                   <p className="py-6 text-center text-sm text-muted-foreground">불러오는 중…</p>
                 ) : data.recentNotices.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted-foreground">
-                    등록된 공지가 없습니다.
+                    등록된 글이 없습니다.
                   </p>
                 ) : (
                   <ul className="space-y-4">
@@ -254,7 +254,7 @@ export default function AdminDashboardPage() {
                 {[
                   { href: '/admin/programs', icon: Film, label: '프로그램 관리' },
                   { href: '/admin/schedules', icon: Calendar, label: '일정 관리' },
-                  { href: '/admin/notices', icon: FileText, label: '공지 작성' },
+                  { href: '/admin/notices', icon: FileText, label: '게시판 관리' },
                   { href: '/admin/inquiries', icon: MessageSquare, label: '문의 답변' },
                 ].map((action) => {
                   const Icon = action.icon
