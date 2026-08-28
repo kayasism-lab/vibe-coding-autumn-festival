@@ -4,7 +4,8 @@ import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
 import { NoticeBoard } from '@/components/notices/notice-board'
-import { PRESS_BOARD_CATEGORIES } from '@/lib/notice-board'
+import { BoardCrossLink } from '@/components/notices/board-cross-link'
+import { NOTICE_BOARD_CATEGORIES, PRESS_BOARD_CATEGORIES } from '@/lib/notice-board'
 
 /**
  * 보도·미디어 게시판.
@@ -30,6 +31,15 @@ export default function PressPage() {
             />
           </div>
         </section>
+
+        {/* 반대쪽도 같은 자리에서 오갈 수 있게 둔다 */}
+        <BoardCrossLink
+          categories={NOTICE_BOARD_CATEGORIES}
+          heading="공지사항"
+          description="축제 진행에 관한 안내와 소식입니다."
+          href="/notices"
+          linkLabel="전체 보기"
+        />
       </main>
       <Footer />
     </>
