@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table'
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { ProgramFormDialog, type ProgramForm } from '@/components/admin/program-form-dialog'
+import { CENTER_FOCUS } from '@/lib/image-focus'
 
 type Program = {
   _id: string
@@ -33,6 +34,7 @@ type Program = {
   openForApplication: boolean
   order: number
   posterUrl?: string
+  posterFocus?: { x: number; y: number }
   ticketUrl?: string
   cast: string[]
   galleryUrls: string[]
@@ -55,6 +57,7 @@ const emptyForm: ProgramForm = {
   openForApplication: false,
   order: 0,
   posterUrl: '',
+  posterFocus: CENTER_FOCUS,
   ticketUrl: '',
   castText: '',
   galleryUrls: [],
@@ -130,6 +133,8 @@ export default function AdminProgramsPage() {
             openForApplication: program.openForApplication,
             order: program.order,
             posterUrl: program.posterUrl || '',
+            // 예전에 등록한 작품은 이 값이 없어 가운데로 본다 (지금까지의 모습 그대로)
+            posterFocus: program.posterFocus || CENTER_FOCUS,
             ticketUrl: program.ticketUrl || '',
             castText: program.cast.join('\n'),
             galleryUrls: program.galleryUrls,
@@ -167,6 +172,8 @@ export default function AdminProgramsPage() {
     openForApplication: form.openForApplication,
     order: form.order,
     posterUrl: form.posterUrl || undefined,
+    // 포스터가 없으면 위치도 의미가 없다
+    posterFocus: form.posterUrl ? (form.posterFocus ?? CENTER_FOCUS) : undefined,
     ticketUrl: form.ticketUrl || undefined,
     cast: form.castText.split('\n').map((item) => item.trim()).filter(Boolean),
     galleryUrls: form.galleryUrls,

@@ -18,6 +18,12 @@ const ProgramSchema = new Schema<IProgram>(
     runtime: { type: Number, required: true },
     synopsis: { type: String, required: true },
     posterUrl: { type: String },
+    // 홈 카드는 가로로 길어 세로 포스터의 위아래가 잘린다.
+    // 관리자가 드래그로 정한 중심점을 담아 화면에서 object-position으로 쓴다.
+    posterFocus: {
+      x: { type: Number, min: 0, max: 100 },
+      y: { type: Number, min: 0, max: 100 },
+    },
     galleryUrls: [{ type: String }],
     // 축제 팜플렛(리플렛) 스캔 이미지 - 공연 사진(galleryUrls)과는 별개
     pamphletUrls: [{ type: String }],

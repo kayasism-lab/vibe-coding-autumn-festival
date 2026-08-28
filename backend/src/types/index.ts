@@ -17,6 +17,9 @@ export interface IProgram extends Document {
   runtime: number
   synopsis: string
   posterUrl?: string
+  // 홈 화면 카드처럼 가로로 긴 자리에 포스터를 넣을 때 어느 지점을 중심에 둘지.
+  // 0~100(%) 좌표이며, 값이 없으면 가운데(50/50)로 본다.
+  posterFocus?: { x: number; y: number }
   galleryUrls: string[]
   // 축제 팜플렛(리플렛) 스캔 이미지 - 공연 사진(galleryUrls)과는 별개
   pamphletUrls: string[]

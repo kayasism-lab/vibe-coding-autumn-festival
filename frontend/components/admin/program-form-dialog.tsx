@@ -1,6 +1,8 @@
 'use client'
 
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
+import { ImageFocusPicker } from '@/components/admin/image-focus-picker'
+import { CENTER_FOCUS, HOME_CARD_RATIO, type ImageFocus } from '@/lib/image-focus'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -35,6 +37,8 @@ export interface ProgramForm {
   openForApplication: boolean
   order: number
   posterUrl?: string
+  // 홈 카드에서 포스터의 어느 부분을 보여줄지 (0~100%)
+  posterFocus?: ImageFocus
   ticketUrl?: string
   castText: string
   galleryUrls: string[]
@@ -158,12 +162,27 @@ export function ProgramFormDialog({
           <Field label="포스터 이미지">
             <CloudinaryUpload
               value={form.posterUrl}
-              onChange={(posterUrl) => onFormChange({ ...form, posterUrl: posterUrl as string })}
+              onChange={(posterUrl) =>
+                // 다른 이미지로 바꾸면 이전 이미지 기준으로 맞춰둔 위치는 의미가 없으므로 되돌린다
+                onFormChange({ ...form, posterUrl: posterUrl as string, posterFocus: CENTER_FOCUS })
+              }
               folder="autumn_festival/programs/posters"
               placeholder="포스터 이미지 업로드"
               aspectRatio={3 / 4}
             />
           </Field>
+          {/* 홈 카드는 가로로 길어 세로 포스터의 위아래가 잘린다. 어디를 보여줄지 직접 정한다 */}
+          {form.posterUrl && (
+            <Field label="홈 화면 카드에 보일 위치">
+              <ImageFocusPicker
+                src={form.posterUrl}
+                ratio={HOME_CARD_RATIO}
+                value={form.posterFocus}
+                onChange={(posterFocus) => onFormChange({ ...form, posterFocus })}
+                hint="홈 '참여 극단 & 공연' 카드에 이대로 보입니다. 원본 포스터는 그대로 보관됩니다."
+              />
+            </Field>
+          )}
           <Field label="예매 URL"><Input value={form.ticketUrl} onChange={(e) => onFormChange({ ...form, ticketUrl: e.target.value })} /></Field>
           <Field label="공연 갤러리 이미지">
             <CloudinaryUpload

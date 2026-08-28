@@ -6,6 +6,8 @@ import { ArrowRight, Calendar, Sparkles, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
+import { ProgramPeriod } from '@/components/shared/program-period'
+import { toObjectPosition, type ImageFocus } from '@/lib/image-focus'
 
 type Program = {
   _id: string
@@ -15,6 +17,13 @@ type Program = {
   venue: string
   venueAddress?: string
   posterUrl?: string
+  posterFocus?: ImageFocus
+}
+
+/** /api/schedules 응답 중 공연 기간 계산에 필요한 부분만 */
+type RawSchedule = {
+  date: string
+  programId: { _id: string } | null
 }
 
 const typeLabels: Record<Program['type'], { text: string; style: string }> = {
@@ -34,12 +43,35 @@ const cardStyles = [
 
 export function PerformanceNews() {
   const [programs, setPrograms] = useState<Program[]>([])
+  // 키는 프로그램 id, 값은 그 공연의 회차 날짜 목록
+  const [datesByProgram, setDatesByProgram] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
     fetch('/api/programs')
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setPrograms(data.data.slice(0, 6))
+      })
+  }, [])
+
+  // 공연 기간은 프로그램이 아니라 회차(일정)에 들어 있어 따로 불러와 프로그램별로 묶는다.
+  // 목록 페이지(/programs)와 같은 방식이라 두 화면의 기간 표기가 항상 일치한다
+  useEffect(() => {
+    fetch('/api/schedules')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) return
+        const grouped: Record<string, string[]> = {}
+        for (const schedule of data.data as RawSchedule[]) {
+          const programId = schedule.programId?._id
+          if (!programId) continue // 연결된 프로그램이 지워진 경우 방어
+          if (!grouped[programId]) grouped[programId] = []
+          grouped[programId].push(schedule.date)
+        }
+        setDatesByProgram(grouped)
+      })
+      .catch(() => {
+        // 회차를 못 받으면 '일정 준비 중'으로 남을 뿐 카드는 그대로 나온다
       })
   }, [])
 
@@ -66,7 +98,13 @@ export function PerformanceNews() {
                   <article className={`${style.bgColor} overflow-hidden rounded-2xl border border-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}>
                     <div className={`relative h-32 overflow-hidden bg-gradient-to-br ${style.color}`}>
                       {program.posterUrl ? (
-                        <img src={program.posterUrl} alt={program.title} className="h-full w-full object-cover opacity-80" />
+                        <img
+                          src={program.posterUrl}
+                          alt={program.title}
+                          // 카드가 가로로 길어 세로 포스터는 잘린다. 관리자가 정해둔 지점을 중심에 둔다
+                          style={{ objectPosition: toObjectPosition(program.posterFocus) }}
+                          className="h-full w-full object-cover opacity-80"
+                        />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Users className="h-16 w-16 text-white/30" />
@@ -90,10 +128,15 @@ export function PerformanceNews() {
                         {program.title}
                       </h3>
                       <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>일정 준비 중</span>
-                        </div>
+                        {/* 등록된 회차가 있으면 그 기간을, 아직 없으면 준비 중으로 알린다 */}
+                        {(datesByProgram[program._id]?.length ?? 0) > 0 ? (
+                          <ProgramPeriod dates={datesByProgram[program._id]} />
+                        ) : (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>일정 준비 중</span>
+                          </div>
+                        )}
                         {/* 카드 전체가 링크라 지도 버튼·주소는 클릭 전파를 막고 동작한다 */}
                         <div className="flex items-start gap-2 text-muted-foreground">
                           <span className="mt-0.5 flex-shrink-0">
