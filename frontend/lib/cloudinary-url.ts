@@ -40,17 +40,22 @@ function withTransform(url: string, preset: Preset): string {
   return `${head}/upload/${buildTransform(preset)}/${tail}`
 }
 
-/** 목록 칸에 쓰는 크기. 4:3 자리에 맞춰 잘라 담는다 */
+/**
+ * 크기를 정할 때는 화면에 보이는 크기의 두 배를 기준으로 삼는다.
+ * 요즘 노트북·휴대폰은 픽셀 밀도가 두 배여서, 보이는 만큼만 받으면 흐릿하게 보인다.
+ */
+
+/** 목록 칸. 홈의 큰 칸(가로 850px 자리)까지 감당하도록 넉넉히 잡았다 */
 export function toThumbnailUrl(url: string): string {
-  return withTransform(url, { width: 800, crop: { height: 600 } })
+  return withTransform(url, { width: 1000, crop: { height: 750 } })
 }
 
-/** 작은 미리보기(크게 보기 아래 필름처럼 늘어놓는 줄) */
+/** 크게 보기 아래에 늘어놓는 작은 사진. 칸이 56px이라 이 정도면 넉넉하다 */
 export function toMiniUrl(url: string): string {
   return withTransform(url, { width: 200, crop: { height: 200 } })
 }
 
-/** 크게 볼 때. 원래 비율을 지키면서 폭만 제한한다 */
+/** 크게 볼 때. 가로 1024px 자리를 픽셀 밀도 두 배 화면에서 봐도 또렷한 크기 */
 export function toLargeUrl(url: string): string {
-  return withTransform(url, { width: 1600 })
+  return withTransform(url, { width: 2400 })
 }
