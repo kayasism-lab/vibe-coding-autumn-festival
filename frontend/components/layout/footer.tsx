@@ -16,7 +16,8 @@ const footerLinks = {
   // 갤러리는 상단 메뉴에서 단독 항목으로 뺐지만, 푸터는 전체 사이트맵 역할이라
   // 링크를 빠뜨리지 않도록 여기에는 그대로 둔다
   community: [
-    { href: '/notices', label: '홍보게시판' },
+    { href: '/notices', label: '공지사항' },
+    { href: '/press', label: '보도 · 미디어' },
     { href: '/gallery', label: '갤러리' },
     { href: '/community', label: '자유게시판' },
     { href: '/inquiries', label: '문의하기' },

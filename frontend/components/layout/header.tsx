@@ -40,11 +40,12 @@ const navItems: NavItem[] = [
   },
   {
     // 하위 항목 라벨은 각 페이지의 실제 제목과 동일하게 맞춘다.
-    // (보도자료는 홍보게시판 안의 탭으로 제공하므로 메뉴에서 분리하지 않음)
+    // 공지사항과 보도·미디어는 성격이 달라 페이지를 나눴다
     label: '커뮤니티',
     href: '/notices',
     children: [
-      { href: '/notices', label: '홍보게시판' },
+      { href: '/notices', label: '공지사항' },
+      { href: '/press', label: '보도 · 미디어' },
       { href: '/community', label: '자유게시판' },
       { href: '/inquiries', label: '문의하기' },
     ],

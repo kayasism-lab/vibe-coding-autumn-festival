@@ -63,6 +63,8 @@ export interface INotice extends Document {
   content: string
   category: NoticeCategory
   imageUrls: string[]
+  // 실제로 알려진 날짜. 예전 보도를 뒤늦게 올릴 때를 위해 등록 시각과 따로 둔다
+  publishedAt: Date
   isPinned: boolean
   viewCount: number
   createdAt: Date

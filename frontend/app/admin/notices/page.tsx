@@ -43,6 +43,7 @@ type Notice = {
   imageUrls: string[]
   isPinned: boolean
   viewCount: number
+  publishedAt?: string
   createdAt: string
 }
 
@@ -52,6 +53,29 @@ type NoticeForm = {
   category: Notice['category']
   imageUrls: string[]
   isPinned: boolean
+  /** 'YYYY-MM-DD'. 예전 보도를 뒤늦게 올릴 때 그 시절 날짜를 넣는다 */
+  publishedAt: string
+}
+
+/** 오늘 날짜를 'YYYY-MM-DD'로 (한국 시각 기준) */
+function todayInKst(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
+/** 저장된 값을 날짜 입력칸에 넣을 모양으로 (한국 시각 기준) */
+function toDateInput(value?: string): string {
+  if (!value) return todayInKst()
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(value))
 }
 
 const emptyForm: NoticeForm = {
@@ -60,6 +84,7 @@ const emptyForm: NoticeForm = {
   category: 'notice',
   imageUrls: [],
   isPinned: false,
+  publishedAt: '',
 }
 
 const categoryLabels = {
@@ -108,8 +133,10 @@ export default function AdminNoticesPage() {
             category: notice.category,
             imageUrls: notice.imageUrls,
             isPinned: notice.isPinned,
+            publishedAt: toDateInput(notice.publishedAt ?? notice.createdAt),
           }
-        : emptyForm
+        // 새 글은 오늘 날짜로 시작한다. 예전 보도라면 관리자가 날짜를 바꾸면 된다
+        : { ...emptyForm, publishedAt: todayInKst() }
     )
     setIsDialogOpen(true)
   }
@@ -123,6 +150,9 @@ export default function AdminNoticesPage() {
         category: form.category,
         isPinned: form.isPinned,
         imageUrls: form.imageUrls,
+        // 날짜만 받으므로 한국 시각 정오로 저장한다.
+        // 자정으로 두면 시간대 차이로 하루 앞뒤가 밀려 보일 수 있다
+        publishedAt: form.publishedAt ? `${form.publishedAt}T12:00:00+09:00` : undefined,
       }
       const res = await fetch(editingNotice ? `/api/notices/${editingNotice._id}` : '/api/notices', {
         method: editingNotice ? 'PUT' : 'POST',
@@ -189,7 +219,8 @@ export default function AdminNoticesPage() {
                     <TableCell className="font-medium">{notice.title}</TableCell>
                     <TableCell><Badge variant="outline">{categoryLabels[notice.category]}</Badge></TableCell>
                     <TableCell><span className="inline-flex items-center gap-1 text-muted-foreground"><Eye className="h-3 w-3" />{notice.viewCount}</span></TableCell>
-                    <TableCell>{new Date(notice.createdAt).toLocaleDateString('ko-KR')}</TableCell>
+                    {/* 예전 보도는 등록 시각이 아니라 실제 보도된 날짜를 보여준다 */}
+                    <TableCell>{new Date(notice.publishedAt ?? notice.createdAt).toLocaleDateString('ko-KR')}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" onClick={() => openDialog(notice)}><Pencil className="h-4 w-4" /></Button>
                       {!isGroupAccount && (
@@ -225,6 +256,18 @@ export default function AdminNoticesPage() {
                 </Select>
               </Field>
             </div>
+            <Field label="날짜">
+              <Input
+                type="date"
+                value={form.publishedAt}
+                onChange={(e) => setForm({ ...form, publishedAt: e.target.value })}
+              />
+              {/* 예전 보도를 참고용으로 지금 올릴 수 있어야 해서 날짜를 직접 고르게 한다 */}
+              <p className="text-xs text-muted-foreground">
+                목록에 표시되고 정렬 기준이 되는 날짜입니다. 예전 보도자료를 올릴 때는 실제
+                보도된 날짜로 바꿔주세요.
+              </p>
+            </Field>
             <Field label="내용"><Textarea rows={8} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} /></Field>
             <Field label="첨부 이미지">
               <CloudinaryUpload
