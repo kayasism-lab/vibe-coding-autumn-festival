@@ -30,8 +30,7 @@ export default function GalleryPage() {
   // 사진·영상을 포함해 모든 조건은 '전체'로 시작한다. 먼저 다 보여주고 좁혀가는 방식
   const [filters, setFilters] = useState<GalleryFilterState>(emptyFilterState)
   const [page, setPage] = useState(1)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isOpen, setIsOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<LightboxItem | null>(null)
   const gridTopRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -103,26 +102,13 @@ export default function GalleryPage() {
 
   const changePage = (next: number) => {
     setPage(Math.min(Math.max(next, 1), totalPages))
-    setIsOpen(false)
+    setSelectedItem(null)
     // 페이지를 넘기면 목록 맨 위부터 보게 한다
     gridTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const openLightbox = (item: LightboxItem) => {
-    setCurrentIndex(pageItems.findIndex((candidate) => candidate._id === item._id))
-    setIsOpen(true)
-  }
-
-  // 지금 보고 있는 페이지 안에서만 넘긴다. 끝에서 한 번 더 넘기면 처음으로 돌아간다
-  const navigateLightbox = (direction: 'prev' | 'next') => {
-    if (pageItems.length === 0) return
-    setCurrentIndex((prev) => {
-      const next = direction === 'prev' ? prev - 1 : prev + 1
-      if (next < 0) return pageItems.length - 1
-      if (next >= pageItems.length) return 0
-      return next
-    })
-  }
+  // 크게 보기는 고른 자료 하나만 다룬다. 그 안의 사진 넘기기는 창이 알아서 한다
+  const openLightbox = (item: LightboxItem) => setSelectedItem(item)
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -143,7 +129,7 @@ export default function GalleryPage() {
               onChange={(next) => {
                 setFilters(next)
                 // 조건이 바뀌면 목록 순서가 달라지므로 크게 보기를 닫는다
-                setIsOpen(false)
+                setSelectedItem(null)
               }}
               typeOptions={typeOptions}
               categoryOptions={categoryOptions}
@@ -171,13 +157,7 @@ export default function GalleryPage() {
       </main>
       <Footer />
 
-      <GalleryLightbox
-        item={isOpen ? pageItems[currentIndex] ?? null : null}
-        index={currentIndex}
-        total={pageItems.length}
-        onClose={() => setIsOpen(false)}
-        onNavigate={navigateLightbox}
-      />
+      <GalleryLightbox item={selectedItem} onClose={() => setSelectedItem(null)} />
     </div>
   )
 }

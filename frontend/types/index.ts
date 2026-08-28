@@ -91,6 +91,8 @@ export interface IGallery {
   type: GalleryType
   category: GalleryCategory
   url: string
+  /** 사진 여러 장을 한 항목으로 묶는다 (첫 장이 대표) */
+  images?: string[]
   thumbnailUrl?: string
   programId?: string
   // 목록 API는 이름을 채워서 내려주고, 저장할 때는 ID 문자열만 보낸다

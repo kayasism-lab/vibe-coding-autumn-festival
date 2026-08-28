@@ -9,6 +9,7 @@ import { VideoUrlHint } from '@/components/admin/video-url-hint'
 import {
   GALLERY_CATEGORIES,
   getGalleryCategoryLabel,
+  getGalleryImages,
   getTheaterGroupId,
   getTheaterGroupName,
   sortGalleryLatestFirst,
@@ -44,6 +45,7 @@ type GalleryItem = {
   type: 'photo' | 'video'
   category?: GalleryCategory
   url: string
+  images?: string[]
   thumbnailUrl?: string
   theaterGroup?: GalleryTheaterGroup
   order: number
@@ -57,7 +59,10 @@ type GalleryForm = {
   description: string
   type: GalleryItem['type']
   category: GalleryCategory
+  /** 영상 주소 (사진일 때는 images의 첫 장이 들어간다) */
   url: string
+  /** 사진 여러 장 */
+  images: string[]
   thumbnailUrl: string
   /** 빈 문자열이면 '지정 안 함' */
   theaterGroupId: string
@@ -70,6 +75,7 @@ const emptyForm: GalleryForm = {
   type: 'photo',
   category: 'festival',
   url: '',
+  images: [],
   thumbnailUrl: '',
   theaterGroupId: '',
   order: 0,
@@ -147,6 +153,8 @@ export default function AdminGalleryPage() {
             type: item.type,
             category: item.category ?? 'etc',
             url: item.url,
+            // 예전 자료는 url 하나뿐이라 그 값을 한 장짜리 목록으로 본다
+            images: getGalleryImages(item),
             thumbnailUrl: item.thumbnailUrl || '',
             theaterGroupId: getTheaterGroupId(item.theaterGroup),
             order: item.order,
@@ -170,7 +178,10 @@ export default function AdminGalleryPage() {
           category: form.category,
           // '지정 안 함'으로 되돌린 것을 서버에 전하려면 null을 명시해야 한다
           theaterGroup: form.theaterGroupId || null,
-          url: form.url,
+          // 사진은 첫 장을 대표(url)로 함께 저장한다.
+          // 목록·미리보기 등 예전부터 url을 보던 화면이 그대로 동작하도록
+          url: form.type === 'photo' ? form.images[0] ?? '' : form.url,
+          images: form.type === 'photo' ? form.images : [],
           // 사진은 올린 이미지를 그대로 쓰므로 썸네일을 비운다.
           // undefined로 보내면 JSON에서 아예 빠져 서버가 기존 값을 유지하므로 null을 명시해야 지워진다
           thumbnailUrl: form.type === 'video' ? form.thumbnailUrl || null : null,
@@ -352,13 +363,20 @@ export default function AdminGalleryPage() {
             {/* 사진은 올린 이미지가 곧 썸네일이라 따로 받지 않는다.
                 영상은 이미지가 없으므로 영상 주소에서 뽑아낸 후보 중에서 고르게 한다 */}
             {form.type === 'photo' ? (
-              <Field label="사진 이미지">
+              <Field label="사진">
                 <CloudinaryUpload
-                  value={form.url}
-                  onChange={(url) => setForm({ ...form, url: url as string })}
+                  value={form.images}
+                  onChange={(images) => setForm({ ...form, images: images as string[] })}
+                  multiple
+                  maxFiles={20}
                   folder="autumn_festival/gallery"
                   placeholder="갤러리 사진 업로드"
                 />
+                <p className="text-xs text-muted-foreground">
+                  여러 장을 올리면 목록에는 <strong className="font-medium">첫 번째 사진</strong>만
+                  보이고, 눌러서 크게 보면 나머지를 넘겨볼 수 있습니다. 큰 사진은 올릴 때 자동으로
+                  줄여 저장합니다.
+                </p>
               </Field>
             ) : (
               <>

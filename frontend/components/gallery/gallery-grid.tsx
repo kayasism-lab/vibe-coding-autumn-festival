@@ -1,7 +1,12 @@
 'use client'
 
-import { Play } from 'lucide-react'
-import { getGalleryCategoryLabel, getTheaterGroupName } from '@/lib/gallery-taxonomy'
+import { Images, Play } from 'lucide-react'
+import {
+  getGalleryCategoryLabel,
+  getGalleryImages,
+  getTheaterGroupName,
+} from '@/lib/gallery-taxonomy'
+import { toThumbnailUrl } from '@/lib/cloudinary-url'
 import type { LightboxItem } from './gallery-lightbox'
 
 interface GalleryGridProps {
@@ -21,6 +26,7 @@ export function GalleryGrid({ items, onSelect }: GalleryGridProps) {
     <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
       {items.map((item) => {
         const groupName = getTheaterGroupName(item.theaterGroup)
+        const photoCount = getGalleryImages(item).length
         return (
           <button
             key={item._id}
@@ -31,7 +37,8 @@ export function GalleryGrid({ items, onSelect }: GalleryGridProps) {
                 (인스타그램처럼 썸네일을 자동으로 가져올 수 없는 곳이 있다) */}
             {item.type === 'photo' || item.thumbnailUrl ? (
               <img
-                src={item.thumbnailUrl || item.url}
+                // 목록 칸 크기에 맞춰 줄인 이미지를 받는다. 원본은 그대로 보관된다
+                src={toThumbnailUrl(item.thumbnailUrl || item.url)}
                 alt={item.title}
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -53,6 +60,14 @@ export function GalleryGrid({ items, onSelect }: GalleryGridProps) {
             {item.type === 'video' && (
               <span className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform group-hover:scale-110">
                 <Play className="ml-0.5 h-5 w-5 text-primary" />
+              </span>
+            )}
+
+            {/* 여러 장이 묶여 있다는 표시. 누르면 더 있다는 것을 미리 알린다 */}
+            {photoCount > 1 && (
+              <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+                <Images className="h-3.5 w-3.5" />
+                {photoCount}
               </span>
             )}
           </button>

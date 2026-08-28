@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, ExternalLink, Info, Play, X } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { getProviderLabel, getVideoEmbedUrl } from '@/lib/video-thumbnail'
-import { getGalleryCategoryLabel, getTheaterGroupName } from '@/lib/gallery-taxonomy'
+import {
+  getGalleryCategoryLabel,
+  getGalleryImages,
+  getTheaterGroupName,
+} from '@/lib/gallery-taxonomy'
+import { toLargeUrl, toMiniUrl } from '@/lib/cloudinary-url'
 import type { GalleryCategory } from '@/types'
 import type { GalleryTheaterGroup } from '@/lib/gallery-taxonomy'
 
@@ -15,6 +20,7 @@ export type LightboxItem = {
   description?: string
   category?: GalleryCategory
   url: string
+  images?: string[]
   thumbnailUrl?: string
   theaterGroup?: GalleryTheaterGroup
   order?: number
@@ -23,42 +29,47 @@ export type LightboxItem = {
 
 interface GalleryLightboxProps {
   item: LightboxItem | null
-  index: number
-  total: number
   onClose: () => void
-  onNavigate: (direction: 'prev' | 'next') => void
 }
 
 /**
  * 사진·영상 크게 보기.
  *
- * 설명은 사진을 가리지 않도록 아래에 따로 놓는다. 대신 사진만 보고 싶을 때를 위해
- * 사진을 탭하면 설명이 접히고 다시 탭하면 펼쳐진다.
- * 영상은 탭이 재생 조작이므로 이 토글을 걸지 않는다.
+ * 화살표는 '지금 보고 있는 자료 안의 사진'을 넘긴다. 다른 자료로 건너뛰지 않는다.
+ * 공연 사진 다섯 장을 보다가 갑자기 다른 극단 사진이 나오면 맥락이 끊기기 때문이다.
+ * 다른 자료는 창을 닫고 목록에서 고르면 된다.
+ *
+ * 설명은 사진을 가리지 않도록 아래에 놓고, 사진만 보고 싶을 때는 탭으로 접을 수 있다.
  */
-export function GalleryLightbox({ item, index, total, onClose, onNavigate }: GalleryLightboxProps) {
+export function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
+  const [photoIndex, setPhotoIndex] = useState(0)
   const [isCaptionVisible, setIsCaptionVisible] = useState(true)
 
-  // 다른 자료로 넘어가면 접어둔 설명을 다시 펴준다
+  const photos = item ? getGalleryImages(item) : []
+  const hasMultiple = photos.length > 1
+
+  // 다른 자료를 열면 첫 장부터, 접어둔 설명도 다시 펴준다
   useEffect(() => {
+    setPhotoIndex(0)
     setIsCaptionVisible(true)
   }, [item?._id])
 
-  // 사진첩을 넘기듯 좌우 키로도 이동할 수 있게 한다
+  // 사진첩을 넘기듯 좌우 키로도 넘길 수 있게 한다
   useEffect(() => {
-    if (!item) return
+    if (!item || !hasMultiple) return
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') onNavigate('prev')
-      if (event.key === 'ArrowRight') onNavigate('next')
+      if (event.key === 'ArrowLeft') setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)
+      if (event.key === 'ArrowRight') setPhotoIndex((i) => (i + 1) % photos.length)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [item, onNavigate])
+  }, [item, hasMultiple, photos.length])
 
   const embedUrl = item && item.type === 'video' ? getVideoEmbedUrl(item.url) : null
   // 영상인데 사이트 안에서 재생할 수 없으면 원본으로 보내야 한다
   const isExternal = !!item && item.type === 'video' && !embedUrl
   const providerLabel = item ? getProviderLabel(item.url) : ''
+
   const groupName = getTheaterGroupName(item?.theaterGroup)
   const meta = item
     ? [
@@ -84,30 +95,29 @@ export function GalleryLightbox({ item, index, total, onClose, onNavigate }: Gal
               <X className="h-5 w-5" />
             </button>
 
-            {total > 1 && (
+            {hasMultiple && (
               <>
                 <button
-                  onClick={() => onNavigate('prev')}
-                  aria-label="이전"
+                  onClick={() => setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)}
+                  aria-label="이전 사진"
                   className="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-black/60 sm:left-4 sm:h-11 sm:w-11"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
                 <button
-                  onClick={() => onNavigate('next')}
-                  aria-label="다음"
+                  onClick={() => setPhotoIndex((i) => (i + 1) % photos.length)}
+                  aria-label="다음 사진"
                   className="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-black/60 sm:right-4 sm:h-11 sm:w-11"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
                 <span className="absolute left-3 top-3 z-10 rounded-full bg-black/40 px-3 py-1 text-xs text-white backdrop-blur">
-                  {index + 1} / {total}
+                  {photoIndex + 1} / {photos.length}
                 </span>
               </>
             )}
 
             {embedUrl ? (
-              // 릴스처럼 세로로 긴 영상은 16:9 틀에 넣으면 위아래가 잘린다
               <div className="aspect-video">
                 <iframe
                   src={embedUrl}
@@ -118,8 +128,7 @@ export function GalleryLightbox({ item, index, total, onClose, onNavigate }: Gal
                 />
               </div>
             ) : isExternal ? (
-              // 사이트 안에서 재생할 수 없는 영상(인스타그램 등).
-              // 대표 이미지를 보여주고 누르면 원본에서 재생하도록 보낸다
+              // 사이트 안에서 재생할 수 없는 영상(인스타그램 등)
               <a
                 href={item.url}
                 target="_blank"
@@ -128,7 +137,7 @@ export function GalleryLightbox({ item, index, total, onClose, onNavigate }: Gal
               >
                 {item.thumbnailUrl ? (
                   <img
-                    src={item.thumbnailUrl}
+                    src={toLargeUrl(item.thumbnailUrl)}
                     alt={item.title}
                     className="max-h-[70dvh] w-full object-contain"
                   />
@@ -154,15 +163,42 @@ export function GalleryLightbox({ item, index, total, onClose, onNavigate }: Gal
                 className="block w-full cursor-zoom-out"
               >
                 <img
-                  src={item.url}
-                  alt={item.title}
-                  className="max-h-[70dvh] w-full object-contain"
+                  src={toLargeUrl(photos[photoIndex] ?? item.url)}
+                  alt={`${item.title} ${photoIndex + 1}`}
+                  className="max-h-[62dvh] w-full object-contain"
                 />
               </button>
             )}
 
+            {/* 여러 장일 때만 아래에 늘어놓아, 몇 장인지와 어디쯤인지 한눈에 보이게 한다 */}
+            {hasMultiple && (
+              <div className="flex gap-2 overflow-x-auto border-t border-white/10 px-4 py-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {photos.map((photo, index) => (
+                  <button
+                    key={`${photo}-${index}`}
+                    type="button"
+                    onClick={() => setPhotoIndex(index)}
+                    aria-label={`${index + 1}번째 사진`}
+                    aria-current={index === photoIndex}
+                    className={`h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 transition-opacity ${
+                      index === photoIndex
+                        ? 'border-white'
+                        : 'border-transparent opacity-50 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={toMiniUrl(photo)}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
             {isCaptionVisible ? (
-              <div className="max-h-[22dvh] overflow-y-auto border-t border-white/10 px-5 py-4">
+              <div className="max-h-[20dvh] overflow-y-auto border-t border-white/10 px-5 py-4">
                 <p className="font-medium text-white">{item.title}</p>
                 {meta.length > 0 && (
                   <p className="mt-1 text-xs text-white/60">{meta.join(' · ')}</p>

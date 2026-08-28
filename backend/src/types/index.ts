@@ -112,6 +112,8 @@ export interface IGallery extends Document {
   type: GalleryType
   category: GalleryCategory
   url: string
+  /** 사진 여러 장을 한 항목으로 묶는다 (첫 장이 대표) */
+  images?: string[]
   thumbnailUrl?: string
   programId?: Types.ObjectId
   // 어느 극단의 기록인지. 협의회 공동 행사처럼 특정 극단이 없는 것도 있어 선택 항목이다

@@ -42,6 +42,22 @@ export function getTheaterGroupName(value: GalleryTheaterGroup): string {
 }
 
 /**
+ * 한 항목이 품고 있는 사진 목록.
+ *
+ * 예전 자료는 url 하나만 갖고 있어서, images가 비어 있으면 그 값을 한 장짜리로 본다.
+ * 이렇게 하면 옛 자료를 고치지 않아도 새 화면에서 그대로 보인다.
+ */
+export function getGalleryImages(item: {
+  type: 'photo' | 'video'
+  url: string
+  images?: string[]
+}): string[] {
+  if (item.type === 'video') return []
+  if (item.images && item.images.length > 0) return item.images
+  return item.url ? [item.url] : []
+}
+
+/**
  * 최근에 올린 자료가 앞에 오도록 정렬한다.
  *
  * 서버도 같은 순서로 내려주지만, 화면에서 한 번 더 맞춰둔다.

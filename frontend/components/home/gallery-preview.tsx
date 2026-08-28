@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowRight, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { sortGalleryLatestFirst } from '@/lib/gallery-taxonomy'
+import { toThumbnailUrl } from '@/lib/cloudinary-url'
 
 type GalleryItem = {
   _id: string
@@ -90,7 +91,7 @@ export function GalleryPreview() {
                   index === 0 && isFeatureLayout && 'md:col-span-2 md:row-span-2 md:aspect-square'
                 )}
               >
-                <img src={item.thumbnailUrl || item.url} alt={item.title} className="h-full w-full object-cover" />
+                <img src={toThumbnailUrl(item.thumbnailUrl || item.url)} alt={item.title} loading="lazy" className="h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
                 {item.type === 'video' && (
                   <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-background/80">

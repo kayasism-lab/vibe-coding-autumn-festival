@@ -16,7 +16,12 @@ const GallerySchema = new Schema<IGallery>(
       enum: ['festival', 'general', 'etc'],
       default: 'etc',
     },
+    // 사진이면 대표 이미지(images의 첫 장), 영상이면 영상 주소.
+    // 예전 자료가 이 값만 갖고 있어서 그대로 둔다
     url: { type: String, required: true },
+    // 사진 여러 장을 한 항목으로 묶는다. 목록에는 첫 장만 보이고,
+    // 눌러서 크게 보면 나머지를 넘겨볼 수 있다
+    images: [{ type: String }],
     thumbnailUrl: { type: String },
     programId: {
       type: Schema.Types.ObjectId,

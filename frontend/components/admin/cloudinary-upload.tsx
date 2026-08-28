@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ImagePlus, Upload, Loader2 } from 'lucide-react'
 import { getConfigError, uploadImage, validateImageFile } from '@/lib/cloudinary'
+import { resizeImageFile, formatFileSize } from '@/lib/image-resize'
 import { UploadPreviewGrid } from './upload-preview-grid'
 
 interface CloudinaryUploadProps {
@@ -46,6 +47,8 @@ export function CloudinaryUpload({
 }: CloudinaryUploadProps) {
   const [status, setStatus] = useState<UploadStatus | null>(null)
   const [error, setError] = useState('')
+  /** 크기를 줄여 올렸을 때 얼마나 가벼워졌는지 알리는 문구 */
+  const [savedNotice, setSavedNotice] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const [previewRatio, setPreviewRatio] = useState(aspectRatio || aspectRatios[0]?.value || 16 / 9)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -84,10 +87,16 @@ export function CloudinaryUpload({
 
     // 한 장씩 순서대로 올린다. 중간에 실패해도 그때까지 성공한 것은 살린다
     const uploaded: string[] = []
+    let savedBytes = 0
     try {
       for (let i = 0; i < targets.length; i++) {
         setStatus({ current: i + 1, total: targets.length, ratio: 0 })
-        const url = await uploadImage(targets[i], {
+
+        // 큰 사진은 올리기 전에 줄인다. 업로드도 빨라지고 보는 사람도 가볍게 받는다
+        const { file: prepared, resized, originalSize } = await resizeImageFile(targets[i])
+        if (resized) savedBytes += originalSize - prepared.size
+
+        const url = await uploadImage(prepared, {
           folder,
           onProgress: (ratio) => setStatus({ current: i + 1, total: targets.length, ratio }),
         })
@@ -104,6 +113,8 @@ export function CloudinaryUpload({
       onChange(multiple ? [...urls, ...uploaded] : uploaded[0])
     }
     setError(notice)
+    // 얼마나 가벼워졌는지 알려준다 (실패 안내가 있으면 그쪽을 우선한다)
+    setSavedNotice(!notice && savedBytes > 0 ? `용량을 ${formatFileSize(savedBytes)} 줄여서 올렸습니다.` : '')
   }
 
   const openFilePicker = () => {
@@ -230,6 +241,7 @@ export function CloudinaryUpload({
         </Button>
       )}
 
+      {savedNotice && <p className="mt-2 text-xs text-muted-foreground">{savedNotice}</p>}
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </div>
   )
