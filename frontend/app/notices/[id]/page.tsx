@@ -7,7 +7,7 @@ import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, Eye } from 'lucide-react'
+import { ArrowLeft, Calendar, ExternalLink, Eye } from 'lucide-react'
 
 type Notice = {
   _id: string
@@ -16,6 +16,9 @@ type Notice = {
   category: 'notice' | 'press' | 'event' | 'media'
   imageUrls?: string[]
   viewCount: number
+  publishedAt?: string
+  sourceUrl?: string
+  sourceName?: string
   createdAt: string
 }
 
@@ -63,7 +66,7 @@ export default function NoticeDetailPage() {
                 <div className="mt-4 flex items-center gap-4 text-sm text-background/60">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    {new Date(notice.createdAt).toLocaleDateString('ko-KR')}
+                    {new Date(notice.publishedAt ?? notice.createdAt).toLocaleDateString('ko-KR')}
                   </span>
                   <span className="flex items-center gap-1">
                     <Eye className="h-4 w-4" />
@@ -88,9 +91,34 @@ export default function NoticeDetailPage() {
                 </div>
               )}
               <article className="whitespace-pre-line leading-relaxed text-card-foreground">{notice.content}</article>
+
+              {/* 기사 본문은 언론사 저작물이라 옮겨 담지 않는다. 원문으로 보내주는 것이 원칙 */}
+              {notice.sourceUrl && (
+                <div className="mt-8 rounded-lg border bg-muted/40 p-4">
+                  <p className="mb-2 text-sm text-muted-foreground">
+                    이 소식은 {notice.sourceName || '언론'}에 보도된 내용입니다.
+                  </p>
+                  <Button asChild variant="outline" size="sm">
+                    <a href={notice.sourceUrl} target="_blank" rel="noopener noreferrer">
+                      원문 기사 보기
+                      <ExternalLink className="ml-2 h-3.5 w-3.5" />
+                    </a>
+                  </Button>
+                </div>
+              )}
+
               <div className="mt-12 flex justify-center border-t pt-8">
                 <Button asChild variant="outline">
-                  <Link href="/notices">목록으로</Link>
+                  {/* 보도자료는 보도·미디어 게시판으로 돌아간다 */}
+                  <Link
+                    href={
+                      notice.category === 'press' || notice.category === 'media'
+                        ? '/press'
+                        : '/notices'
+                    }
+                  >
+                    목록으로
+                  </Link>
                 </Button>
               </div>
             </div>

@@ -65,6 +65,9 @@ export interface INotice extends Document {
   imageUrls: string[]
   // 실제로 알려진 날짜. 예전 보도를 뒤늦게 올릴 때를 위해 등록 시각과 따로 둔다
   publishedAt: Date
+  // 보도자료 원문 주소와 실은 곳. 본문을 옮겨 담지 않고 원문으로 보내주기 위한 값
+  sourceUrl?: string
+  sourceName?: string
   isPinned: boolean
   viewCount: number
   createdAt: Date

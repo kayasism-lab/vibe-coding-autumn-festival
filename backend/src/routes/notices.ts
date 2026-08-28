@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { Notice } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
+import { fetchLinkPreview } from '../lib/link-preview.js'
 
 export const noticesRouter = Router()
 
@@ -103,6 +104,29 @@ noticesRouter.get(
       totalPages: Math.ceil(total / limit),
       years: yearRows.map((row) => row._id),
     })
+  })
+)
+
+/**
+ * 기사 주소를 넣으면 제목·대표 이미지·발행일을 읽어 돌려준다.
+ * 글을 만들지는 않는다 - 관리자가 화면에서 확인하고 고친 뒤 저장하도록 하기 위해서다.
+ */
+noticesRouter.post(
+  '/preview',
+  requirePermission('notices'),
+  asyncHandler(async (req, res) => {
+    const url = typeof req.body?.url === 'string' ? req.body.url : ''
+    if (!url.trim()) {
+      fail(res, '기사 주소를 입력해주세요.', 400)
+      return
+    }
+
+    try {
+      ok(res, await fetchLinkPreview(url))
+    } catch (error) {
+      // 바깥 사이트 사정으로 실패하는 일이 잦아 서버 오류로 처리하지 않는다
+      fail(res, error instanceof Error ? error.message : '기사를 불러오지 못했습니다.', 400)
+    }
   })
 )
 

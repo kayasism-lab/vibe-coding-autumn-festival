@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { useAdminAccount } from '@/lib/use-admin-account'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
+import { ArticleLinkImport } from '@/components/admin/article-link-import'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -44,6 +45,8 @@ type Notice = {
   isPinned: boolean
   viewCount: number
   publishedAt?: string
+  sourceUrl?: string
+  sourceName?: string
   createdAt: string
 }
 
@@ -55,6 +58,9 @@ type NoticeForm = {
   isPinned: boolean
   /** 'YYYY-MM-DD'. 예전 보도를 뒤늦게 올릴 때 그 시절 날짜를 넣는다 */
   publishedAt: string
+  /** 보도자료 원문 주소와 실은 곳 */
+  sourceUrl: string
+  sourceName: string
 }
 
 /** 오늘 날짜를 'YYYY-MM-DD'로 (한국 시각 기준) */
@@ -85,6 +91,8 @@ const emptyForm: NoticeForm = {
   imageUrls: [],
   isPinned: false,
   publishedAt: '',
+  sourceUrl: '',
+  sourceName: '',
 }
 
 const categoryLabels = {
@@ -134,6 +142,8 @@ export default function AdminNoticesPage() {
             imageUrls: notice.imageUrls,
             isPinned: notice.isPinned,
             publishedAt: toDateInput(notice.publishedAt ?? notice.createdAt),
+            sourceUrl: notice.sourceUrl ?? '',
+            sourceName: notice.sourceName ?? '',
           }
         // 새 글은 오늘 날짜로 시작한다. 예전 보도라면 관리자가 날짜를 바꾸면 된다
         : { ...emptyForm, publishedAt: todayInKst() }
@@ -153,6 +163,9 @@ export default function AdminNoticesPage() {
         // 날짜만 받으므로 한국 시각 정오로 저장한다.
         // 자정으로 두면 시간대 차이로 하루 앞뒤가 밀려 보일 수 있다
         publishedAt: form.publishedAt ? `${form.publishedAt}T12:00:00+09:00` : undefined,
+        // 지웠을 때도 서버에 전해지도록 빈 값은 null로 보낸다
+        sourceUrl: form.sourceUrl || null,
+        sourceName: form.sourceName || null,
       }
       const res = await fetch(editingNotice ? `/api/notices/${editingNotice._id}` : '/api/notices', {
         method: editingNotice ? 'PUT' : 'POST',
@@ -242,6 +255,25 @@ export default function AdminNoticesPage() {
             <DialogDescription>공지사항 정보를 입력하세요.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* 보도자료·미디어를 올릴 때만 쓰는 기능이라 그 종류에서만 보여준다 */}
+            {(form.category === 'press' || form.category === 'media') && (
+              <ArticleLinkImport
+                onLoaded={(preview) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    // 이미 적어둔 제목이 있으면 덮어쓰지 않는다
+                    title: prev.title || preview.title,
+                    publishedAt: preview.publishedAt
+                      ? toDateInput(preview.publishedAt)
+                      : prev.publishedAt,
+                    imageUrls: preview.imageUrl ? [preview.imageUrl] : prev.imageUrls,
+                    sourceUrl: preview.url,
+                    sourceName: preview.siteName,
+                  }))
+                }
+              />
+            )}
+
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="제목"><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
               <Field label="카테고리">
@@ -279,6 +311,28 @@ export default function AdminNoticesPage() {
                 placeholder="공지 이미지 업로드"
               />
             </Field>
+            {/* 불러오기로 채워지지만, 손으로 고치거나 지울 수 있어야 한다 */}
+            {(form.category === 'press' || form.category === 'media') && (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="sm:col-span-2">
+                  <Field label="원문 주소">
+                    <Input
+                      value={form.sourceUrl}
+                      onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })}
+                      placeholder="https://..."
+                    />
+                  </Field>
+                </div>
+                <Field label="출처">
+                  <Input
+                    value={form.sourceName}
+                    onChange={(e) => setForm({ ...form, sourceName: e.target.value })}
+                    placeholder="예: 연합뉴스"
+                  />
+                </Field>
+              </div>
+            )}
+
             <div className="flex items-center gap-2">
               <Checkbox checked={form.isPinned} onCheckedChange={(isPinned) => setForm({ ...form, isPinned: Boolean(isPinned) })} />
               <Label>상단 고정</Label>
