@@ -81,14 +81,20 @@ export interface IInquiry {
 // Gallery (갤러리)
 export type GalleryType = 'photo' | 'video'
 
+// 어떤 자리에서 찍은 것인지 구분한다. 극단 구분과는 축이 다르므로 따로 둔다
+export type GalleryCategory = 'festival' | 'general' | 'etc'
+
 export interface IGallery {
   _id: string
   title: string
   description?: string
   type: GalleryType
+  category: GalleryCategory
   url: string
   thumbnailUrl?: string
   programId?: string
+  // 목록 API는 이름을 채워서 내려주고, 저장할 때는 ID 문자열만 보낸다
+  theaterGroup?: string | { _id: string; name: string }
   order: number
   createdAt: Date
 }

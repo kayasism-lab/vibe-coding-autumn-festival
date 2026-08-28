@@ -41,7 +41,8 @@ schedulesRouter.get(
     }
 
     const schedules = await Schedule.find(query)
-      .populate('programId', 'title type company posterUrl ticketUrl venue venueAddress')
+      // runtime은 공연이 언제 끝나는지 계산해 '공연 중' 표시를 내리는 데 쓴다
+      .populate('programId', 'title type company posterUrl ticketUrl venue venueAddress runtime')
       .sort({ date: 1, time: 1 })
       .lean()
 

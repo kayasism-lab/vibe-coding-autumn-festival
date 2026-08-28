@@ -5,6 +5,14 @@ import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { useAdminAccount } from '@/lib/use-admin-account'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { VideoThumbnailPicker } from '@/components/admin/video-thumbnail-picker'
+import {
+  GALLERY_CATEGORIES,
+  getGalleryCategoryLabel,
+  getTheaterGroupId,
+  getTheaterGroupName,
+  type GalleryTheaterGroup,
+} from '@/lib/gallery-taxonomy'
+import type { GalleryCategory } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -32,18 +40,25 @@ type GalleryItem = {
   title: string
   description?: string
   type: 'photo' | 'video'
+  category?: GalleryCategory
   url: string
   thumbnailUrl?: string
+  theaterGroup?: GalleryTheaterGroup
   order: number
   createdAt: string
 }
+
+type TheaterGroupOption = { _id: string; name: string }
 
 type GalleryForm = {
   title: string
   description: string
   type: GalleryItem['type']
+  category: GalleryCategory
   url: string
   thumbnailUrl: string
+  /** 빈 문자열이면 '지정 안 함' */
+  theaterGroupId: string
   order: number
 }
 
@@ -51,14 +66,19 @@ const emptyForm: GalleryForm = {
   title: '',
   description: '',
   type: 'photo',
+  category: 'festival',
   url: '',
   thumbnailUrl: '',
+  theaterGroupId: '',
   order: 0,
 }
 
+/** Select는 빈 문자열을 값으로 쓸 수 없어 '지정 안 함'에 따로 값을 준다 */
+const NO_GROUP = 'none'
+
 export default function AdminGalleryPage() {
   // 극단 담당자는 등록·수정만 가능하고 삭제는 관리자 몫이다
-  const { isGroupAccount } = useAdminAccount()
+  const { isGroupAccount, theaterGroup: myGroupId } = useAdminAccount()
   const [items, setItems] = useState<GalleryItem[]>([])
   const [yearFilter, setYearFilter] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
@@ -66,6 +86,7 @@ export default function AdminGalleryPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<GalleryItem | null>(null)
   const [form, setForm] = useState<GalleryForm>(emptyForm)
+  const [groups, setGroups] = useState<TheaterGroupOption[]>([])
 
   const fetchItems = async () => {
     try {
@@ -79,6 +100,13 @@ export default function AdminGalleryPage() {
 
   useEffect(() => {
     fetchItems()
+    // 극단 선택 목록. 실패해도 갤러리 관리 자체는 되어야 하므로 조용히 넘긴다
+    fetch('/api/theater-groups?active=true')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setGroups(data.data)
+      })
+      .catch(() => setGroups([]))
   }, [])
 
   const years = Array.from(new Set(items.map((item) => new Date(item.createdAt).getFullYear().toString()))).sort().reverse()
@@ -94,11 +122,14 @@ export default function AdminGalleryPage() {
             title: item.title,
             description: item.description || '',
             type: item.type,
+            category: item.category ?? 'etc',
             url: item.url,
             thumbnailUrl: item.thumbnailUrl || '',
+            theaterGroupId: getTheaterGroupId(item.theaterGroup),
             order: item.order,
           }
-        : { ...emptyForm, order: items.length }
+        // 극단 담당자가 새로 올릴 때는 자기 극단을 미리 골라둔다
+        : { ...emptyForm, theaterGroupId: myGroupId ?? '', order: items.length }
     )
     setIsDialogOpen(true)
   }
@@ -113,6 +144,9 @@ export default function AdminGalleryPage() {
           title: form.title,
           description: form.description || undefined,
           type: form.type,
+          category: form.category,
+          // '지정 안 함'으로 되돌린 것을 서버에 전하려면 null을 명시해야 한다
+          theaterGroup: form.theaterGroupId || null,
           url: form.url,
           // 사진은 올린 이미지를 그대로 쓰므로 썸네일을 비운다.
           // undefined로 보내면 JSON에서 아예 빠져 서버가 기존 값을 유지하므로 null을 명시해야 지워진다
@@ -185,7 +219,12 @@ export default function AdminGalleryPage() {
                   </div>
                   <div className="p-3">
                     <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(item.createdAt).getFullYear()}</p>
+                    {/* 분류를 목록에서 바로 확인할 수 있어야 잘못 넣은 자료를 찾아낼 수 있다 */}
+                    <p className="text-xs text-muted-foreground truncate">
+                      {getGalleryCategoryLabel(item.category)}
+                      {getTheaterGroupName(item.theaterGroup) && ` · ${getTheaterGroupName(item.theaterGroup)}`}
+                      {` · ${new Date(item.createdAt).getFullYear()}`}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -207,6 +246,36 @@ export default function AdminGalleryPage() {
                 <SelectContent>
                   <SelectItem value="photo">사진</SelectItem>
                   <SelectItem value="video">영상</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="구분">
+              <Select
+                value={form.category}
+                onValueChange={(category: GalleryCategory) => setForm({ ...form, category })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {GALLERY_CATEGORIES.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="극단">
+              <Select
+                value={form.theaterGroupId || NO_GROUP}
+                onValueChange={(value) =>
+                  setForm({ ...form, theaterGroupId: value === NO_GROUP ? '' : value })
+                }
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {/* 협의회 공동 행사처럼 특정 극단이 없는 자료도 있다 */}
+                  <SelectItem value={NO_GROUP}>지정 안 함</SelectItem>
+                  {groups.map((group) => (
+                    <SelectItem key={group._id} value={group._id}>{group.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>

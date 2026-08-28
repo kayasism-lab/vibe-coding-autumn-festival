@@ -10,6 +10,8 @@ galleryRouter.get(
   asyncHandler(async (_req, res) => {
     const items = await Gallery.find()
       .populate('programId', 'title')
+      // 극단은 ID로 저장하므로, 화면에서 이름을 쓰려면 함께 내려줘야 한다
+      .populate('theaterGroup', 'name')
       .sort({ order: 1, createdAt: -1 })
       .lean()
 

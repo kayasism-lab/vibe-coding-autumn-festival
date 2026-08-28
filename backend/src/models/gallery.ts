@@ -10,11 +10,21 @@ const GallerySchema = new Schema<IGallery>(
       enum: ['photo', 'video'],
       default: 'photo',
     },
+    // 기존 자료는 구분이 없으므로 '기타'로 들어간다. 나중에 관리자가 골라 바꾸면 된다
+    category: {
+      type: String,
+      enum: ['festival', 'general', 'etc'],
+      default: 'etc',
+    },
     url: { type: String, required: true },
     thumbnailUrl: { type: String },
     programId: {
       type: Schema.Types.ObjectId,
       ref: 'Program',
+    },
+    theaterGroup: {
+      type: Schema.Types.ObjectId,
+      ref: 'TheaterGroup',
     },
     order: { type: Number, default: 0 },
   },
@@ -24,6 +34,8 @@ const GallerySchema = new Schema<IGallery>(
 )
 
 GallerySchema.index({ type: 1 })
+GallerySchema.index({ category: 1 })
+GallerySchema.index({ theaterGroup: 1 })
 GallerySchema.index({ programId: 1 })
 GallerySchema.index({ order: 1 })
 

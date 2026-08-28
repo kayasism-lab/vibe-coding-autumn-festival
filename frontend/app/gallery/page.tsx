@@ -1,31 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { ChevronLeft, ChevronRight, X, Play } from 'lucide-react'
-import { getVideoEmbedUrl } from '@/lib/video-thumbnail'
-
-type GalleryItem = {
-  _id: string
-  type: 'photo' | 'video'
-  title: string
-  url: string
-  thumbnailUrl?: string
-  createdAt: string
-}
+import {
+  ALL,
+  GalleryFilters,
+  emptyFilterState,
+  type FilterOption,
+  type GalleryFilterState,
+} from '@/components/gallery/gallery-filters'
+import { GalleryGrid } from '@/components/gallery/gallery-grid'
+import { GalleryLightbox, type LightboxItem } from '@/components/gallery/gallery-lightbox'
+import { GALLERY_CATEGORIES, GALLERY_TYPES, getTheaterGroupId, getTheaterGroupName } from '@/lib/gallery-taxonomy'
 
 export default function GalleryPage() {
-  const [items, setItems] = useState<GalleryItem[]>([])
-  const [selectedYear, setSelectedYear] = useState('전체')
-  // 사진/영상 구분 필터 (기존에는 상단 메뉴가 '포토갤러리·영상갤러리'로 나뉘어 있었으나
-  // 실제로는 같은 페이지였기 때문에, 메뉴를 하나로 합치고 구분은 이 필터로 제공한다)
-  const [selectedType, setSelectedType] = useState<'전체' | 'photo' | 'video'>('전체')
-  const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null)
+  const [items, setItems] = useState<LightboxItem[]>([])
+  // 사진·영상을 포함해 모든 조건은 '전체'로 시작한다. 먼저 다 보여주고 좁혀가는 방식
+  const [filters, setFilters] = useState<GalleryFilterState>(emptyFilterState)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
     fetch('/api/gallery')
@@ -35,31 +30,68 @@ export default function GalleryPage() {
       })
   }, [])
 
-  const years = ['전체', ...Array.from(new Set(items.map((item) => new Date(item.createdAt).getFullYear().toString()))).sort().reverse()]
-  const filteredItems = items.filter((item) => {
-    const matchesYear = selectedYear === '전체' || new Date(item.createdAt).getFullYear().toString() === selectedYear
-    const matchesType = selectedType === '전체' || item.type === selectedType
-    return matchesYear && matchesType
-  })
+  const typeOptions: FilterOption[] = [
+    { value: ALL, label: '전체' },
+    ...GALLERY_TYPES.map(({ value, label }) => ({ value, label })),
+  ]
 
-  const typeFilters = [
-    { value: '전체', label: '전체' },
-    { value: 'photo', label: '사진' },
-    { value: 'video', label: '영상' },
-  ] as const
+  const categoryOptions: FilterOption[] = [
+    { value: ALL, label: '전체' },
+    ...GALLERY_CATEGORIES.map(({ value, label }) => ({ value, label })),
+  ]
 
-  const openLightbox = (item: GalleryItem) => {
+  // 극단·연도는 실제 등록된 자료에 있는 것만 조건으로 보여준다.
+  // 고르면 아무것도 안 나오는 빈 조건을 늘어놓지 않기 위해서다
+  const groupOptions: FilterOption[] = useMemo(() => {
+    const found = new Map<string, string>()
+    items.forEach((item) => {
+      const id = getTheaterGroupId(item.theaterGroup)
+      const name = getTheaterGroupName(item.theaterGroup)
+      if (id && name) found.set(id, name)
+    })
+    return [
+      { value: ALL, label: '전체' },
+      ...Array.from(found, ([value, label]) => ({ value, label })).sort((a, b) =>
+        a.label.localeCompare(b.label, 'ko')
+      ),
+    ]
+  }, [items])
+
+  const yearOptions: FilterOption[] = useMemo(() => {
+    const years = Array.from(
+      new Set(items.map((item) => new Date(item.createdAt).getFullYear().toString()))
+    ).sort().reverse()
+    return [{ value: ALL, label: '전체' }, ...years.map((year) => ({ value: year, label: year }))]
+  }, [items])
+
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        const year = new Date(item.createdAt).getFullYear().toString()
+        return (
+          (filters.type === ALL || item.type === filters.type) &&
+          (filters.category === ALL || (item.category ?? 'etc') === filters.category) &&
+          (filters.group === ALL || getTheaterGroupId(item.theaterGroup) === filters.group) &&
+          (filters.year === ALL || year === filters.year)
+        )
+      }),
+    [items, filters]
+  )
+
+  const openLightbox = (item: LightboxItem) => {
     setCurrentIndex(filteredItems.findIndex((candidate) => candidate._id === item._id))
-    setSelectedItem(item)
+    setIsOpen(true)
   }
 
+  // 목록 끝에서 한 번 더 넘기면 처음으로 돌아간다
   const navigateLightbox = (direction: 'prev' | 'next') => {
     if (filteredItems.length === 0) return
-    let nextIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1
-    if (nextIndex < 0) nextIndex = filteredItems.length - 1
-    if (nextIndex >= filteredItems.length) nextIndex = 0
-    setCurrentIndex(nextIndex)
-    setSelectedItem(filteredItems[nextIndex])
+    setCurrentIndex((prev) => {
+      const next = direction === 'prev' ? prev - 1 : prev + 1
+      if (next < 0) return filteredItems.length - 1
+      if (next >= filteredItems.length) return 0
+      return next
+    })
   }
 
   return (
@@ -74,64 +106,39 @@ export default function GalleryPage() {
         />
         <section className="py-16">
           <div className="container mx-auto px-4">
-            {/* 사진/영상 구분 — 종류가 다르므로 연도 필터보다 위에 둔다 */}
-            <div className="mb-4 flex justify-center gap-2">
-              {typeFilters.map(({ value, label }) => (
-                <Button
-                  key={value}
-                  size="sm"
-                  variant={selectedType === value ? 'default' : 'outline'}
-                  onClick={() => setSelectedType(value)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-            <div className="flex justify-center gap-2 mb-10">
-              {years.map((year) => <Button key={year} variant={selectedYear === year ? 'default' : 'outline'} onClick={() => setSelectedYear(year)}>{year}</Button>)}
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
-                <button key={item._id} onClick={() => openLightbox(item)} className="group relative aspect-[4/3] rounded-xl overflow-hidden bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                  <img src={item.thumbnailUrl || item.url} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-left translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all">
-                    <p className="text-white font-medium">{item.title}</p>
-                    <p className="text-white/70 text-sm">{new Date(item.createdAt).getFullYear()}</p>
-                  </div>
-                  {item.type === 'video' && <div className="absolute inset-0 flex items-center justify-center"><div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg"><Play className="h-6 w-6 text-primary ml-1" /></div></div>}
-                </button>
-              ))}
-            </div>
-            {filteredItems.length === 0 && <div className="text-center py-20 text-muted-foreground">등록된 갤러리가 없습니다.</div>}
+            <GalleryFilters
+              value={filters}
+              onChange={(next) => {
+                setFilters(next)
+                // 조건이 바뀌면 목록 순서가 달라지므로 크게 보기를 닫는다
+                setIsOpen(false)
+              }}
+              typeOptions={typeOptions}
+              categoryOptions={categoryOptions}
+              groupOptions={groupOptions}
+              yearOptions={yearOptions}
+              resultCount={filteredItems.length}
+            />
+
+            {filteredItems.length === 0 ? (
+              <div className="py-20 text-center text-muted-foreground">
+                {items.length === 0 ? '등록된 갤러리가 없습니다.' : '조건에 맞는 자료가 없습니다.'}
+              </div>
+            ) : (
+              <GalleryGrid items={filteredItems} onSelect={openLightbox} />
+            )}
           </div>
         </section>
       </main>
       <Footer />
-      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-5xl p-0 bg-foreground/95 border-none">
-          <div className="relative">
-            <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"><X className="h-5 w-5" /></button>
-            <button onClick={() => navigateLightbox('prev')} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"><ChevronLeft className="h-5 w-5" /></button>
-            <button onClick={() => navigateLightbox('next')} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"><ChevronRight className="h-5 w-5" /></button>
-            {/* 영상은 주소를 이미지로 그릴 수 없으므로 재생용 임베드로 띄운다 */}
-            <div className="aspect-video">
-              {selectedItem && (selectedItem.type === 'video' && getVideoEmbedUrl(selectedItem.url) ? (
-                <iframe
-                  src={getVideoEmbedUrl(selectedItem.url) as string}
-                  title={selectedItem.title}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <img src={selectedItem.url} alt={selectedItem.title} className="w-full h-full object-contain" />
-              ))}
-            </div>
-            <div className="p-4 text-center"><p className="text-white font-medium">{selectedItem?.title}</p></div>
-          </div>
-        </DialogContent>
-      </Dialog>
+
+      <GalleryLightbox
+        item={isOpen ? filteredItems[currentIndex] ?? null : null}
+        index={currentIndex}
+        total={filteredItems.length}
+        onClose={() => setIsOpen(false)}
+        onNavigate={navigateLightbox}
+      />
     </div>
   )
 }

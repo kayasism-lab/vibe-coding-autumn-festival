@@ -97,14 +97,20 @@ export interface IInquiry extends Document {
 // Gallery (갤러리)
 export type GalleryType = 'photo' | 'video'
 
+// 어떤 자리에서 찍은 것인지 구분한다. 극단 구분(theaterGroup)과는 축이 다르므로 따로 둔다
+export type GalleryCategory = 'festival' | 'general' | 'etc'
+
 export interface IGallery extends Document {
   _id: Types.ObjectId
   title: string
   description?: string
   type: GalleryType
+  category: GalleryCategory
   url: string
   thumbnailUrl?: string
   programId?: Types.ObjectId
+  // 어느 극단의 기록인지. 협의회 공동 행사처럼 특정 극단이 없는 것도 있어 선택 항목이다
+  theaterGroup?: Types.ObjectId
   order: number
   createdAt: Date
 }

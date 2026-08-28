@@ -27,6 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { getDefaultStartTime, getSuggestedTimes, getWeekdayName } from '@/lib/schedule-time-presets'
+import type { ProgramType } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Edit, Trash2, Calendar, Clock, MapPin, Save, X } from 'lucide-react'
@@ -47,6 +49,8 @@ interface Schedule {
 interface Program {
   _id: string
   title: string
+  // 유형에 따라 공연 시각 기본값이 달라진다
+  type?: ProgramType
   theaterGroup?: string | null
 }
 
@@ -88,6 +92,18 @@ export default function AdminSchedulesPage() {
     (program) => !isGroupAccount || program.theaterGroup === theaterGroup
   )
   const visibleProgramIds = new Set(visiblePrograms.map((program) => program._id))
+
+  // 눌러서 넣을 수 있는 시각과, 빈 칸에 미리 채워둘 시각
+  const selectedProgram = programs.find((program) => program._id === formData.programId)
+  const suggestedTimes = getSuggestedTimes(formData.date)
+  const defaultStartTime = getDefaultStartTime(selectedProgram?.type, formData.date)
+
+  // 새로 등록할 때 비어 있는 시간 칸만 채운다.
+  // 이미 입력한 값이나 기존 회차의 시각을 말없이 바꿔버리면 안 되기 때문이다
+  useEffect(() => {
+    if (editingSchedule || formData.time || !defaultStartTime) return
+    setFormData((prev) => (prev.time ? prev : { ...prev, time: defaultStartTime }))
+  }, [editingSchedule, formData.time, defaultStartTime])
   const visibleSchedules = isGroupAccount
     ? schedules.filter((schedule) => schedule.programId && visibleProgramIds.has(schedule.programId._id))
     : schedules
@@ -248,6 +264,30 @@ export default function AdminSchedulesPage() {
                       />
                     </div>
                   </div>
+
+                  {/* 자주 쓰는 시각을 눌러 넣게 돕는 것일 뿐, 여기 없는 시각도 위 칸에 직접 입력하면 된다 */}
+                  {suggestedTimes.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 px-3 py-2">
+                      <span className="text-xs text-muted-foreground">
+                        {getWeekdayName(formData.date)}요일 · 자주 쓰는 시간
+                      </span>
+                      {suggestedTimes.map((time) => (
+                        <Button
+                          key={time}
+                          type="button"
+                          size="sm"
+                          variant={formData.time === time ? 'default' : 'outline'}
+                          className="h-7 px-2.5 text-xs"
+                          onClick={() => setFormData({ ...formData, time })}
+                        >
+                          {time}
+                        </Button>
+                      ))}
+                      <span className="text-xs text-muted-foreground/70">
+                        다른 시간은 위 칸에 직접 입력
+                      </span>
+                    </div>
+                  )}
                   
                   <div className="space-y-2">
                     <Label>공연장 *</Label>
