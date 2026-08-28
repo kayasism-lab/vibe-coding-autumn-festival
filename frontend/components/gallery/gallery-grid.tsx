@@ -27,12 +27,18 @@ export function GalleryGrid({ items, onSelect }: GalleryGridProps) {
             onClick={() => onSelect(item)}
             className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-muted text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <img
-              src={item.thumbnailUrl || item.url}
-              alt={item.title}
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            {/* 영상은 주소가 이미지가 아니라서, 썸네일을 안 올렸으면 그림 대신 자리 표시를 둔다.
+                (인스타그램처럼 썸네일을 자동으로 가져올 수 없는 곳이 있다) */}
+            {item.type === 'photo' || item.thumbnailUrl ? (
+              <img
+                src={item.thumbnailUrl || item.url}
+                alt={item.title}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-foreground/80 to-foreground/60" />
+            )}
             {/* 글씨가 밝은 사진 위에서도 읽히도록 아래쪽에 어두운 층을 깐다 */}
             <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-foreground/90 to-transparent" />
 

@@ -5,7 +5,11 @@ import { Check, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CloudinaryUpload } from './cloudinary-upload'
-import { fetchVideoThumbnails, type ThumbnailCandidate } from '@/lib/video-thumbnail'
+import {
+  fetchVideoThumbnails,
+  getVideoProvider,
+  type ThumbnailCandidate,
+} from '@/lib/video-thumbnail'
 
 interface VideoThumbnailPickerProps {
   /** 영상 주소. 이 값이 바뀌면 후보를 다시 불러온다 */
@@ -62,6 +66,7 @@ export function VideoThumbnailPicker({ videoUrl, value, onChange }: VideoThumbna
   // 후보 중에서 고른 값을 업로드 칸에 넘기면 "이미 올린 이미지"로 잡혀 업로드 버튼이 사라진다.
   // 직접 올린 이미지일 때만 넘겨서 미리보기·삭제가 되게 한다
   const customThumbnail = value && !candidates.some((item) => item.url === value) ? value : ''
+  const provider = getVideoProvider(videoUrl.trim())
 
   return (
     <div className="space-y-3">
@@ -112,8 +117,10 @@ export function VideoThumbnailPicker({ videoUrl, value, onChange }: VideoThumbna
       )}
 
       {!isLoading && videoUrl.trim() && visibleCandidates.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          이 영상 주소에서는 썸네일을 자동으로 가져올 수 없습니다. 아래에서 직접 지정해주세요.
+        <p className="rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
+          {provider === 'instagram'
+            ? '인스타그램 영상은 사이트 안에서 재생할 수 없어, 눌렀을 때 인스타그램으로 연결됩니다. 썸네일도 자동으로 가져올 수 없으니 대표 이미지를 아래에서 꼭 올려주세요 (없으면 빈 화면이 보입니다).'
+            : '이 영상 주소에서는 썸네일을 자동으로 가져올 수 없습니다. 아래에서 직접 지정해주세요.'}
         </p>
       )}
 

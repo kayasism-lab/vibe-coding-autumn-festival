@@ -35,7 +35,9 @@ export function UploadPreviewGrid({ urls, ratio, multiple, onRemove }: UploadPre
             type="button"
             onClick={() => onRemove(index)}
             aria-label={`${index + 1}번째 이미지 삭제`}
-            className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-lg"
+            // 터치 화면에는 마우스를 올리는 동작이 없다. 예전처럼 hover에만 걸어두면
+            // 휴대폰에서 올린 이미지를 지우지 못해 바꿀 방법이 사라진다
+            className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full shadow-lg transition-transform hover:scale-110"
           >
             <X className="h-4 w-4" />
           </button>

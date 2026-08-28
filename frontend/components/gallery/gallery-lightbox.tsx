@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Info, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ExternalLink, Info, Play, X } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { getVideoEmbedUrl } from '@/lib/video-thumbnail'
+import { getProviderLabel, getVideoEmbedUrl } from '@/lib/video-thumbnail'
 import { getGalleryCategoryLabel, getTheaterGroupName } from '@/lib/gallery-taxonomy'
 import type { GalleryCategory } from '@/types'
 import type { GalleryTheaterGroup } from '@/lib/gallery-taxonomy'
@@ -55,6 +55,9 @@ export function GalleryLightbox({ item, index, total, onClose, onNavigate }: Gal
   }, [item, onNavigate])
 
   const embedUrl = item && item.type === 'video' ? getVideoEmbedUrl(item.url) : null
+  // 영상인데 사이트 안에서 재생할 수 없으면 원본으로 보내야 한다
+  const isExternal = !!item && item.type === 'video' && !embedUrl
+  const providerLabel = item ? getProviderLabel(item.url) : ''
   const groupName = getTheaterGroupName(item?.theaterGroup)
   const meta = item
     ? [
@@ -103,6 +106,7 @@ export function GalleryLightbox({ item, index, total, onClose, onNavigate }: Gal
             )}
 
             {embedUrl ? (
+              // 릴스처럼 세로로 긴 영상은 16:9 틀에 넣으면 위아래가 잘린다
               <div className="aspect-video">
                 <iframe
                   src={embedUrl}
@@ -112,6 +116,34 @@ export function GalleryLightbox({ item, index, total, onClose, onNavigate }: Gal
                   allowFullScreen
                 />
               </div>
+            ) : isExternal ? (
+              // 사이트 안에서 재생할 수 없는 영상(인스타그램 등).
+              // 대표 이미지를 보여주고 누르면 원본에서 재생하도록 보낸다
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group/link relative block"
+              >
+                {item.thumbnailUrl ? (
+                  <img
+                    src={item.thumbnailUrl}
+                    alt={item.title}
+                    className="max-h-[70dvh] w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex aspect-video w-full items-center justify-center bg-white/5" />
+                )}
+                <span className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-foreground/40 transition-colors group-hover/link:bg-foreground/50">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                    <Play className="ml-1 h-6 w-6 text-primary" />
+                  </span>
+                  <span className="flex items-center gap-1.5 rounded-full bg-black/50 px-4 py-2 text-sm text-white backdrop-blur">
+                    {providerLabel}에서 재생하기
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </span>
+                </span>
+              </a>
             ) : (
               // 세로로 긴 사진도 잘리지 않도록 높이만 제한하고 원래 비율을 지킨다
               <button

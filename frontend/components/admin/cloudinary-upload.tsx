@@ -154,18 +154,19 @@ export function CloudinaryUpload({
         onRemove={removeImage}
       />
 
-      {(multiple || urls.length === 0) && (
-        <>
-          {/* 실제 파일 선택 입력. 화면에는 안 보이지만 팝업 내부 요소라 정상 동작한다 */}
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            multiple={multiple}
-            className="hidden"
-            onChange={(e) => void handleFiles(e.target.files)}
-          />
+      {/* 실제 파일 선택 입력. 화면에는 안 보이지만 팝업 내부 요소라 정상 동작한다.
+          한 장 모드에서 이미지를 바꿀 때도 써야 하므로 항상 그려둔다 */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple={multiple}
+        className="hidden"
+        onChange={(e) => void handleFiles(e.target.files)}
+      />
 
+      {multiple || urls.length === 0 ? (
+        <>
           <Button
             type="button"
             variant="outline"
@@ -205,6 +206,28 @@ export function CloudinaryUpload({
             )}
           </Button>
         </>
+      ) : (
+        // 한 장만 올리는 자리에서는 미리보기가 뜨면 큰 업로드 칸이 사라진다.
+        // 지우고 다시 올리지 않아도 바로 바꿀 수 있도록 교체 버튼을 남겨둔다
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={openFilePicker}
+          disabled={isUploading}
+        >
+          {isUploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              업로드 중 · {Math.round(status.ratio * 100)}%
+            </>
+          ) : (
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              다른 이미지로 바꾸기
+            </>
+          )}
+        </Button>
       )}
 
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}

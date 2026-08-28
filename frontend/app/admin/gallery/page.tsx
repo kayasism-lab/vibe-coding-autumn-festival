@@ -204,13 +204,22 @@ export default function AdminGalleryPage() {
               {filteredItems.map((item) => (
                 <div key={item._id} className="group relative bg-card border border-border rounded-xl overflow-hidden">
                   <div className="aspect-[4/3] relative bg-muted">
-                    <img src={item.thumbnailUrl || item.url} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
+                    {/* 썸네일 없는 영상은 주소를 이미지로 그릴 수 없어 자리 표시를 둔다 */}
+                    {item.type === 'photo' || item.thumbnailUrl ? (
+                      <img src={item.thumbnailUrl || item.url} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-muted-foreground/10 text-xs text-muted-foreground">
+                        썸네일 없음
+                      </div>
+                    )}
                     <div className="absolute top-2 left-2">
                       <Badge variant="secondary" className="text-xs">
                         {item.type === 'video' ? <><Film className="h-3 w-3 mr-1" /> 영상</> : <><ImageIcon className="h-3 w-3 mr-1" /> 사진</>}
                       </Badge>
                     </div>
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* 예전에는 마우스를 올렸을 때만 보였는데, 터치 화면에는 그 동작이 없어
+                        휴대폰에서는 수정 자체를 할 수 없었다. 그래서 늘 보이게 둔다 */}
+                    <div className="absolute top-2 right-2 flex gap-1">
                       <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => openDialog(item)}><Pencil className="h-4 w-4" /></Button>
                       {!isGroupAccount && (
                         <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDelete(item._id)}><Trash2 className="h-4 w-4" /></Button>
