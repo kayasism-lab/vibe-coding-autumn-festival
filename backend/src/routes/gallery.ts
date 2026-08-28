@@ -12,7 +12,10 @@ galleryRouter.get(
       .populate('programId', 'title')
       // 극단은 ID로 저장하므로, 화면에서 이름을 쓰려면 함께 내려줘야 한다
       .populate('theaterGroup', 'name')
-      .sort({ order: 1, createdAt: -1 })
+      // 최근에 올린 자료가 앞에 오도록 내림차순으로 본다.
+      // 새 자료일수록 order가 커지므로(등록 시 기존 개수를 넣는다) 이렇게 해야 최신순이 된다.
+      // order 값이 같으면 나중에 올린 것을 앞에 둔다
+      .sort({ order: -1, createdAt: -1 })
       .lean()
 
     ok(res, items)

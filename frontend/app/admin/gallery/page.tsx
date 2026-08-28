@@ -322,7 +322,13 @@ export default function AdminGalleryPage() {
               </>
             )}
             <Field label="설명"><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
-            <Field label="정렬"><Input type="number" value={form.order} onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} /></Field>
+            <Field label="정렬">
+              <Input type="number" value={form.order} onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} />
+              {/* 최신순이 기본이라, 특정 자료를 위로 올리고 싶을 때만 손대면 된다 */}
+              <p className="text-xs text-muted-foreground">
+                숫자가 클수록 앞에 나옵니다. 기본은 최근에 올린 순서이니 그대로 두셔도 됩니다.
+              </p>
+            </Field>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
