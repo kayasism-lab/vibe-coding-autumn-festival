@@ -9,10 +9,16 @@ import { Footer } from '@/components/layout/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, Clock, ExternalLink, ShieldCheck, Users } from 'lucide-react'
-import { programTypeConfig, resolveSeatStatus, seatStatusConfig } from '@/lib/program-display'
+import {
+  programTypeConfig,
+  resolveSeatStatus,
+  resolveTicketButtonMode,
+  seatStatusConfig,
+  ticketButtonLabel,
+} from '@/lib/program-display'
 import { formatScheduleDate } from '@/lib/format-date'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
-import { ImageLightbox } from '@/components/shared/image-lightbox'
+import { ImageLightbox, LightboxViewer } from '@/components/shared/image-lightbox'
 import { ProgramPeriod } from '@/components/shared/program-period'
 import { pageHeroImages } from '@/components/shared/page-header'
 import { PosterPlaceholder } from '@/components/shared/poster-placeholder'
@@ -54,6 +60,8 @@ export default function ProgramDetailPage() {
   const [program, setProgram] = useState<Program | null>(null)
   const [schedules, setSchedules] = useState<ProgramSchedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  // 포스터 크게 보기. 팜플렛과 같은 뷰어를 한 장짜리로 쓴다
+  const [isPosterOpen, setIsPosterOpen] = useState(false)
 
   useEffect(() => {
     fetch(`/api/programs/${params.id}`)
@@ -69,6 +77,13 @@ export default function ProgramDetailPage() {
         if (data.success) setSchedules(data.data)
       })
   }, [params.id])
+
+  // 회차 상태를 종합해 예약 버튼을 어떻게 보여줄지 정한다.
+  // 회차가 아직 없으면 예전처럼 예약 링크 유무로만 판단한다
+  const ticketMode = resolveTicketButtonMode(
+    schedules.map((schedule) => schedule.seatStatus),
+    Boolean(program?.ticketUrl)
+  )
 
   return (
     <>
@@ -118,13 +133,29 @@ export default function ProgramDetailPage() {
           <section className="bg-background py-12 lg:py-16">
             <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-3 lg:gap-12 lg:px-8">
               <div className="lg:col-span-2">
-                <div className="relative mb-8 aspect-[3/4] max-w-md overflow-hidden rounded-xl bg-muted">
-                  {program.posterUrl ? (
+                {/* 포스터는 눌러서 크게 볼 수 있다. 준비 중인 자리는 누를 것이 없어 그대로 둔다 */}
+                {program.posterUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsPosterOpen(true)}
+                    aria-label={`${program.title} 포스터 크게 보기`}
+                    className="relative mb-8 block aspect-[3/4] w-full max-w-md overflow-hidden rounded-xl bg-muted transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
                     <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-full w-full object-cover" />
-                  ) : (
+                  </button>
+                ) : (
+                  <div className="relative mb-8 aspect-[3/4] max-w-md overflow-hidden rounded-xl bg-muted">
                     <PosterPlaceholder />
-                  )}
-                </div>
+                  </div>
+                )}
+
+                <LightboxViewer
+                  images={program.posterUrl ? [program.posterUrl] : []}
+                  index={isPosterOpen ? 0 : null}
+                  altPrefix={`${program.title} 포스터`}
+                  onIndexChange={() => {}}
+                  onClose={() => setIsPosterOpen(false)}
+                />
 
                 <div className="mb-8">
                   <h2 className="mb-4 text-xl font-bold text-foreground">작품 소개</h2>
@@ -211,7 +242,9 @@ export default function ProgramDetailPage() {
                   )}
                 </div>
 
-                {program.ticketUrl ? (
+                {/* 예약 버튼 문구는 회차 상태를 종합해서 정한다 (/schedule 과 같은 규칙).
+                    링크만 보고 열어두면 배지는 '예매마감'인데 버튼은 열려 있는 엇갈림이 생긴다 */}
+                {ticketMode === 'open' ? (
                   <Button asChild className="w-full" size="lg">
                     <a href={program.ticketUrl} target="_blank" rel="noopener noreferrer">
                       무료 예약하기
@@ -219,10 +252,15 @@ export default function ProgramDetailPage() {
                     </a>
                   </Button>
                 ) : (
-                  <Button asChild variant="outline" className="w-full" size="lg">
-                    <Link href="/tickets">관람 안내 보기</Link>
+                  <Button variant="outline" className="w-full" size="lg" disabled>
+                    {ticketButtonLabel[ticketMode]}
                   </Button>
                 )}
+
+                {/* 예약할 수 없을 때도 관람 방법은 알 수 있어야 한다 */}
+                <Button asChild variant="ghost" className="w-full" size="sm">
+                  <Link href="/tickets">관람 안내 보기</Link>
+                </Button>
 
                 {program.openForApplication && (
                   <Button asChild variant="secondary" className="w-full" size="lg">
