@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 /**
  * 이미지 크게 보기 창.
@@ -112,11 +113,15 @@ export function LightboxViewer({
 // 썸네일 그리드 + 클릭 시 크게 보기.
 // 팜플렛은 세로형 포스터와 가로로 긴 리플릿이 섞여 들어오므로,
 // 잘라내지 않고(object-contain) 가로가 긴 이미지는 그리드에서 두 칸을 쓰게 한다.
-// 모바일 핀치 줌은 layout.tsx의 viewport 설정(maximumScale)에 맡기고 별도 로직을 넣지 않는다.
+//
+// 크게 보기는 넓은 화면에서만 연다. 휴대폰에서는 화면에서 바로 손가락으로 확대하면 되고
+// (썸네일이 원본 주소를 그대로 쓰므로 확대해도 화질이 그대로다),
+// 크게 보기 창은 position:fixed라 확대하는 동안 화면이 떨린다.
 export function ImageLightbox({ images, altPrefix }: { images: string[]; altPrefix: string }) {
   const [index, setIndex] = useState<number | null>(null)
   // 이미지별 가로/세로 비율 (로드된 뒤에만 알 수 있어 상태로 보관)
   const [ratios, setRatios] = useState<Record<number, number>>({})
+  const isMobile = useIsMobile()
 
   const handleLoad = (i: number) => (event: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight } = event.currentTarget
@@ -127,24 +132,36 @@ export function ImageLightbox({ images, altPrefix }: { images: string[]; altPref
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {images.map((url, i) => (
-          <button
-            key={url}
-            type="button"
-            onClick={() => setIndex(i)}
-            aria-label={`${altPrefix} ${i + 1} 크게 보기`}
-            className={`group relative aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted transition-colors hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-              ratios[i] > 1.4 ? 'col-span-2' : ''
-            }`}
-          >
+        {images.map((url, i) => {
+          const cellClass = `group relative aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted ${
+            ratios[i] > 1.4 ? 'col-span-2' : ''
+          }`
+          const thumbnail = (
             <img
               src={url}
               alt={`${altPrefix} ${i + 1}`}
               onLoad={handleLoad(i)}
               className="h-full w-full object-contain p-1 transition-transform duration-300 group-hover:scale-[1.02]"
             />
-          </button>
-        ))}
+          )
+
+          // 휴대폰에서는 누를 것이 없는 그냥 사진으로 둔다
+          return isMobile ? (
+            <div key={url} className={cellClass}>
+              {thumbnail}
+            </div>
+          ) : (
+            <button
+              key={url}
+              type="button"
+              onClick={() => setIndex(i)}
+              aria-label={`${altPrefix} ${i + 1} 크게 보기`}
+              className={`${cellClass} transition-colors hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+            >
+              {thumbnail}
+            </button>
+          )
+        })}
       </div>
 
       <LightboxViewer

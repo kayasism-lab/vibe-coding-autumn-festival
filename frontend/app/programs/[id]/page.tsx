@@ -22,6 +22,7 @@ import { ImageLightbox, LightboxViewer } from '@/components/shared/image-lightbo
 import { ProgramPeriod } from '@/components/shared/program-period'
 import { pageHeroImages } from '@/components/shared/page-header'
 import { PosterPlaceholder } from '@/components/shared/poster-placeholder'
+import { useIsMobile } from '@/hooks/use-mobile'
 import type { ProgramType, SeatStatus } from '@/types/index'
 
 type Program = {
@@ -60,8 +61,11 @@ export default function ProgramDetailPage() {
   const [program, setProgram] = useState<Program | null>(null)
   const [schedules, setSchedules] = useState<ProgramSchedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  // 포스터 크게 보기. 팜플렛과 같은 뷰어를 한 장짜리로 쓴다
+  // 포스터 크게 보기. 팜플렛과 같은 뷰어를 한 장짜리로 쓴다.
+  // 휴대폰에서는 열지 않는다 - 화면에서 바로 손가락으로 확대하면 되고,
+  // 크게 보기 창은 position:fixed라 확대하는 동안 화면이 떨린다
   const [isPosterOpen, setIsPosterOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     fetch(`/api/programs/${params.id}`)
@@ -133,8 +137,9 @@ export default function ProgramDetailPage() {
           <section className="bg-background py-12 lg:py-16">
             <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-3 lg:gap-12 lg:px-8">
               <div className="lg:col-span-2">
-                {/* 포스터는 눌러서 크게 볼 수 있다. 준비 중인 자리는 누를 것이 없어 그대로 둔다 */}
-                {program.posterUrl ? (
+                {/* 넓은 화면에서는 눌러서 크게 볼 수 있다.
+                    준비 중인 자리와 휴대폰에서는 누를 것이 없는 그냥 사진으로 둔다 */}
+                {program.posterUrl && !isMobile ? (
                   <button
                     type="button"
                     onClick={() => setIsPosterOpen(true)}
@@ -145,7 +150,11 @@ export default function ProgramDetailPage() {
                   </button>
                 ) : (
                   <div className="relative mb-8 aspect-[3/4] max-w-md overflow-hidden rounded-xl bg-muted">
-                    <PosterPlaceholder />
+                    {program.posterUrl ? (
+                      <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-full w-full object-cover" />
+                    ) : (
+                      <PosterPlaceholder />
+                    )}
                   </div>
                 )}
 
