@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/table'
 import { Plus, Pencil, Trash2, Loader2, Save, MapPin, Users } from 'lucide-react'
 import Image from 'next/image'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 interface Venue {
   _id: string
@@ -59,6 +60,8 @@ export default function AdminVenuesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  // 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
+  const [saveError, setSaveError] = useState('')
   const [editingVenue, setEditingVenue] = useState<Partial<Venue> | null>(null)
   const [facilitiesText, setFacilitiesText] = useState('')
 
@@ -83,12 +86,14 @@ export default function AdminVenuesPage() {
   const openCreateDialog = () => {
     setEditingVenue({ ...emptyVenue, order: venues.length })
     setFacilitiesText('')
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
   const openEditDialog = (venue: Venue) => {
     setEditingVenue({ ...venue })
     setFacilitiesText(venue.facilities.join('\n'))
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
@@ -106,7 +111,7 @@ export default function AdminVenuesPage() {
       const url = isEditing ? `/api/venues/${editingVenue._id}` : '/api/venues'
       const method = isEditing ? 'PUT' : 'POST'
 
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(venueData),
@@ -116,9 +121,13 @@ export default function AdminVenuesPage() {
         fetchVenues()
         setIsDialogOpen(false)
         setEditingVenue(null)
+        return
       }
-    } catch (error) {
-      console.error('Failed to save venue:', error)
+
+      // 실패했으면 창을 닫지 않는다. 입력한 내용을 다시 쓰지 않아도 되도록
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsSaving(false)
     }
@@ -128,12 +137,14 @@ export default function AdminVenuesPage() {
     if (!confirm('정말 이 공연장을 삭제하시겠습니까?')) return
 
     try {
-      const res = await fetch(`/api/venues/${id}`, { method: 'DELETE' })
+      const res = await adminFetch(`/api/venues/${id}`, { method: 'DELETE' })
       if (res.ok) {
         fetchVenues()
+        return
       }
-    } catch (error) {
-      console.error('Failed to delete venue:', error)
+      alert(await getErrorMessage(res))
+    } catch {
+      alert('삭제 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     }
   }
 
@@ -379,6 +390,12 @@ export default function AdminVenuesPage() {
                     }
                   />
                 </div>
+
+                {saveError && (
+                  <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {saveError}
+                  </p>
+                )}
 
                 {/* 저장 버튼 */}
                 <div className="flex justify-end gap-2 pt-4 border-t">

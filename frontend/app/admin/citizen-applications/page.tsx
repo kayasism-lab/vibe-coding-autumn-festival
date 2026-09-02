@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Eye, Loader2 } from 'lucide-react'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import {
   CitizenApplicationDetailDialog,
   type CitizenApplication,
@@ -37,6 +38,8 @@ export default function AdminCitizenApplicationsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [adminNote, setAdminNote] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
+  // 심사 결과 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
+  const [saveError, setSaveError] = useState('')
 
   const fetchApplications = async () => {
     try {
@@ -55,14 +58,16 @@ export default function AdminCitizenApplicationsPage() {
   const openDetail = (app: CitizenApplication) => {
     setSelected(app)
     setAdminNote(app.adminNote || '')
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
   const updateStatus = async (status: 'approved' | 'rejected') => {
     if (!selected) return
     setIsUpdating(true)
+    setSaveError('')
     try {
-      const res = await fetch(`/api/citizen-applications/${selected._id}/status`, {
+      const res = await adminFetch(`/api/citizen-applications/${selected._id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, adminNote }),
@@ -70,7 +75,13 @@ export default function AdminCitizenApplicationsPage() {
       if (res.ok) {
         fetchApplications()
         setIsDialogOpen(false)
+        return
       }
+
+      // 실패했으면 창을 닫지 않는다. 작성한 심사 메모를 지키기 위해
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('처리 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsUpdating(false)
     }
@@ -78,15 +89,22 @@ export default function AdminCitizenApplicationsPage() {
 
   const handleQnaReply = async (text: string): Promise<string | void> => {
     if (!selected) return '신청 내역을 먼저 선택해주세요.'
-    const res = await fetch(`/api/citizen-applications/${selected._id}/qna/admin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text }),
-    })
-    const data = await res.json()
-    if (!data.success) return data.error || '문의 등록에 실패했습니다.'
-    setSelected(data.data)
-    fetchApplications()
+    try {
+      const res = await adminFetch(`/api/citizen-applications/${selected._id}/qna/admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      })
+      // 401 등은 본문이 JSON이 아닐 수 있어 파싱 전에 상태부터 본다
+      if (!res.ok) return await getErrorMessage(res)
+
+      const data = await res.json()
+      if (!data.success) return data.error || '문의 등록에 실패했습니다.'
+      setSelected(data.data)
+      fetchApplications()
+    } catch {
+      return '등록 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.'
+    }
   }
 
   const pendingCount = applications.filter((a) => a.status === 'pending').length
@@ -170,6 +188,7 @@ export default function AdminCitizenApplicationsPage() {
           adminNote={adminNote}
           onAdminNoteChange={setAdminNote}
           isUpdating={isUpdating}
+          saveError={saveError}
           onUpdateStatus={updateStatus}
           onQnaSubmit={handleQnaReply}
         />

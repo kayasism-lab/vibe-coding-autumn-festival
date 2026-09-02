@@ -58,6 +58,7 @@ export function ProgramFormDialog({
   form,
   onFormChange,
   isSaving,
+  saveError,
   onSave,
   theaterGroups,
   canChangeOwner,
@@ -68,6 +69,8 @@ export function ProgramFormDialog({
   form: ProgramForm
   onFormChange: (form: ProgramForm) => void
   isSaving: boolean
+  /** 저장에 실패한 사유. 있으면 저장 버튼 위에 그대로 보여준다 */
+  saveError: string
   onSave: () => void
   theaterGroups: { _id: string; name: string }[]
   /** 극단 담당자는 소유 극단을 바꿀 수 없으므로 false로 내려온다 */
@@ -219,6 +222,11 @@ export function ProgramFormDialog({
             />
           </div>
         </div>
+        {saveError && (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {saveError}
+          </p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
           <Button onClick={onSave} disabled={isSaving}>{isEditing ? '수정' : '추가'}</Button>

@@ -17,6 +17,7 @@ import {
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { ProgramFormDialog, type ProgramForm } from '@/components/admin/program-form-dialog'
 import { CENTER_FOCUS } from '@/lib/image-focus'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 type Program = {
   _id: string
@@ -77,6 +78,8 @@ export default function AdminProgramsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  // 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
+  const [saveError, setSaveError] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProgram, setEditingProgram] = useState<Program | null>(null)
   const [form, setForm] = useState<ProgramForm>(emptyForm)
@@ -154,6 +157,7 @@ export default function AdminProgramsPage() {
               : {}),
           }
     )
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
@@ -186,8 +190,9 @@ export default function AdminProgramsPage() {
 
   const handleSave = async () => {
     setIsSaving(true)
+    setSaveError('')
     try {
-      const res = await fetch(editingProgram ? `/api/programs/${editingProgram._id}` : '/api/programs', {
+      const res = await adminFetch(editingProgram ? `/api/programs/${editingProgram._id}` : '/api/programs', {
         method: editingProgram ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(toPayload()),
@@ -195,7 +200,13 @@ export default function AdminProgramsPage() {
       if (res.ok) {
         await fetchPrograms()
         setIsDialogOpen(false)
+        return
       }
+
+      // 실패했으면 창을 닫지 않는다. 입력한 내용을 다시 쓰지 않아도 되도록
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsSaving(false)
     }
@@ -203,8 +214,12 @@ export default function AdminProgramsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
-    const res = await fetch(`/api/programs/${id}`, { method: 'DELETE' })
-    if (res.ok) fetchPrograms()
+    const res = await adminFetch(`/api/programs/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      fetchPrograms()
+      return
+    }
+    alert(await getErrorMessage(res))
   }
 
   return (
@@ -280,6 +295,7 @@ export default function AdminProgramsPage() {
         form={form}
         onFormChange={setForm}
         isSaving={isSaving}
+        saveError={saveError}
         onSave={handleSave}
         theaterGroups={theaterGroups}
         canChangeOwner={!isGroupAccount}

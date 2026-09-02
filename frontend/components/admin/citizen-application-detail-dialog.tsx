@@ -57,6 +57,7 @@ export function CitizenApplicationDetailDialog({
   adminNote,
   onAdminNoteChange,
   isUpdating,
+  saveError,
   onUpdateStatus,
   onQnaSubmit,
 }: {
@@ -66,6 +67,8 @@ export function CitizenApplicationDetailDialog({
   adminNote: string
   onAdminNoteChange: (value: string) => void
   isUpdating: boolean
+  /** 심사 결과 저장에 실패한 사유. 있으면 승인·반려 버튼 위에 보여준다 */
+  saveError: string
   onUpdateStatus: (status: 'approved' | 'rejected') => void
   onQnaSubmit: (message: string) => Promise<string | void>
 }) {
@@ -148,6 +151,12 @@ export function CitizenApplicationDetailDialog({
                   rows={3}
                 />
               </div>
+
+              {saveError && (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {saveError}
+                </p>
+              )}
 
               {selected.status === 'pending' && (
                 <div className="flex gap-3 border-t pt-4">

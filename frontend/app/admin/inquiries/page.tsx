@@ -25,6 +25,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Lock, MessageSquare, Search, Send, Trash2 } from 'lucide-react'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 type Inquiry = {
   _id: string
@@ -47,6 +48,8 @@ export default function AdminInquiriesPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  // 답변 등록에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
+  const [saveError, setSaveError] = useState('')
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null)
   const [replyContent, setReplyContent] = useState('')
 
@@ -72,14 +75,16 @@ export default function AdminInquiriesPage() {
 
   const openReplyDialog = (inquiry: Inquiry) => {
     setSelectedInquiry(inquiry)
+    setSaveError('')
     setReplyContent(inquiry.reply?.content || '')
   }
 
   const handleReply = async () => {
     if (!selectedInquiry || !replyContent.trim()) return
     setIsSaving(true)
+    setSaveError('')
     try {
-      const res = await fetch(`/api/inquiries/${selectedInquiry._id}/reply`, {
+      const res = await adminFetch(`/api/inquiries/${selectedInquiry._id}/reply`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: replyContent }),
@@ -88,7 +93,13 @@ export default function AdminInquiriesPage() {
         await fetchInquiries()
         setSelectedInquiry(null)
         setReplyContent('')
+        return
       }
+
+      // 실패했으면 창을 닫지 않는다. 작성한 답변을 다시 쓰지 않아도 되도록
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('등록 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsSaving(false)
     }
@@ -96,8 +107,12 @@ export default function AdminInquiriesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
-    const res = await fetch(`/api/inquiries/${id}`, { method: 'DELETE' })
-    if (res.ok) fetchInquiries()
+    const res = await adminFetch(`/api/inquiries/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      fetchInquiries()
+      return
+    }
+    alert(await getErrorMessage(res))
   }
 
   return (
@@ -190,6 +205,11 @@ export default function AdminInquiriesPage() {
               <Textarea rows={6} value={replyContent} onChange={(e) => setReplyContent(e.target.value)} placeholder="답변을 입력하세요..." />
             </div>
           </div>
+          {saveError && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {saveError}
+            </p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedInquiry(null)}>취소</Button>
             <Button onClick={handleReply} disabled={isSaving}>

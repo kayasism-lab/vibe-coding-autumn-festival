@@ -36,6 +36,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Eye, Pencil, Pin, Plus, Search, Trash2 } from 'lucide-react'
 import { looksLikeHtml } from '@/lib/notice-board'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 type Notice = {
   _id: string
@@ -110,6 +111,8 @@ export default function AdminNoticesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  // 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
+  const [saveError, setSaveError] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   // HTML로 쓴 공지가 어떻게 보일지 저장 전에 확인하는 창
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
@@ -153,11 +156,13 @@ export default function AdminNoticesPage() {
         // 새 글은 오늘 날짜로 시작한다. 예전 보도라면 관리자가 날짜를 바꾸면 된다
         : { ...emptyForm, publishedAt: todayInKst() }
     )
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
   const handleSave = async () => {
     setIsSaving(true)
+    setSaveError('')
     try {
       const payload = {
         title: form.title,
@@ -172,7 +177,7 @@ export default function AdminNoticesPage() {
         sourceUrl: form.sourceUrl || null,
         sourceName: form.sourceName || null,
       }
-      const res = await fetch(editingNotice ? `/api/notices/${editingNotice._id}` : '/api/notices', {
+      const res = await adminFetch(editingNotice ? `/api/notices/${editingNotice._id}` : '/api/notices', {
         method: editingNotice ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -181,7 +186,13 @@ export default function AdminNoticesPage() {
       if (res.ok) {
         await fetchNotices()
         setIsDialogOpen(false)
+        return
       }
+
+      // 실패했으면 창을 닫지 않는다. 작성한 본문을 다시 쓰지 않아도 되도록
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsSaving(false)
     }
@@ -189,8 +200,12 @@ export default function AdminNoticesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
-    const res = await fetch(`/api/notices/${id}`, { method: 'DELETE' })
-    if (res.ok) fetchNotices()
+    const res = await adminFetch(`/api/notices/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      fetchNotices()
+      return
+    }
+    alert(await getErrorMessage(res))
   }
 
   return (
@@ -381,6 +396,11 @@ export default function AdminNoticesPage() {
               <Label>상단 고정</Label>
             </div>
           </div>
+          {saveError && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {saveError}
+            </p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
             <Button onClick={handleSave} disabled={isSaving}>{editingNotice ? '수정' : '작성'}</Button>

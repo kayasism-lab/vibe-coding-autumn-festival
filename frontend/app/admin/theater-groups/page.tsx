@@ -40,6 +40,7 @@ import {
 import Image from 'next/image'
 import { UpcomingShowFields } from '@/components/admin/upcoming-show-fields'
 import type { UpcomingShow } from '@/types/index'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 interface TheaterGroup {
   _id: string
@@ -93,6 +94,8 @@ export default function AdminTheaterGroupsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  // 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
+  const [saveError, setSaveError] = useState('')
   const [editingGroup, setEditingGroup] = useState<Partial<TheaterGroup> | null>(null)
   const [highlightsText, setHighlightsText] = useState('')
 
@@ -117,12 +120,14 @@ export default function AdminTheaterGroupsPage() {
   const openCreateDialog = () => {
     setEditingGroup({ ...emptyGroup, order: groups.length })
     setHighlightsText('')
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
   const openEditDialog = (group: TheaterGroup) => {
     setEditingGroup({ ...group })
     setHighlightsText(group.highlights.join('\n'))
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
@@ -145,7 +150,7 @@ export default function AdminTheaterGroupsPage() {
         : '/api/theater-groups'
       const method = isEditing ? 'PUT' : 'POST'
 
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(groupData),
@@ -155,9 +160,13 @@ export default function AdminTheaterGroupsPage() {
         fetchGroups()
         setIsDialogOpen(false)
         setEditingGroup(null)
+        return
       }
-    } catch (error) {
-      console.error('Failed to save group:', error)
+
+      // 실패했으면 창을 닫지 않는다. 올린 사진과 입력한 내용을 지키기 위해
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsSaving(false)
     }
@@ -167,12 +176,14 @@ export default function AdminTheaterGroupsPage() {
     if (!confirm('정말 이 극단을 삭제하시겠습니까?')) return
 
     try {
-      const res = await fetch(`/api/theater-groups/${id}`, { method: 'DELETE' })
+      const res = await adminFetch(`/api/theater-groups/${id}`, { method: 'DELETE' })
       if (res.ok) {
         fetchGroups()
+        return
       }
-    } catch (error) {
-      console.error('Failed to delete group:', error)
+      alert(await getErrorMessage(res))
+    } catch {
+      alert('삭제 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     }
   }
 
@@ -530,6 +541,12 @@ export default function AdminTheaterGroupsPage() {
                     }
                   />
                 </div>
+
+                {saveError && (
+                  <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {saveError}
+                  </p>
+                )}
 
                 {/* 저장 버튼 */}
                 <div className="flex justify-end gap-2 pt-4 border-t">

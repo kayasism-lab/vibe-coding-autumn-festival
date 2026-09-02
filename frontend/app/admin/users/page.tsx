@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { GROUP_PERMISSION_META, type GroupPermission } from '@/lib/admin-permissions'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 type User = {
   _id: string
@@ -115,26 +116,34 @@ export default function AdminUsersPage() {
       return
     }
 
-    const res = await fetch(editingUser ? `/api/users/${editingUser._id}` : '/api/users', {
-      method: editingUser ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    })
-    const data = await res.json()
+    try {
+      const res = await adminFetch(editingUser ? `/api/users/${editingUser._id}` : '/api/users', {
+        method: editingUser ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
 
-    if (!res.ok || !data.success) {
-      setErrorMessage(data.message || '저장하지 못했습니다.')
-      return
+      // 서버는 실패 사유를 error 필드로 보낸다 (예: 아이디 중복, 담당 극단 없음)
+      if (!res.ok) {
+        setErrorMessage(await getErrorMessage(res))
+        return
+      }
+
+      await fetchUsers()
+      setIsDialogOpen(false)
+    } catch {
+      setErrorMessage('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     }
-
-    await fetchUsers()
-    setIsDialogOpen(false)
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
-    const res = await fetch(`/api/users/${id}`, { method: 'DELETE' })
-    if (res.ok) fetchUsers()
+    const res = await adminFetch(`/api/users/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      fetchUsers()
+      return
+    }
+    alert(await getErrorMessage(res))
   }
 
   return (

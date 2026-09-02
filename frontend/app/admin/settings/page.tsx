@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Save, Loader2, Image as ImageIcon, Type, Settings2 } from 'lucide-react'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 interface HeroConfig {
   backgroundImage: string
@@ -70,6 +71,8 @@ export default function AdminSettingsPage() {
   const [siteInfo, setSiteInfo] = useState<SiteInfo>(defaultSiteInfo)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  // 저장 실패 사유. 성공 안내(초록)와 구분해 붉게 보여준다
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     fetchConfigs()
@@ -108,8 +111,9 @@ export default function AdminSettingsPage() {
 
   const saveHeroConfig = async () => {
     setIsSaving(true)
+    setSaveError('')
     try {
-      const res = await fetch('/api/site-config', {
+      const res = await adminFetch('/api/site-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'hero', value: heroConfig }),
@@ -118,10 +122,12 @@ export default function AdminSettingsPage() {
       if (res.ok) {
         setSaveMessage('히어로 설정이 저장되었습니다.')
         setTimeout(() => setSaveMessage(''), 3000)
+        return
       }
-    } catch (error) {
-      console.error('Failed to save hero config:', error)
-      setSaveMessage('저장에 실패했습니다.')
+
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsSaving(false)
     }
@@ -129,8 +135,9 @@ export default function AdminSettingsPage() {
 
   const saveSiteInfo = async () => {
     setIsSaving(true)
+    setSaveError('')
     try {
-      const res = await fetch('/api/site-config', {
+      const res = await adminFetch('/api/site-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'siteInfo', value: siteInfo }),
@@ -139,10 +146,12 @@ export default function AdminSettingsPage() {
       if (res.ok) {
         setSaveMessage('사이트 정보가 저장되었습니다.')
         setTimeout(() => setSaveMessage(''), 3000)
+        return
       }
-    } catch (error) {
-      console.error('Failed to save site info:', error)
-      setSaveMessage('저장에 실패했습니다.')
+
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsSaving(false)
     }
@@ -163,6 +172,12 @@ export default function AdminSettingsPage() {
           {saveMessage && (
             <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-700">
               {saveMessage}
+            </div>
+          )}
+
+          {saveError && (
+            <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+              {saveError}
             </div>
           )}
 

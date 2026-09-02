@@ -9,6 +9,7 @@ import {
   seatStatusOptions,
   type SeatStatusKey,
 } from '@/lib/program-display'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -68,6 +69,8 @@ export default function AdminSchedulesPage() {
   const [programs, setPrograms] = useState<Program[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  // 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
+  const [saveError, setSaveError] = useState('')
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
   const [formData, setFormData] = useState<ScheduleFormData>({
     programId: '',
@@ -136,14 +139,15 @@ export default function AdminSchedulesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    setSaveError('')
+
     const url = editingSchedule 
       ? `/api/schedules/${editingSchedule._id}` 
       : '/api/schedules'
     const method = editingSchedule ? 'PUT' : 'POST'
 
     try {
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -153,9 +157,13 @@ export default function AdminSchedulesPage() {
         fetchSchedules()
         setIsDialogOpen(false)
         resetForm()
+        return
       }
-    } catch (error) {
-      console.error('Failed to save schedule:', error)
+
+      // 실패했으면 창을 닫지 않는다. 입력한 내용을 다시 쓰지 않아도 되도록
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     }
   }
 
@@ -163,12 +171,14 @@ export default function AdminSchedulesPage() {
     if (!confirm('정말 삭제하시겠습니까?')) return
 
     try {
-      const res = await fetch(`/api/schedules/${id}`, { method: 'DELETE' })
+      const res = await adminFetch(`/api/schedules/${id}`, { method: 'DELETE' })
       if (res.ok) {
         fetchSchedules()
+        return
       }
-    } catch (error) {
-      console.error('Failed to delete schedule:', error)
+      alert(await getErrorMessage(res))
+    } catch {
+      alert('삭제 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     }
   }
 
@@ -182,11 +192,13 @@ export default function AdminSchedulesPage() {
       seatStatus: schedule.seatStatus,
       note: schedule.note || '',
     })
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
   const resetForm = () => {
     setEditingSchedule(null)
+    setSaveError('')
     setFormData({
       programId: '',
       date: '',
@@ -328,6 +340,12 @@ export default function AdminSchedulesPage() {
                       rows={3}
                     />
                   </div>
+
+                  {saveError && (
+                    <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                      {saveError}
+                    </p>
+                  )}
 
                   <div className="flex justify-end gap-2 pt-4">
                     <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>

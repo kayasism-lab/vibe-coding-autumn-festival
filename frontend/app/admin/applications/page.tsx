@@ -32,6 +32,7 @@ import {
   Users,
 } from 'lucide-react'
 import Image from 'next/image'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 interface Application {
   _id: string
@@ -59,6 +60,8 @@ export default function AdminApplicationsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [adminNote, setAdminNote] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
+  // 심사 결과 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     fetchApplications()
@@ -81,6 +84,7 @@ export default function AdminApplicationsPage() {
   const openDetail = (app: Application) => {
     setSelectedApp(app)
     setAdminNote(app.adminNote || '')
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
@@ -88,8 +92,9 @@ export default function AdminApplicationsPage() {
     if (!selectedApp) return
 
     setIsUpdating(true)
+    setSaveError('')
     try {
-      const res = await fetch(`/api/applications/${selectedApp._id}`, {
+      const res = await adminFetch(`/api/applications/${selectedApp._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, adminNote }),
@@ -98,9 +103,13 @@ export default function AdminApplicationsPage() {
       if (res.ok) {
         fetchApplications()
         setIsDialogOpen(false)
+        return
       }
-    } catch (error) {
-      console.error('Failed to update application:', error)
+
+      // 실패했으면 창을 닫지 않는다. 작성한 심사 메모를 지키기 위해
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('처리 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsUpdating(false)
     }
@@ -266,6 +275,12 @@ export default function AdminApplicationsPage() {
                       rows={3}
                     />
                   </div>
+
+                  {saveError && (
+                    <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                      {saveError}
+                    </p>
+                  )}
 
                   {/* 액션 버튼 */}
                   {selectedApp.status === 'pending' && (

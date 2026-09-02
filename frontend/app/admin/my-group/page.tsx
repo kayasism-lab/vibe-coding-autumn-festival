@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { ExternalLink, Loader2, Save } from 'lucide-react'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 interface TheaterGroup {
   _id: string
@@ -45,6 +46,8 @@ export default function MyGroupPage() {
   const [isSavingGroup, setIsSavingGroup] = useState(false)
   const [savingProgramId, setSavingProgramId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
+  // 안내가 성공인지 실패인지. 실패는 초록 대신 붉게 보여준다
+  const [isErrorMessage, setIsErrorMessage] = useState(false)
 
   useEffect(() => {
     load()
@@ -78,35 +81,49 @@ export default function MyGroupPage() {
     setIsLoading(false)
   }
 
-  function flash(text: string) {
+  function flash(text: string, failed = false) {
     setMessage(text)
-    setTimeout(() => setMessage(''), 3000)
+    setIsErrorMessage(failed)
+    // 성공 안내만 잠시 뒤 사라진다. 실패는 보고 조치해야 하므로 남겨둔다
+    if (!failed) setTimeout(() => setMessage(''), 3000)
   }
 
   const saveGroup = async () => {
     if (!group) return
     setIsSavingGroup(true)
-    const res = await fetch(`/api/theater-groups/${group._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...group,
-        highlights: highlightsText.split('\n').filter((h) => h.trim()),
-      }),
-    })
-    flash(res.ok ? '극단 정보가 저장되었습니다.' : '저장에 실패했습니다.')
-    setIsSavingGroup(false)
+    setMessage('')
+    try {
+      const res = await adminFetch(`/api/theater-groups/${group._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...group,
+          highlights: highlightsText.split('\n').filter((h) => h.trim()),
+        }),
+      })
+      flash(res.ok ? '극단 정보가 저장되었습니다.' : await getErrorMessage(res), !res.ok)
+    } catch {
+      flash('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.', true)
+    } finally {
+      setIsSavingGroup(false)
+    }
   }
 
   const saveTicketUrl = async (programId: string) => {
     setSavingProgramId(programId)
-    const res = await fetch(`/api/programs/${programId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticketUrl: ticketUrls[programId] }),
-    })
-    flash(res.ok ? '예약 링크가 저장되었습니다.' : '저장에 실패했습니다.')
-    setSavingProgramId(null)
+    setMessage('')
+    try {
+      const res = await adminFetch(`/api/programs/${programId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketUrl: ticketUrls[programId] }),
+      })
+      flash(res.ok ? '예약 링크가 저장되었습니다.' : await getErrorMessage(res), !res.ok)
+    } catch {
+      flash('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.', true)
+    } finally {
+      setSavingProgramId(null)
+    }
   }
 
   if (isLoading) {
@@ -133,7 +150,13 @@ export default function MyGroupPage() {
           </div>
 
           {message && (
-            <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-700">
+            <div
+              className={`rounded-lg border p-4 text-sm ${
+                isErrorMessage
+                  ? 'border-destructive/20 bg-destructive/10 text-destructive'
+                  : 'border-green-500/20 bg-green-500/10 text-green-700'
+              }`}
+            >
               {message}
             </div>
           )}

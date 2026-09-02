@@ -31,6 +31,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 
 type Sponsor = {
   _id: string
@@ -67,6 +68,8 @@ export default function AdminSponsorsPage() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  // 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
+  const [saveError, setSaveError] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingSponsor, setEditingSponsor] = useState<Sponsor | null>(null)
   const [form, setForm] = useState<Omit<Sponsor, '_id'>>(emptyForm)
@@ -94,13 +97,15 @@ export default function AdminSponsorsPage() {
       tier: sponsor.tier,
       order: sponsor.order,
     } : { ...emptyForm, order: sponsors.length })
+    setSaveError('')
     setIsDialogOpen(true)
   }
 
   const handleSave = async () => {
     setIsSaving(true)
+    setSaveError('')
     try {
-      const res = await fetch(editingSponsor ? `/api/sponsors/${editingSponsor._id}` : '/api/sponsors', {
+      const res = await adminFetch(editingSponsor ? `/api/sponsors/${editingSponsor._id}` : '/api/sponsors', {
         method: editingSponsor ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -112,7 +117,13 @@ export default function AdminSponsorsPage() {
       if (res.ok) {
         await fetchSponsors()
         setIsDialogOpen(false)
+        return
       }
+
+      // 실패했으면 창을 닫지 않는다. 올린 로고를 다시 고르지 않아도 되도록
+      setSaveError(await getErrorMessage(res))
+    } catch {
+      setSaveError('저장 중 통신 문제가 생겼습니다. 잠시 후 다시 눌러주세요.')
     } finally {
       setIsSaving(false)
     }
@@ -120,8 +131,12 @@ export default function AdminSponsorsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
-    const res = await fetch(`/api/sponsors/${id}`, { method: 'DELETE' })
-    if (res.ok) fetchSponsors()
+    const res = await adminFetch(`/api/sponsors/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      fetchSponsors()
+      return
+    }
+    alert(await getErrorMessage(res))
   }
 
   return (
@@ -211,6 +226,11 @@ export default function AdminSponsorsPage() {
             </Field>
             <Field label="정렬"><Input type="number" value={form.order} onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} /></Field>
           </div>
+          {saveError && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {saveError}
+            </p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
             <Button onClick={handleSave} disabled={isSaving}>{editingSponsor ? '수정' : '추가'}</Button>
