@@ -85,3 +85,12 @@ export function canGroupAccessPath(pathname: string, permissions: GroupPermissio
   if (!matched) return false
   return permissions.includes(matched.permission)
 }
+
+// 극단 계정이 로그인 직후·사이드바 로고 클릭 시 들어갈 첫 화면.
+// my-group을 고정으로 쓰면 그 권한이 없는 계정(낭독극·단막극 담당자)이 '접근 권한 없음'
+// 화면을 만나므로, 실제로 가진 권한 중 메뉴 순서상 첫 번째로 보낸다.
+// programs는 모든 극단 계정이 항상 갖고 있어 최후의 대비값으로 안전하다.
+export function resolveGroupHomeHref(permissions: GroupPermission[]) {
+  const matched = PATH_PERMISSIONS.find((entry) => permissions.includes(entry.permission))
+  return matched?.prefix ?? '/admin/programs'
+}

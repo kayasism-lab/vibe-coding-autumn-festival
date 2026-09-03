@@ -22,7 +22,7 @@ import {
   UserCog,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { GROUP_PERMISSION_META, type GroupPermission } from '@/lib/admin-permissions'
+import { GROUP_PERMISSION_META, resolveGroupHomeHref, type GroupPermission } from '@/lib/admin-permissions'
 
 const fullSidebarItems = [
   { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
@@ -76,7 +76,9 @@ export function AdminSidebar() {
   )
 
   const sidebarItems = isGroupRole ? groupSidebarItems : fullSidebarItems
-  const homeHref = isGroupRole ? '/admin/my-group' : '/admin'
+  // my-group 권한이 없는 극단 계정(낭독극·단막극 담당자)도 있어, 실제로 가진 권한 중
+  // 첫 메뉴로 보낸다
+  const homeHref = isGroupRole ? resolveGroupHomeHref(permissions) : '/admin'
 
   const handleLogout = async () => {
     try {

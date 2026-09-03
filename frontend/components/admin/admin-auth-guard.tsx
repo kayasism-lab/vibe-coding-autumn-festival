@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { canGroupAccessPath, type GroupPermission } from '@/lib/admin-permissions'
+import { canGroupAccessPath, resolveGroupHomeHref, type GroupPermission } from '@/lib/admin-permissions'
 import { refreshSession } from '@/lib/admin-fetch'
 
 /**
@@ -27,6 +27,8 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [state, setState] = useState<GuardState>('checking')
+  // '접근 권한 없음' 화면에서 "돌아가기" 링크를 계산하는 데 쓴다 (my-group이 없는 계정도 있음)
+  const [permissions, setPermissions] = useState<GroupPermission[]>([])
 
   useEffect(() => {
     if (pathname === '/admin/login') {
@@ -49,7 +51,9 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
         // 극단 담당자는 권한이 있는 메뉴에만 들어갈 수 있다.
         // 주소를 직접 입력해 들어와도 여기서 막는다.
-        if (role === 'group' && !canGroupAccessPath(pathname, data.data?.permissions ?? [])) {
+        const myPermissions = data.data?.permissions ?? []
+        if (role === 'group' && !canGroupAccessPath(pathname, myPermissions)) {
+          setPermissions(myPermissions)
           setState('forbidden')
           return
         }
@@ -90,10 +94,10 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
           이 메뉴를 사용할 권한이 없습니다. 필요하시면 축제 사무국(관리자)에 권한을 요청해주세요.
         </p>
         <Link
-          href="/admin/my-group"
+          href={resolveGroupHomeHref(permissions)}
           className="rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground"
         >
-          내 극단 관리로 이동
+          내 관리 화면으로 이동
         </Link>
       </div>
     )

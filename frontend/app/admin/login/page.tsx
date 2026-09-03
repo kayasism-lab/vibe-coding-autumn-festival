@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+import { resolveGroupHomeHref } from '@/lib/admin-permissions'
 
 // 아이디만 저장(비밀번호는 브라우저 자체 비밀번호 관리자에 위임)
 const SAVED_ID_KEY = 'admin_saved_id'
@@ -59,7 +60,8 @@ export default function AdminLoginPage() {
           localStorage.removeItem(SAVED_ID_KEY)
         }
 
-        router.push(role === 'group' ? '/admin/my-group' : '/admin')
+        // 극단 계정은 실제로 가진 권한 중 첫 메뉴로 보낸다 (my-group이 없는 계정도 있음)
+        router.push(role === 'group' ? resolveGroupHomeHref(result.data.user.permissions ?? []) : '/admin')
         router.refresh()
       } else {
         setError(result.error || '로그인에 실패했습니다.')
