@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { Menu, X, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { resolveGroupHomeHref, type GroupPermission } from '@/lib/admin-permissions'
 
 type NavItem = {
   label: string
@@ -66,6 +67,10 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isScrolled, setIsScrolled] = useState(false)
+  // 로그인 세션이 살아있는 동안(관리 화면에서 로그인 유지 시간 안에 있는 동안)은
+  // "관리자 로그인" 대신 "관리페이지 이동"을 보여준다. 이 컴포넌트는 페이지마다
+  // 개별적으로 들어가 있어 이동할 때마다 새로 마운트되므로, 매번 최신 상태로 확인된다.
+  const [adminHref, setAdminHref] = useState<string | null>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -73,6 +78,21 @@ export function Header() {
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        const role = data.data?.role
+        if (!data.success || (role !== 'superadmin' && role !== 'admin' && role !== 'group')) {
+          setAdminHref(null)
+          return
+        }
+        const permissions = (data.data?.permissions ?? []) as GroupPermission[]
+        setAdminHref(role === 'group' ? resolveGroupHomeHref(permissions) : '/admin')
+      })
+      .catch(() => setAdminHref(null))
   }, [])
 
   return (
@@ -138,9 +158,16 @@ export function Header() {
             <div className="hidden sm:flex items-center gap-4">
               {/* 회원가입은 당분간 비공개, 로그인은 관리자 로그인 페이지로 연결 */}
               {/* 오시는 길은 중요도가 낮아 상단 바에서 제거, 메뉴(축제안내)에서만 접근 */}
-              <Link href="/admin/login" className="text-white/60 hover:text-amber-400 transition-colors">
-                관리자 로그인
-              </Link>
+              {/* 로그인 세션이 살아있으면 로그인 폼 대신 관리 화면 바로가기를 보여준다 */}
+              {adminHref ? (
+                <Link href={adminHref} className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
+                  관리페이지 이동
+                </Link>
+              ) : (
+                <Link href="/admin/login" className="text-white/60 hover:text-amber-400 transition-colors">
+                  관리자 로그인
+                </Link>
+              )}
             </div>
           </div>
         </div>
