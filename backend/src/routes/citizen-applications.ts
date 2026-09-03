@@ -1,9 +1,10 @@
 import { Router } from 'express'
+import type { Types } from 'mongoose'
 import bcrypt from 'bcryptjs'
 import { CitizenApplication, Program } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
-import { requireAdmin, requireAdminOrGroup } from '../middleware/require-admin.js'
-import { canManageGroupResource } from '../lib/ownership.js'
+import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
+import { canManageProgram } from '../lib/ownership.js'
 import { clearFailures, getBlockedMinutes, recordFailure } from '../lib/attempt-limiter.js'
 import { validatePassword } from '../lib/password-policy.js'
 
@@ -243,24 +244,38 @@ citizenApplicationsRouter.post(
   })
 )
 
-// 관리자/극단 담당자용 목록 (극단 담당자는 본인 소속 프로그램 신청만 조회 가능)
+// 관리자/담당 계정용 목록.
+// 낭독극·단막극 담당 계정(programType)은 본인 담당 유형 신청만, 극단 담당자는 소유 극단이
+// 없는 이 데이터를 애초에 볼 일이 없다(requirePermission이 먼저 걸러줌).
 citizenApplicationsRouter.get(
   '/',
-  requireAdminOrGroup,
+  requirePermission('citizen-applications'),
   asyncHandler(async (req, res) => {
     const query: Record<string, unknown> = {}
     if (req.query.programId) query.programId = req.query.programId
 
     const applications = await CitizenApplication.find(query)
       .select('-password')
-      .populate('programId', 'title company')
+      .populate('programId', 'title company theaterGroup type')
       .sort({ createdAt: -1 })
       .lean()
 
     const visible = []
     for (const application of applications) {
-      const company = (application.programId as unknown as { company?: string } | null)?.company
-      if (company && (await canManageGroupResource(res.locals.user, company))) {
+      const program = application.programId as unknown as {
+        company?: string
+        theaterGroup?: Types.ObjectId | string | null
+        type?: string
+      } | null
+      if (
+        program?.company &&
+        program.type &&
+        (await canManageProgram(res.locals.user, {
+          company: program.company,
+          theaterGroup: program.theaterGroup,
+          type: program.type,
+        }))
+      ) {
         // lean() 조회는 스키마 default를 적용하지 않으므로 qna 필드를 직접 보정
         visible.push({ ...application, qna: application.qna ?? [] })
       }
@@ -270,10 +285,10 @@ citizenApplicationsRouter.get(
   })
 )
 
-// 관리자/극단 담당자가 심사중인 신청에 문의·답변 남기기
+// 관리자/담당 계정이 심사중인 신청에 문의·답변 남기기
 citizenApplicationsRouter.post(
   '/:id/qna/admin',
-  requireAdminOrGroup,
+  requirePermission('citizen-applications'),
   asyncHandler(async (req, res) => {
     const { message } = req.body
     if (!message?.trim()) {
@@ -281,14 +296,29 @@ citizenApplicationsRouter.post(
       return
     }
 
-    const application = await CitizenApplication.findById(req.params.id).populate('programId', 'company')
+    const application = await CitizenApplication.findById(req.params.id).populate(
+      'programId',
+      'company theaterGroup type'
+    )
     if (!application) {
       fail(res, '신청 내역을 찾을 수 없습니다.', 404)
       return
     }
 
-    const company = (application.programId as unknown as { company?: string } | null)?.company
-    if (!company || !(await canManageGroupResource(res.locals.user, company))) {
+    const program = application.programId as unknown as {
+      company?: string
+      theaterGroup?: Types.ObjectId | string | null
+      type?: string
+    } | null
+    if (
+      !program?.company ||
+      !program.type ||
+      !(await canManageProgram(res.locals.user, {
+        company: program.company,
+        theaterGroup: program.theaterGroup,
+        type: program.type,
+      }))
+    ) {
       fail(res, '권한이 없습니다.', 403)
       return
     }

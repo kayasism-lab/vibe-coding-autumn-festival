@@ -60,6 +60,7 @@ export function CitizenApplicationDetailDialog({
   saveError,
   onUpdateStatus,
   onQnaSubmit,
+  canDecide,
 }: {
   selected: CitizenApplication | null
   isOpen: boolean
@@ -71,6 +72,8 @@ export function CitizenApplicationDetailDialog({
   saveError: string
   onUpdateStatus: (status: 'approved' | 'rejected') => void
   onQnaSubmit: (message: string) => Promise<string | void>
+  /** 승인·반려·관리자 메모는 총괄 관리자만 다룰 수 있다. false면 열람과 문의 답변만 보여준다 */
+  canDecide: boolean
 }) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -142,35 +145,39 @@ export function CitizenApplicationDetailDialog({
                 onSubmit={onQnaSubmit}
               />
 
-              <div className="space-y-2">
-                <Label>관리자 메모</Label>
-                <Textarea
-                  value={adminNote}
-                  onChange={(e) => onAdminNoteChange(e.target.value)}
-                  placeholder="심사 관련 메모를 작성하세요..."
-                  rows={3}
-                />
-              </div>
+              {canDecide && (
+                <>
+                  <div className="space-y-2">
+                    <Label>관리자 메모</Label>
+                    <Textarea
+                      value={adminNote}
+                      onChange={(e) => onAdminNoteChange(e.target.value)}
+                      placeholder="심사 관련 메모를 작성하세요..."
+                      rows={3}
+                    />
+                  </div>
 
-              {saveError && (
-                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {saveError}
-                </p>
-              )}
+                  {saveError && (
+                    <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                      {saveError}
+                    </p>
+                  )}
 
-              {selected.status === 'pending' && (
-                <div className="flex gap-3 border-t pt-4">
-                  <Button
-                    onClick={() => onUpdateStatus('approved')}
-                    disabled={isUpdating}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="mr-2 h-4 w-4" />승인</>}
-                  </Button>
-                  <Button onClick={() => onUpdateStatus('rejected')} disabled={isUpdating} variant="destructive" className="flex-1">
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><X className="mr-2 h-4 w-4" />반려</>}
-                  </Button>
-                </div>
+                  {selected.status === 'pending' && (
+                    <div className="flex gap-3 border-t pt-4">
+                      <Button
+                        onClick={() => onUpdateStatus('approved')}
+                        disabled={isUpdating}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="mr-2 h-4 w-4" />승인</>}
+                      </Button>
+                      <Button onClick={() => onUpdateStatus('rejected')} disabled={isUpdating} variant="destructive" className="flex-1">
+                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><X className="mr-2 h-4 w-4" />반려</>}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </>

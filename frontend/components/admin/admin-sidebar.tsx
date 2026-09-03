@@ -49,6 +49,13 @@ const groupMenuByPermission: Record<GroupPermission, { href: string; icon: typeo
   gallery: { href: '/admin/gallery', icon: Images, label: '갤러리 관리' },
   notices: { href: '/admin/notices', icon: FileText, label: '게시판 관리' },
   inquiries: { href: '/admin/inquiries', icon: MessageSquare, label: '문의 답변' },
+  'citizen-applications': { href: '/admin/citizen-applications', icon: ClipboardList, label: '참여 신청자 관리' },
+}
+
+// 낭독극·단막극 담당 계정은 담당 유형에 맞는 메뉴 이름으로 보여준다
+const citizenApplicationsLabelByProgramType: Record<string, string> = {
+  reading: '낭독극 신청자 관리',
+  short_play: '단막극 신청자 관리',
 }
 
 export function AdminSidebar() {
@@ -57,6 +64,7 @@ export function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isGroupRole, setIsGroupRole] = useState(false)
   const [permissions, setPermissions] = useState<GroupPermission[]>([])
+  const [programType, setProgramType] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -65,15 +73,20 @@ export function AdminSidebar() {
         if (data.success && data.data?.role === 'group') {
           setIsGroupRole(true)
           setPermissions(data.data.permissions ?? [])
+          setProgramType(data.data.programType ?? null)
         }
       })
       .catch(() => {})
   }, [])
 
   // 권한 목록 순서가 아니라 메뉴 정의 순서대로 노출해 화면 순서가 계정마다 흔들리지 않게 한다
-  const groupSidebarItems = GROUP_PERMISSION_META.filter((meta) => permissions.includes(meta.key)).map(
-    (meta) => groupMenuByPermission[meta.key]
-  )
+  const groupSidebarItems = GROUP_PERMISSION_META.filter((meta) => permissions.includes(meta.key)).map((meta) => {
+    const item = groupMenuByPermission[meta.key]
+    if (meta.key === 'citizen-applications' && programType && citizenApplicationsLabelByProgramType[programType]) {
+      return { ...item, label: citizenApplicationsLabelByProgramType[programType] }
+    }
+    return item
+  })
 
   const sidebarItems = isGroupRole ? groupSidebarItems : fullSidebarItems
   // my-group 권한이 없는 극단 계정(낭독극·단막극 담당자)도 있어, 실제로 가진 권한 중

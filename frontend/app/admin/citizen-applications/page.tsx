@@ -31,6 +31,12 @@ const programTypeLabels = {
   short_play: '열린 단막극',
 }
 
+// 낭독극·단막극 담당 계정은 페이지 제목도 담당 유형에 맞게 보여준다. 그 외(관리자)는 전체를 다룬다는 원래 문구 그대로.
+const pageHeadingByProgramType: Record<string, { title: string; description: string }> = {
+  reading: { title: '낭독극 신청자 관리', description: '열린 낭독극 시민 참여 신청을 검토합니다.' },
+  short_play: { title: '단막극 신청자 관리', description: '열린 단막극 시민 참여 신청을 검토합니다.' },
+}
+
 export default function AdminCitizenApplicationsPage() {
   const [applications, setApplications] = useState<CitizenApplication[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -40,6 +46,9 @@ export default function AdminCitizenApplicationsPage() {
   const [isUpdating, setIsUpdating] = useState(false)
   // 심사 결과 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
   const [saveError, setSaveError] = useState('')
+  // 승인·반려는 총괄 관리자만 가능하다. 담당 계정은 열람·문의 답변까지만.
+  const [canDecide, setCanDecide] = useState(false)
+  const [heading, setHeading] = useState({ title: '시민 참여 신청 관리', description: '열린 낭독극·열린 단막극 시민 참여 신청을 검토합니다.' })
 
   const fetchApplications = async () => {
     try {
@@ -53,6 +62,19 @@ export default function AdminCitizenApplicationsPage() {
 
   useEffect(() => {
     fetchApplications()
+
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) return
+        const role = data.data?.role
+        setCanDecide(role === 'superadmin' || role === 'admin')
+        const programType = data.data?.programType as string | undefined
+        if (programType && pageHeadingByProgramType[programType]) {
+          setHeading(pageHeadingByProgramType[programType])
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const openDetail = (app: CitizenApplication) => {
@@ -115,8 +137,8 @@ export default function AdminCitizenApplicationsPage() {
       <main className="flex-1 p-6 pt-20 lg:p-8 lg:pt-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">시민 참여 신청 관리</h1>
-            <p className="mt-1 text-muted-foreground">열린 낭독극·열린 단막극 시민 참여 신청을 검토합니다.</p>
+            <h1 className="text-3xl font-bold">{heading.title}</h1>
+            <p className="mt-1 text-muted-foreground">{heading.description}</p>
           </div>
 
           <div className="mb-8 grid grid-cols-2 gap-4">
@@ -191,6 +213,7 @@ export default function AdminCitizenApplicationsPage() {
           saveError={saveError}
           onUpdateStatus={updateStatus}
           onQnaSubmit={handleQnaReply}
+          canDecide={canDecide}
         />
       </main>
     </div>

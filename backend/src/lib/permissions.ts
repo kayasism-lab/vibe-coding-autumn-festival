@@ -9,6 +9,7 @@ export const GROUP_PERMISSIONS = [
   'gallery',
   'notices',
   'inquiries',
+  'citizen-applications',
 ] as const
 
 export type GroupPermission = (typeof GROUP_PERMISSIONS)[number]
@@ -18,13 +19,15 @@ export type GroupPermission = (typeof GROUP_PERMISSIONS)[number]
 export const GROUP_DEFAULT_PERMISSIONS: GroupPermission[] = ['my-group', 'programs']
 
 // 담당 극단이 없는 계정(낭독극·단막극 담당자)의 기본 권한.
-// 소개할 '내 극단'이 없으므로 my-group은 제외한다.
-export const PROGRAM_TYPE_DEFAULT_PERMISSIONS: GroupPermission[] = ['programs']
+// 소개할 '내 극단'이 없으므로 my-group은 제외한다. citizen-applications(시민 참여
+// 신청자 관리)는 극단 계정에는 애초에 해당 데이터가 없어 이쪽에만 기본으로 둔다.
+export const PROGRAM_TYPE_DEFAULT_PERMISSIONS: GroupPermission[] = ['programs', 'citizen-applications']
 
 // 관리자가 계정별로 켜고 끌 수 있는 추가 권한.
-// my-group·programs는 계정 종류와 무관하게 항상 기본 권한 쪽에서만 나오므로 여기선 뺀다.
+// 어느 한쪽이라도 기본 권한으로 이미 나오는 항목은 여기선 뺀다(중복 노출 방지).
 export const GRANTABLE_PERMISSIONS: GroupPermission[] = GROUP_PERMISSIONS.filter(
-  (permission) => !GROUP_DEFAULT_PERMISSIONS.includes(permission)
+  (permission) =>
+    !GROUP_DEFAULT_PERMISSIONS.includes(permission) && !PROGRAM_TYPE_DEFAULT_PERMISSIONS.includes(permission)
 )
 
 export function isGroupPermission(value: unknown): value is GroupPermission {

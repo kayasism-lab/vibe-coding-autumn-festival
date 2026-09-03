@@ -4,7 +4,8 @@
 export const GROUP_DEFAULT_PERMISSIONS = ['my-group', 'programs'] as const
 
 // 담당 극단이 없는 계정(낭독극·단막극 담당자)의 기본 권한. 소개할 '내 극단'이 없어 my-group은 뺀다.
-export const PROGRAM_TYPE_DEFAULT_PERMISSIONS = ['programs'] as const
+// citizen-applications(참여 신청자 관리)는 극단 계정에는 해당 데이터가 없어 이쪽에만 기본으로 둔다.
+export const PROGRAM_TYPE_DEFAULT_PERMISSIONS = ['programs', 'citizen-applications'] as const
 
 export type GroupPermission =
   | 'my-group'
@@ -13,6 +14,7 @@ export type GroupPermission =
   | 'gallery'
   | 'notices'
   | 'inquiries'
+  | 'citizen-applications'
 
 interface PermissionMeta {
   key: GroupPermission
@@ -60,6 +62,12 @@ export const GROUP_PERMISSION_META: PermissionMeta[] = [
     description: '관람객 문의를 확인하고 답변합니다.',
     grantable: true,
   },
+  {
+    key: 'citizen-applications',
+    label: '참여 신청자 관리',
+    description: '담당 공연 유형(낭독극·단막극)에 들어온 시민 참여 신청자를 확인하고 문의에 답변합니다. 승인·반려는 총괄 관리자만 할 수 있습니다.',
+    grantable: false,
+  },
 ]
 
 export const GRANTABLE_PERMISSION_META = GROUP_PERMISSION_META.filter((meta) => meta.grantable)
@@ -77,6 +85,7 @@ const PATH_PERMISSIONS: { prefix: string; permission: GroupPermission }[] = [
   { prefix: '/admin/gallery', permission: 'gallery' },
   { prefix: '/admin/notices', permission: 'notices' },
   { prefix: '/admin/inquiries', permission: 'inquiries' },
+  { prefix: '/admin/citizen-applications', permission: 'citizen-applications' },
 ]
 
 /** 극단 계정이 해당 경로에 들어갈 수 있는지 판단한다 (관리자는 항상 허용) */
