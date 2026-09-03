@@ -25,6 +25,7 @@ function publicUser(user: {
   phone: string
   theaterGroupName: string
   theaterGroup?: unknown
+  programType?: string | null
   permissions?: string[]
   role: string
 }) {
@@ -35,8 +36,10 @@ function publicUser(user: {
     phone: user.phone,
     theaterGroupName: user.theaterGroupName,
     theaterGroup: user.theaterGroup ? String(user.theaterGroup) : null,
+    // 담당 극단이 없는 계정(낭독극·단막극 담당자)만 값이 있다
+    programType: user.theaterGroup ? null : user.programType ?? null,
     // 관리자 화면에서 메뉴를 그릴 때 쓰도록 최종 권한(기본+부여)을 계산해 내려준다
-    permissions: user.role === 'group' ? resolveGroupPermissions(user.permissions) : [],
+    permissions: user.role === 'group' ? resolveGroupPermissions(user.permissions, !!user.theaterGroup) : [],
     role: user.role,
   }
 }

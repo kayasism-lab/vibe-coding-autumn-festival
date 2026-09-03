@@ -4,9 +4,25 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Check, Lock } from 'lucide-react'
-import { GRANTABLE_PERMISSION_META, GROUP_PERMISSION_META, type GroupPermission } from '@/lib/admin-permissions'
+import {
+  GRANTABLE_PERMISSION_META,
+  GROUP_DEFAULT_PERMISSIONS,
+  GROUP_PERMISSION_META,
+  PROGRAM_TYPE_DEFAULT_PERMISSIONS,
+  type GroupPermission,
+} from '@/lib/admin-permissions'
+import { PROGRAM_TYPE_ACCOUNT_OPTIONS, type ProgramTypeAccount } from '@/lib/program-type-account'
 
 export type UserRole = 'superadmin' | 'admin' | 'group' | 'normal'
 
@@ -15,10 +31,17 @@ export interface UserForm {
   email: string
   phone: string
   theaterGroup: string
+  // 담당 극단이 없는 계정(낭독극·단막극 담당자)만 값이 있다. theaterGroup과 동시에 값을 갖지 않는다
+  programType: ProgramTypeAccount | ''
   permissions: GroupPermission[]
   role: UserRole
   password: string
 }
+
+// "담당 대상" 선택창에 극단·공연 유형을 한 목록에 섞어 보여주기 위한 값 인코딩.
+// Select 컴포넌트는 값 하나만 다루므로, 실제 저장 필드(theaterGroup/programType)로 분해해 쓴다
+const GROUP_VALUE_PREFIX = 'group:'
+const TYPE_VALUE_PREFIX = 'type:'
 
 interface Props {
   isOpen: boolean
@@ -42,12 +65,32 @@ export function UserFormDialog({
   onSave,
 }: Props) {
   const isGroupAccount = form.role === 'group'
+  // 담당 극단 없이 공연 유형만 담당하는 계정(낭독극·단막극 담당자)인지
+  const isProgramTypeAccount = isGroupAccount && !!form.programType
 
   const togglePermission = (key: GroupPermission) => {
     const next = form.permissions.includes(key)
       ? form.permissions.filter((permission) => permission !== key)
       : [...form.permissions, key]
     setForm({ ...form, permissions: next })
+  }
+
+  // "담당 극단" 선택값과 "담당 공연 유형" 선택값을 하나의 드롭다운으로 합쳐서 다룬다
+  const ownerValue = form.theaterGroup
+    ? `${GROUP_VALUE_PREFIX}${form.theaterGroup}`
+    : form.programType
+      ? `${TYPE_VALUE_PREFIX}${form.programType}`
+      : ''
+
+  const handleOwnerChange = (value: string) => {
+    if (value.startsWith(GROUP_VALUE_PREFIX)) {
+      setForm({ ...form, theaterGroup: value.slice(GROUP_VALUE_PREFIX.length), programType: '' })
+      return
+    }
+    if (value.startsWith(TYPE_VALUE_PREFIX)) {
+      const type = value.slice(TYPE_VALUE_PREFIX.length) as ProgramTypeAccount
+      setForm({ ...form, theaterGroup: '', programType: type })
+    }
   }
 
   return (
@@ -89,20 +132,34 @@ export function UserFormDialog({
 
           {isGroupAccount && (
             <>
-              <Field label="담당 극단">
-                <Select
-                  value={form.theaterGroup}
-                  onValueChange={(theaterGroup) => setForm({ ...form, theaterGroup })}
-                >
-                  <SelectTrigger><SelectValue placeholder="극단을 선택하세요" /></SelectTrigger>
+              <Field label="담당 대상">
+                <Select value={ownerValue} onValueChange={handleOwnerChange}>
+                  <SelectTrigger><SelectValue placeholder="극단 또는 공연 유형을 선택하세요" /></SelectTrigger>
                   <SelectContent>
-                    {theaterGroups.map((group) => (
-                      <SelectItem key={group._id} value={group._id}>{group.name}</SelectItem>
-                    ))}
+                    <SelectGroup>
+                      <SelectLabel>극단</SelectLabel>
+                      {theaterGroups.map((group) => (
+                        <SelectItem key={group._id} value={`${GROUP_VALUE_PREFIX}${group._id}`}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                    <SelectSeparator />
+                    <SelectGroup>
+                      {/* 소유 극단이 없는(협의회 직접 주관) 공연 유형만 담당하는 계정 */}
+                      <SelectLabel>공연 유형</SelectLabel>
+                      {PROGRAM_TYPE_ACCOUNT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={`${TYPE_VALUE_PREFIX}${option.value}`}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  선택한 극단의 정보와 작품만 수정할 수 있습니다. 극단명이 바뀌어도 연결은 유지됩니다.
+                  {isProgramTypeAccount
+                    ? '선택한 공연 유형 중 소유 극단이 없는(협의회 직접 주관) 작품만 수정할 수 있습니다.'
+                    : '선택한 극단의 정보와 작품만 수정할 수 있습니다. 극단명이 바뀌어도 연결은 유지됩니다.'}
                 </p>
               </Field>
 
@@ -115,16 +172,28 @@ export function UserFormDialog({
                 </div>
 
                 <ul className="space-y-2">
-                  {GROUP_PERMISSION_META.filter((meta) => !meta.grantable).map((meta) => (
-                    <li key={meta.key} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <Lock className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                      <span>
-                        <span className="font-medium text-foreground">{meta.label}</span>
-                        <span className="ml-1.5 text-xs">기본 제공</span>
-                        <span className="block text-xs">{meta.description}</span>
-                      </span>
-                    </li>
-                  ))}
+                  {GROUP_PERMISSION_META.filter((meta) => !meta.grantable)
+                    // 담당 극단이 없는 계정은 소개할 '내 극단'이 없어 my-group을 빼고 보여준다
+                    .filter((meta) => {
+                      const lockedKeys: readonly string[] = isProgramTypeAccount
+                        ? PROGRAM_TYPE_DEFAULT_PERMISSIONS
+                        : GROUP_DEFAULT_PERMISSIONS
+                      return lockedKeys.includes(meta.key)
+                    })
+                    .map((meta) => (
+                      <li key={meta.key} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <Lock className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium text-foreground">{meta.label}</span>
+                          <span className="ml-1.5 text-xs">기본 제공</span>
+                          <span className="block text-xs">
+                            {isProgramTypeAccount && meta.key === 'programs'
+                              ? '담당 공연 유형(낭독극·단막극) 작품의 소개, 포스터, 팜플렛을 등록·수정합니다.'
+                              : meta.description}
+                          </span>
+                        </span>
+                      </li>
+                    ))}
                 </ul>
 
                 <div className="space-y-2 border-t border-border pt-3">

@@ -144,8 +144,11 @@ export interface ISponsor extends Document {
 }
 
 // User (사용자)
-// group: 극단별 담당자 계정 - 본인 소속 극단(theaterGroupName과 일치하는 TheaterGroup/Program)만 관리 가능
+// group: 극단별 담당자 계정 - 본인 소속 극단(theaterGroupName과 일치하는 TheaterGroup/Program)만 관리 가능.
+// theaterGroup 대신 programType을 갖는 계정은 소유 극단이 없는(협의회 직접 주관) 열린 낭독극·
+// 열린 단막극처럼 특정 공연 유형의 작품만 관리한다 (theaterGroup·programType은 동시에 갖지 않음).
 export type UserRole = 'superadmin' | 'admin' | 'group' | 'normal'
+export type GroupAccountProgramType = 'reading' | 'short_play'
 
 export interface IUser extends Document {
   _id: Types.ObjectId
@@ -156,6 +159,8 @@ export interface IUser extends Document {
   theaterGroupName: string
   // 담당 극단 참조. 극단명이 바뀌어도 권한이 끊기지 않도록 ID로 연결한다.
   theaterGroup?: Types.ObjectId
+  // 담당 공연 유형(낭독극/단막극). 소유 극단이 없는 작품만 이 값으로 소유권을 판정한다.
+  programType?: GroupAccountProgramType
   // 관리자가 추가로 부여한 메뉴 권한 (기본 권한은 코드 상수로 관리하므로 저장하지 않음)
   permissions: string[]
   password: string

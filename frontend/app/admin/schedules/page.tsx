@@ -82,18 +82,24 @@ export default function AdminSchedulesPage() {
     note: '',
   })
 
-  // 극단 담당자면 본인 극단 작품의 일정만 다루게 제한한다
-  const { isGroupAccount, theaterGroup } = useAdminAccount()
+  // 극단 담당자면 본인 극단 작품의, 낭독극·단막극 담당자면 담당 유형의 일정만 다루게 제한한다
+  const { isGroupAccount, theaterGroup, programType } = useAdminAccount()
 
   useEffect(() => {
     fetchSchedules()
     fetchPrograms()
   }, [])
 
+  // 담당 극단이 있으면 그 극단 작품만, 없으면(낭독극·단막극 담당자) 소유 극단이 없고
+  // 유형이 같은 작품만 내 것으로 본다
+  const isOwnedProgram = (program: Program) => {
+    if (theaterGroup) return program.theaterGroup === theaterGroup
+    if (programType) return !program.theaterGroup && program.type === programType
+    return false
+  }
+
   // 극단 담당자에게 보여줄 작품과 일정 (관리자는 전체)
-  const visiblePrograms = programs.filter(
-    (program) => !isGroupAccount || program.theaterGroup === theaterGroup
-  )
+  const visiblePrograms = programs.filter((program) => !isGroupAccount || isOwnedProgram(program))
   const visibleProgramIds = new Set(visiblePrograms.map((program) => program._id))
 
   // 눌러서 넣을 수 있는 시각과, 빈 칸에 미리 채워둘 시각

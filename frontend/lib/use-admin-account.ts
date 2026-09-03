@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import type { GroupPermission } from '@/lib/admin-permissions'
+import type { ProgramTypeAccount } from '@/lib/program-type-account'
 
 interface AdminAccount {
   role: string
   theaterGroup: string | null
+  // 담당 극단이 없는 계정(낭독극·단막극 담당자)만 값이 있다
+  programType: ProgramTypeAccount | null
   permissions: GroupPermission[]
 }
 
@@ -17,6 +20,7 @@ export function useAdminAccount() {
   const [account, setAccount] = useState<AdminAccount>({
     role: '',
     theaterGroup: null,
+    programType: null,
     permissions: [],
   })
 
@@ -30,6 +34,7 @@ export function useAdminAccount() {
         setAccount({
           role: data.data.role,
           theaterGroup: data.data.theaterGroup ?? null,
+          programType: data.data.programType ?? null,
           permissions: data.data.permissions ?? [],
         })
       })

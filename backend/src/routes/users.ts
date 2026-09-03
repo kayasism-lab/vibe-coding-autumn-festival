@@ -4,9 +4,17 @@ import { TheaterGroup, User } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin } from '../middleware/require-admin.js'
 import { normalizeGrantedPermissions } from '../lib/permissions.js'
+import type { GroupAccountProgramType } from '../types/index.js'
 
 export const usersRouter = Router()
 const roles = ['superadmin', 'admin', 'group', 'normal']
+
+// 담당 극단 없이(협의회 직접 주관) 공연 유형만 담당하는 계정의 표시용 이름.
+// theaterGroupName 자리에 그대로 저장해, 화면에서 담당 극단과 같은 방식으로 보여준다.
+const PROGRAM_TYPE_ACCOUNT_LABELS: Record<GroupAccountProgramType, string> = {
+  reading: '열린 낭독극',
+  short_play: '열린 단막극',
+}
 
 usersRouter.use(requireAdmin)
 
@@ -15,25 +23,47 @@ function sanitize(user: Record<string, unknown>) {
   return { ...safe, permissions: (safe.permissions as string[]) ?? [] }
 }
 
-// 극단 담당자 계정은 관리할 극단을 반드시 지정해야 하고,
-// 지정한 극단의 ID와 이름을 함께 저장해 이름이 바뀌어도 연결이 유지되도록 한다.
-async function resolveTheaterGroupFields(role: string, theaterGroupId?: string) {
+// 극단 담당자 계정은 담당 극단 또는 담당 공연 유형(낭독극·단막극) 중 하나를 반드시 지정해야 한다.
+// 극단을 지정하면 ID와 이름을 함께 저장해 이름이 바뀌어도 연결이 유지되도록 하고,
+// 공연 유형을 지정하면 표시용 이름만 정해진 라벨로 채운다(연결할 극단 실체가 없음).
+async function resolveGroupOwnerFields(
+  role: string,
+  theaterGroupId?: string,
+  programType?: string
+) {
   if (role !== 'group') {
-    return { ok: true as const, fields: { theaterGroup: null, permissions: [] as string[] } }
+    return {
+      ok: true as const,
+      fields: { theaterGroup: null, programType: null, permissions: [] as string[] },
+    }
   }
 
-  if (!theaterGroupId) {
-    return { ok: false as const, message: '극단 담당자 계정은 담당 극단을 선택해야 합니다.' }
+  if (theaterGroupId) {
+    const group = await TheaterGroup.findById(theaterGroupId).select('name').lean<{ name: string }>()
+    if (!group) {
+      return { ok: false as const, message: '선택한 극단을 찾을 수 없습니다.' }
+    }
+
+    return {
+      ok: true as const,
+      fields: { theaterGroup: theaterGroupId, theaterGroupName: group.name, programType: null },
+    }
   }
 
-  const group = await TheaterGroup.findById(theaterGroupId).select('name').lean<{ name: string }>()
-  if (!group) {
-    return { ok: false as const, message: '선택한 극단을 찾을 수 없습니다.' }
+  if (programType === 'reading' || programType === 'short_play') {
+    return {
+      ok: true as const,
+      fields: {
+        theaterGroup: null,
+        programType,
+        theaterGroupName: PROGRAM_TYPE_ACCOUNT_LABELS[programType],
+      },
+    }
   }
 
   return {
-    ok: true as const,
-    fields: { theaterGroup: theaterGroupId, theaterGroupName: group.name },
+    ok: false as const,
+    message: '극단 담당자 계정은 담당 극단이나 담당 공연 유형을 선택해야 합니다.',
   }
 }
 
@@ -48,7 +78,8 @@ usersRouter.get(
 usersRouter.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { name, email, phone, theaterGroupName, theaterGroup, permissions, password, role } = req.body
+    const { name, email, phone, theaterGroupName, theaterGroup, programType, permissions, password, role } =
+      req.body
     // email 필드는 실제로 로그인 아이디로만 쓰인다 (연락처는 선택 항목)
     if (!name || !email || !password) {
       fail(res, '이름, 아이디, 비밀번호를 입력해주세요.', 400)
@@ -65,7 +96,7 @@ usersRouter.post(
       return
     }
 
-    const resolved = await resolveTheaterGroupFields(role || 'normal', theaterGroup)
+    const resolved = await resolveGroupOwnerFields(role || 'normal', theaterGroup, programType)
     if (!resolved.ok) {
       fail(res, resolved.message, 400)
       return
@@ -100,7 +131,7 @@ usersRouter.put(
       return
     }
 
-    const resolved = await resolveTheaterGroupFields(req.body.role, req.body.theaterGroup)
+    const resolved = await resolveGroupOwnerFields(req.body.role, req.body.theaterGroup, req.body.programType)
     if (!resolved.ok) {
       fail(res, resolved.message, 400)
       return

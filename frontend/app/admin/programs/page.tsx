@@ -18,6 +18,7 @@ import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { ProgramFormDialog, type ProgramForm } from '@/components/admin/program-form-dialog'
 import { CENTER_FOCUS } from '@/lib/image-focus'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
+import { programTypeAccountLabel } from '@/lib/program-type-account'
 
 type Program = {
   _id: string
@@ -84,8 +85,9 @@ export default function AdminProgramsPage() {
   const [editingProgram, setEditingProgram] = useState<Program | null>(null)
   const [form, setForm] = useState<ProgramForm>(emptyForm)
   const [theaterGroups, setTheaterGroups] = useState<{ _id: string; name: string }[]>([])
-  // 극단 담당자면 본인 극단 작품만 다루도록 화면을 제한한다
-  const { isGroupAccount, theaterGroup: myGroupId } = useAdminAccount()
+  // 극단 담당자면 본인 극단 작품만, 낭독극·단막극 담당자면 담당 유형의(소유 극단 없는) 작품만
+  // 다루도록 화면을 제한한다
+  const { isGroupAccount, theaterGroup: myGroupId, programType: myProgramType } = useAdminAccount()
 
   const fetchPrograms = async () => {
     try {
@@ -110,9 +112,17 @@ export default function AdminProgramsPage() {
       .catch(() => {})
   }, [])
 
+  // 담당 극단이 있으면 그 극단 작품만, 없으면(낭독극·단막극 담당자) 소유 극단이 없고
+  // 유형이 같은 작품만 내 것으로 본다
+  const isOwnedProgram = (program: Program) => {
+    if (myGroupId) return program.theaterGroup === myGroupId
+    if (myProgramType) return !program.theaterGroup && program.type === myProgramType
+    return false
+  }
+
   const filteredPrograms = programs
-    // 극단 담당자에게는 본인 극단 작품만 노출한다 (수정 권한도 백엔드에서 동일하게 막힌다)
-    .filter((program) => !isGroupAccount || program.theaterGroup === myGroupId)
+    // 극단 담당자에게는 본인 담당 작품만 노출한다 (수정 권한도 백엔드에서 동일하게 막힌다)
+    .filter((program) => !isGroupAccount || isOwnedProgram(program))
     .filter((program) =>
       `${program.title} ${program.company}`.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -148,13 +158,20 @@ export default function AdminProgramsPage() {
         : {
             ...emptyForm,
             order: programs.length,
-            // 극단 담당자가 새 작품을 만들면 본인 극단으로 미리 채워둔다
+            // 극단 담당자가 새 작품을 만들면 본인 극단으로, 낭독극·단막극 담당자는
+            // 소유 극단 없이 본인 담당 유형으로 미리 채워둔다
             ...(isGroupAccount && myGroupId
               ? {
                   theaterGroup: myGroupId,
                   company: theaterGroups.find((group) => group._id === myGroupId)?.name ?? '',
                 }
-              : {}),
+              : isGroupAccount && myProgramType
+                ? {
+                    type: myProgramType,
+                    theaterGroup: '',
+                    company: programTypeAccountLabel(myProgramType),
+                  }
+                : {}),
           }
     )
     setSaveError('')
@@ -299,6 +316,8 @@ export default function AdminProgramsPage() {
         onSave={handleSave}
         theaterGroups={theaterGroups}
         canChangeOwner={!isGroupAccount}
+        // 낭독극·단막극 담당자는 작품 유형을 담당 유형에서 바꿀 수 없다 (백엔드도 동일하게 막는다)
+        canChangeType={!(isGroupAccount && !!myProgramType)}
       />
     </div>
   )

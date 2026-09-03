@@ -17,6 +17,7 @@ type User = {
   phone: string
   theaterGroupName: string
   theaterGroup?: string | null
+  programType?: 'reading' | 'short_play' | null
   permissions?: GroupPermission[]
   role: UserRole
   createdAt: string
@@ -29,6 +30,7 @@ const emptyForm: UserForm = {
   email: '',
   phone: '',
   theaterGroup: '',
+  programType: '',
   permissions: [],
   role: 'normal',
   password: '',
@@ -86,6 +88,7 @@ export default function AdminUsersPage() {
             email: user.email,
             phone: user.phone,
             theaterGroup: user.theaterGroup || '',
+            programType: user.programType || '',
             permissions: (user.permissions || []).filter((permission) =>
               GROUP_PERMISSION_META.some((meta) => meta.key === permission && meta.grantable)
             ),
@@ -111,8 +114,8 @@ export default function AdminUsersPage() {
       return
     }
 
-    if (form.role === 'group' && !form.theaterGroup) {
-      setErrorMessage('극단 담당자 계정은 담당 극단을 선택해야 합니다.')
+    if (form.role === 'group' && !form.theaterGroup && !form.programType) {
+      setErrorMessage('극단 담당자 계정은 담당 극단이나 담당 공연 유형을 선택해야 합니다.')
       return
     }
 
@@ -167,7 +170,7 @@ export default function AdminUsersPage() {
                 <TableRow>
                   <TableHead>이름</TableHead>
                   <TableHead>아이디</TableHead>
-                  <TableHead>담당 극단</TableHead>
+                  <TableHead>담당 대상</TableHead>
                   <TableHead>계정 유형</TableHead>
                   <TableHead>추가 권한</TableHead>
                   <TableHead className="text-right">관리</TableHead>

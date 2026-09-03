@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { Program, Schedule } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
-import { canManageGroupResource } from '../lib/ownership.js'
+import { canManageProgram } from '../lib/ownership.js'
 import type { AuthPayload } from '../lib/auth.js'
 
 export const schedulesRouter = Router()
@@ -52,12 +52,17 @@ schedulesRouter.get(
 
 // 일정은 항상 특정 작품에 딸려 있으므로, 극단 담당자는 본인 극단 작품의 일정만 다룰 수 있다.
 async function canManageProgramSchedule(user: AuthPayload, programId: unknown): Promise<boolean> {
-  const program = await Program.findById(programId).select('company theaterGroup').lean<{
+  const program = await Program.findById(programId).select('company theaterGroup type').lean<{
     company: string
     theaterGroup?: unknown
+    type: string
   }>()
   if (!program) return false
-  return canManageGroupResource(user, program.company, program.theaterGroup as string | null)
+  return canManageProgram(user, {
+    company: program.company,
+    theaterGroup: program.theaterGroup as string | null,
+    type: program.type,
+  })
 }
 
 schedulesRouter.post(

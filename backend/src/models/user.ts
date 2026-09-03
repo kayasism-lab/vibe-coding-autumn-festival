@@ -11,6 +11,8 @@ const UserSchema = new Schema<IUser>(
     theaterGroupName: { type: String, required: true, default: '없음' },
     // 극단 담당자 계정이 관리할 극단(ID 참조). 이름이 바뀌어도 연결이 유지된다.
     theaterGroup: { type: Schema.Types.ObjectId, ref: 'TheaterGroup' },
+    // 담당 공연 유형(낭독극/단막극). theaterGroup이 없는 계정만 이 값으로 소유권을 판정한다.
+    programType: { type: String, enum: ['reading', 'short_play'] },
     // 관리자가 추가로 부여한 메뉴 권한 키 목록
     permissions: { type: [String], default: [] },
     password: { type: String, required: true },

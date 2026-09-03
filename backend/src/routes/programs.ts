@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { Program, TheaterGroup } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
-import { canManageGroupResource, loadGroupContext } from '../lib/ownership.js'
+import { canManageProgram, loadGroupContext } from '../lib/ownership.js'
 
 export const programsRouter = Router()
 
@@ -30,15 +30,22 @@ programsRouter.post(
   asyncHandler(async (req, res) => {
     const payload = { ...req.body }
 
-    // 극단 담당자가 등록하면 소유 극단을 본인 극단으로 강제한다 (다른 극단 작품 등록 방지)
+    // 극단 담당자가 등록하면 소유 극단을 본인 극단으로 강제한다 (다른 극단 작품 등록 방지).
+    // 담당 극단 없이 공연 유형만 가진 계정(낭독극·단막극 담당자)은 소유 극단 없이,
+    // 유형도 본인 담당 유형으로 강제한다 (다른 유형으로 등록하는 것 방지)
     if (res.locals.user.role === 'group') {
       const context = await loadGroupContext(res.locals.user)
-      if (!context?.theaterGroupId) {
-        fail(res, '담당 극단이 지정되지 않아 작품을 등록할 수 없습니다.', 400)
+      if (context?.theaterGroupId) {
+        payload.theaterGroup = context.theaterGroupId
+        payload.company = context.theaterGroupName
+      } else if (context?.programType) {
+        payload.theaterGroup = null
+        payload.type = context.programType
+        payload.company = context.theaterGroupName
+      } else {
+        fail(res, '담당 극단 또는 담당 공연 유형이 지정되지 않아 작품을 등록할 수 없습니다.', 400)
         return
       }
-      payload.theaterGroup = context.theaterGroupId
-      payload.company = context.theaterGroupName
     } else if (payload.theaterGroup) {
       const group = await TheaterGroup.findById(payload.theaterGroup).select('name').lean<{ name: string }>()
       if (!group) {
@@ -75,17 +82,29 @@ programsRouter.put(
       return
     }
 
-    if (!(await canManageGroupResource(res.locals.user, existing.company, existing.theaterGroup))) {
+    if (
+      !(await canManageProgram(res.locals.user, {
+        company: existing.company,
+        theaterGroup: existing.theaterGroup,
+        type: existing.type,
+      }))
+    ) {
       fail(res, '해당 프로그램을 수정할 권한이 없습니다.', 403)
       return
     }
 
     const update = { ...req.body, updatedAt: new Date() }
 
-    // 극단 담당자는 작품의 소유 극단을 바꿀 수 없다 (다른 극단으로 넘기는 것 방지)
+    // 극단 담당자는 작품의 소유 극단을 바꿀 수 없다 (다른 극단으로 넘기는 것 방지).
+    // 담당 유형만 있는 계정은 유형도 바꿀 수 없다 (담당 범위를 몰래 벗어나는 것 방지)
     if (res.locals.user.role === 'group') {
       delete update.theaterGroup
       delete update.company
+
+      const context = await loadGroupContext(res.locals.user)
+      if (context?.programType) {
+        delete update.type
+      }
     }
 
     const program = await Program.findByIdAndUpdate(req.params.id, update, { new: true }).lean()

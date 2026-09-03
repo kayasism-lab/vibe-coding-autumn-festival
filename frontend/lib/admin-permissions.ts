@@ -3,6 +3,9 @@
 
 export const GROUP_DEFAULT_PERMISSIONS = ['my-group', 'programs'] as const
 
+// 담당 극단이 없는 계정(낭독극·단막극 담당자)의 기본 권한. 소개할 '내 극단'이 없어 my-group은 뺀다.
+export const PROGRAM_TYPE_DEFAULT_PERMISSIONS = ['programs'] as const
+
 export type GroupPermission =
   | 'my-group'
   | 'programs'

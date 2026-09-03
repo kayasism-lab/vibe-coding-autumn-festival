@@ -17,7 +17,12 @@ export type GroupPermission = (typeof GROUP_PERMISSIONS)[number]
 // 자기 극단 소개와 자기 극단 작품은 대표가 직접 관리하는 것이 당연하므로 기본으로 둔다.
 export const GROUP_DEFAULT_PERMISSIONS: GroupPermission[] = ['my-group', 'programs']
 
+// 담당 극단이 없는 계정(낭독극·단막극 담당자)의 기본 권한.
+// 소개할 '내 극단'이 없으므로 my-group은 제외한다.
+export const PROGRAM_TYPE_DEFAULT_PERMISSIONS: GroupPermission[] = ['programs']
+
 // 관리자가 계정별로 켜고 끌 수 있는 추가 권한.
+// my-group·programs는 계정 종류와 무관하게 항상 기본 권한 쪽에서만 나오므로 여기선 뺀다.
 export const GRANTABLE_PERMISSIONS: GroupPermission[] = GROUP_PERMISSIONS.filter(
   (permission) => !GROUP_DEFAULT_PERMISSIONS.includes(permission)
 )
@@ -36,7 +41,12 @@ export function normalizeGrantedPermissions(value: unknown): GroupPermission[] {
   return [...unique]
 }
 
-// 실제로 계정이 가진 전체 권한 = 기본 권한 + 관리자가 부여한 권한
-export function resolveGroupPermissions(granted?: string[] | null): GroupPermission[] {
-  return [...GROUP_DEFAULT_PERMISSIONS, ...normalizeGrantedPermissions(granted)]
+// 실제로 계정이 가진 전체 권한 = 기본 권한 + 관리자가 부여한 권한.
+// hasTheaterGroup이 false면(담당 극단 없이 담당 공연 유형만 있는 계정) my-group을 기본에서 뺀다.
+export function resolveGroupPermissions(
+  granted?: string[] | null,
+  hasTheaterGroup = true
+): GroupPermission[] {
+  const defaults = hasTheaterGroup ? GROUP_DEFAULT_PERMISSIONS : PROGRAM_TYPE_DEFAULT_PERMISSIONS
+  return [...defaults, ...normalizeGrantedPermissions(granted)]
 }

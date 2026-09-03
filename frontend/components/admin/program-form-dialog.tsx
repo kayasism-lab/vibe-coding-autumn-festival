@@ -51,6 +51,12 @@ export interface ProgramForm {
 // Select는 빈 문자열을 값으로 쓸 수 없어 별도 토큰을 둔다.
 const NO_GROUP = '__none__'
 
+const typeLabels: Record<ProgramFormType, string> = {
+  play: '연극',
+  short_play: '단막극',
+  reading: '낭독극',
+}
+
 export function ProgramFormDialog({
   isOpen,
   onOpenChange,
@@ -62,6 +68,7 @@ export function ProgramFormDialog({
   onSave,
   theaterGroups,
   canChangeOwner,
+  canChangeType = true,
 }: {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
@@ -75,6 +82,8 @@ export function ProgramFormDialog({
   theaterGroups: { _id: string; name: string }[]
   /** 극단 담당자는 소유 극단을 바꿀 수 없으므로 false로 내려온다 */
   canChangeOwner: boolean
+  /** 낭독극·단막극 담당자는 담당 유형을 바꿀 수 없으므로 false로 내려온다 (기본값 true) */
+  canChangeType?: boolean
 }) {
   const handleOwnerChange = (value: string) => {
     if (value === NO_GROUP) {
@@ -97,14 +106,19 @@ export function ProgramFormDialog({
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="제목"><Input value={form.title} onChange={(e) => onFormChange({ ...form, title: e.target.value })} /></Field>
             <Field label="유형">
-              <Select value={form.type} onValueChange={(type: ProgramFormType) => onFormChange({ ...form, type })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="play">연극</SelectItem>
-                  <SelectItem value="short_play">단막극</SelectItem>
-                  <SelectItem value="reading">낭독극</SelectItem>
-                </SelectContent>
-              </Select>
+              {canChangeType ? (
+                <Select value={form.type} onValueChange={(type: ProgramFormType) => onFormChange({ ...form, type })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="play">연극</SelectItem>
+                    <SelectItem value="short_play">단막극</SelectItem>
+                    <SelectItem value="reading">낭독극</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                // 낭독극·단막극 담당자는 담당 유형만 다루므로 읽기 전용으로 보여준다
+                <Input value={typeLabels[form.type]} readOnly disabled />
+              )}
             </Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
