@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { CheckCircle2, Loader2, FileText, Users, Send } from 'lucide-react'
+import { useSiteInfo } from '@/lib/site-info'
 
 interface FormData {
   groupName: string
@@ -34,6 +35,8 @@ export default function ApplyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState('')
+  // 문의 이메일은 관리자 설정(/admin/settings) 값을 따른다. 미설정 시 기존 값 유지
+  const siteInfo = useSiteInfo()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -112,7 +115,7 @@ export default function ApplyPage() {
                   <p>- 신청 기간: 2026년 9월 1일 ~ 12월 31일</p>
                   <p>- 참가 자격: 직장인 연극 동호회 또는 아마추어 극단</p>
                   <p>- 심사 결과: 2027년 1월 중 개별 통보</p>
-                  <p>- 문의: kayasism@naver.com</p>
+                  <p>- 문의: {siteInfo.contactEmail}</p>
                 </CardContent>
               </Card>
 

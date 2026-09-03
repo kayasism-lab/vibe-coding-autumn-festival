@@ -23,31 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle } from 'lucide-react'
-
-const contactInfo = [
-  {
-    icon: MapPin,
-    label: '주소',
-    value: '서울 관악구 남부순환로272길 22 2층\n전국직장인연극단체협의회 사무국',
-  },
-  {
-    icon: Phone,
-    label: '전화',
-    value: '010-9073-8894',
-  },
-  {
-    icon: Mail,
-    label: '이메일',
-    value: 'kayasism@naver.com',
-  },
-  {
-    icon: Clock,
-    label: '운영 시간',
-    value: '평일 09:00 - 18:00\n(주말 및 공휴일 휴무)',
-  },
-]
-
-const mapQuery = encodeURIComponent('서울 관악구 남부순환로272길 22')
+import { useSiteInfo } from '@/lib/site-info'
 
 const inquiryTypes = [
   { value: 'general', label: '일반 문의' },
@@ -73,6 +49,32 @@ export default function ContactPage() {
   const [error, setError] = useState('')
   const [form, setForm] = useState(initialForm)
   const [consent, setConsent] = useState<PrivacyConsentValue>(emptyConsent)
+
+  // 사무국 연락처는 관리자 설정(/admin/settings) 값을 따른다. 미설정 시 기존 값 유지
+  const siteInfo = useSiteInfo()
+  const contactInfo = [
+    {
+      icon: MapPin,
+      label: '주소',
+      value: `${siteInfo.address}\n전국직장인연극단체협의회 사무국`,
+    },
+    {
+      icon: Phone,
+      label: '전화',
+      value: siteInfo.contactPhone,
+    },
+    {
+      icon: Mail,
+      label: '이메일',
+      value: siteInfo.contactEmail,
+    },
+    {
+      icon: Clock,
+      label: '운영 시간',
+      value: '평일 09:00 - 18:00\n(주말 및 공휴일 휴무)',
+    },
+  ]
+  const mapQuery = encodeURIComponent(siteInfo.address)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

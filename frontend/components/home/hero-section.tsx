@@ -14,6 +14,7 @@ import {
 import { ArrowRight, Calendar, MapPin, Sparkles, Users, Award, ExternalLink, Play, Ticket, Instagram, Facebook, Youtube, Globe, BookOpen, HeartHandshake } from 'lucide-react'
 import { UpcomingShowInfo } from '@/components/home/upcoming-show-info'
 import type { UpcomingShow } from '@/types/index'
+import { useSiteInfo } from '@/lib/site-info'
 
 // 참여 극단 정보 타입
 interface TheaterGroup {
@@ -93,6 +94,8 @@ const defaultTheaterGroups: TheaterGroup[] = [
 export function HeroSection() {
   const [theaterGroups, setTheaterGroups] = useState<TheaterGroup[]>(defaultTheaterGroups)
   const [selectedGroup, setSelectedGroup] = useState<TheaterGroup | null>(null)
+  // 배지의 인스타그램 링크는 관리자 설정 값을 따른다 (미설정 시 기존 값 유지)
+  const siteInfo = useSiteInfo()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
 
@@ -202,7 +205,7 @@ export function HeroSection() {
                   전국직장인연극단체협의회(<span className="text-amber-400">직연협</span>) 주최·주관
                 </span>
                 <a
-                  href="https://www.instagram.com/jikplay1997"
+                  href={siteInfo.snsLinks.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="전국직장인연극단체협의회 Instagram"

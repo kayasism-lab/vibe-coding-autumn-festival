@@ -1,6 +1,9 @@
+'use client'
+
 import Link from 'next/link'
 import { Mail, Phone, MapPin, Instagram, Facebook, Globe } from 'lucide-react'
 import { OrganizerBar } from '@/components/shared/organizer-bar'
+import { useSiteInfo } from '@/lib/site-info'
 
 const footerLinks = {
   festival: [
@@ -29,6 +32,10 @@ const footerLinks = {
 }
 
 export function Footer() {
+  // 관리자 설정(/admin/settings)에 저장된 연락처·SNS 링크를 불러온다.
+  // 값을 못 불러오거나 아직 안 채웠으면 기존에 하드코딩돼 있던 값이 그대로 보인다
+  const siteInfo = useSiteInfo()
+
   return (
     <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       {/* Organizer / Sponsor */}
@@ -62,7 +69,7 @@ export function Footer() {
             {/* Social Links */}
             <div className="flex items-center gap-3">
               <a
-                href="https://www.instagram.com/jikplay1997"
+                href={siteInfo.snsLinks.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 bg-white/10 hover:bg-gradient-to-r hover:from-primary hover:to-pink-500 rounded-full flex items-center justify-center transition-all duration-300"
@@ -71,7 +78,7 @@ export function Footer() {
                 <Instagram className="h-4 w-4" />
               </a>
               <a
-                href="https://www.facebook.com/jikplay/?locale=ko_KR"
+                href={siteInfo.snsLinks.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 bg-white/10 hover:bg-gradient-to-r hover:from-primary hover:to-pink-500 rounded-full flex items-center justify-center transition-all duration-300"
@@ -149,15 +156,15 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-sm text-white/60">
                 <Mail className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>kayasism@naver.com</span>
+                <span>{siteInfo.contactEmail}</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-white/60">
                 <Phone className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>010-9073-8894</span>
+                <span>{siteInfo.contactPhone}</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-white/60">
                 <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>서울 관악구 남부순환로272길 22 2층</span>
+                <span>{siteInfo.address}</span>
               </li>
             </ul>
           </div>
