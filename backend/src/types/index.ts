@@ -35,6 +35,15 @@ export interface IProgram extends Document {
   }
   // 열린 낭독극/열린 단막극처럼 시민 공개모집 신청을 받는 프로그램인지 여부
   openForApplication: boolean
+  // 시민참여 접수 상태(신청가능/신청마감/신청준비중/행사종료).
+  // 값이 없으면 openForApplication으로 판단한다
+  applicationStatus?: 'open' | 'closed' | 'preparing' | 'ended'
+  // 신청을 받지 않는 상태에서 보여줄 안내 문구. 비워두면 기본 문구를 쓴다
+  applicationMessages?: {
+    closed?: string
+    preparing?: string
+    ended?: string
+  }
   isActive: boolean
   order: number
   createdAt: Date

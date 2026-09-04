@@ -7,6 +7,10 @@ import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
 import { canManageProgram } from '../lib/ownership.js'
 import { clearFailures, getBlockedMinutes, recordFailure } from '../lib/attempt-limiter.js'
 import { validatePassword } from '../lib/password-policy.js'
+import {
+  resolveCitizenApplicationMessage,
+  resolveCitizenApplicationStatus,
+} from '../lib/citizen-application-status.js'
 
 export const citizenApplicationsRouter = Router()
 
@@ -91,10 +95,21 @@ citizenApplicationsRouter.post(
       return
     }
 
-    // 클라이언트가 programId를 직접 지정하지 못하도록 서버에서 해당 유형의 열린 프로그램을 조회
-    const program = await Program.findOne({ type: programType, openForApplication: true }).lean()
+    // 클라이언트가 programId를 직접 지정하지 못하도록 서버에서 해당 유형의 프로그램을 조회한다
+    const program = await Program.findOne({ type: programType, isActive: true })
+      .sort({ order: 1, createdAt: -1 })
+      .lean()
     if (!program) {
-      fail(res, '현재 열린 낭독극/단막극 신청을 받고 있지 않습니다.', 400)
+      // 해당 유형의 작품 자체가 아직 없으면 '준비중'으로 안내한다
+      fail(res, resolveCitizenApplicationMessage({}, 'preparing'), 400)
+      return
+    }
+
+    // 화면에서 신청 버튼을 감춰도 요청은 직접 보낼 수 있으므로 접수 상태를 서버에서 다시 본다.
+    // 안내 문구는 화면과 같은 규칙으로 골라 두 곳의 말이 어긋나지 않게 한다
+    const applicationStatus = resolveCitizenApplicationStatus(program)
+    if (applicationStatus !== 'open') {
+      fail(res, resolveCitizenApplicationMessage(program, applicationStatus), 400)
       return
     }
 

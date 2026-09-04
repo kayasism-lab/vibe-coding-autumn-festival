@@ -17,6 +17,11 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  ProgramApplicationFields,
+  type ProgramApplicationMessages,
+} from '@/components/admin/program-application-fields'
+import type { CitizenApplicationStatus } from '@/lib/citizen-application-status'
 
 export type ProgramFormType = 'play' | 'short_play' | 'reading'
 
@@ -34,7 +39,10 @@ export interface ProgramForm {
   venueAddress?: string
   ageRating?: string
   isActive: boolean
+  // 시민 공개모집 대상 작품인지 여부. 실제 접수 여부는 applicationStatus가 결정한다
   openForApplication: boolean
+  applicationStatus: CitizenApplicationStatus
+  applicationMessages: ProgramApplicationMessages
   order: number
   posterUrl?: string
   // 홈 카드에서 포스터의 어느 부분을 보여줄지 (0~100%)
@@ -225,16 +233,22 @@ export function ProgramFormDialog({
             <Label>공개 상태</Label>
             <Switch checked={form.isActive} onCheckedChange={(isActive) => onFormChange({ ...form, isActive })} />
           </div>
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div>
-              <Label>시민 참여 신청 받기</Label>
-              <p className="text-xs text-muted-foreground">열린 낭독극/열린 단막극처럼 공개모집이 필요한 프로그램에 켜주세요.</p>
-            </div>
-            <Switch
-              checked={form.openForApplication}
-              onCheckedChange={(openForApplication) => onFormChange({ ...form, openForApplication })}
-            />
-          </div>
+          {/* 시민참여 대상 여부 + 접수 상태 + 상태별 팝업 문구 */}
+          <ProgramApplicationFields
+            value={{
+              isCitizenApplication: form.openForApplication,
+              applicationStatus: form.applicationStatus,
+              applicationMessages: form.applicationMessages,
+            }}
+            onChange={(value) =>
+              onFormChange({
+                ...form,
+                openForApplication: value.isCitizenApplication,
+                applicationStatus: value.applicationStatus,
+                applicationMessages: value.applicationMessages,
+              })
+            }
+          />
         </div>
         {saveError && (
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

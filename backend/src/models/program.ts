@@ -39,6 +39,18 @@ const ProgramSchema = new Schema<IProgram>(
       discount: { type: Number },
     },
     openForApplication: { type: Boolean, default: false },
+    // 시민참여 접수 상태. openForApplication만으로는 "아직 안 열었다"와 "마감했다"를
+    // 구분할 수 없어 네 가지 상태로 나눴다. 값이 없는 예전 문서는
+    // resolveCitizenApplicationStatus가 openForApplication으로 대신 판단한다
+    // enum에 null을 넣어둔 이유: 시민참여 대상이 아닌 작품(연극 등)은 상태를 null로 저장하는데,
+    // null이 enum 목록에 없으면 mongoose가 검증에서 막아 저장이 실패한다
+    applicationStatus: { type: String, enum: ['open', 'closed', 'preparing', 'ended', null] },
+    // 신청을 받지 않는 상태에서 보여줄 안내 문구. 비워두면 코드의 기본 문구를 쓴다
+    applicationMessages: {
+      closed: { type: String },
+      preparing: { type: String },
+      ended: { type: String },
+    },
     isActive: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
   },

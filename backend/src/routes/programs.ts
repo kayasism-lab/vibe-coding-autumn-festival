@@ -3,6 +3,7 @@ import { Program, TheaterGroup } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
 import { canManageProgram, loadGroupContext } from '../lib/ownership.js'
+import { syncOpenForApplication } from '../lib/citizen-application-status.js'
 
 export const programsRouter = Router()
 
@@ -54,6 +55,8 @@ programsRouter.post(
       }
     }
 
+    syncOpenForApplication(payload)
+
     const program = await Program.create(payload)
     ok(res, program.toObject(), '프로그램이 등록되었습니다.', 201)
   })
@@ -94,6 +97,7 @@ programsRouter.put(
     }
 
     const update = { ...req.body, updatedAt: new Date() }
+    syncOpenForApplication(update)
 
     // 극단 담당자는 작품의 소유 극단을 바꿀 수 없다 (다른 극단으로 넘기는 것 방지).
     // 담당 유형만 있는 계정은 유형도 바꿀 수 없다 (담당 범위를 몰래 벗어나는 것 방지)

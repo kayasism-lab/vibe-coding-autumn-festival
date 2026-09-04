@@ -15,11 +15,13 @@ import {
 } from '@/components/shared/privacy-consent'
 import { formatPhoneInput } from '@/lib/phone'
 import { PASSWORD_HINT, PASSWORD_MIN_LENGTH, validatePassword } from '@/lib/password-policy'
+import { citizenProgramLabels, type CitizenProgramType } from '@/lib/citizen-application-status'
 
 // 시민참여 행사(낭독극·단막극)는 만 20세 이상만 신청할 수 있다.
 const MIN_AGE = 20
 
-export type CitizenProgramType = 'reading' | 'short_play'
+// 유형 정의는 lib/citizen-application-status로 옮겼다. 기존 import 경로를 쓰는 곳이 있어 다시 내보낸다
+export type { CitizenProgramType }
 
 interface FormState {
   programType: CitizenProgramType
@@ -57,9 +59,16 @@ function emptyForm(initialType: CitizenProgramType): FormState {
 
 export function CitizenApplicationForm({
   initialType,
+  isTypeLocked = false,
   onSuccess,
 }: {
   initialType: CitizenProgramType
+  /**
+   * 신청 구분을 바꿀 수 없게 잠글지 여부.
+   * 낭독극 안내를 보고 들어온 사람에게 단막극 선택지가 같이 보이면,
+   * 접수를 안 받는 유형으로 잘못 신청하는 일이 생겨 진입 경로의 유형으로 고정한다.
+   */
+  isTypeLocked?: boolean
   onSuccess: () => void
 }) {
   const [form, setForm] = useState<FormState>(() => emptyForm(initialType))
@@ -138,14 +147,20 @@ export function CitizenApplicationForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Field label="신청 구분 *">
-        <RadioGroup
-          value={form.programType}
-          onValueChange={(value) => setForm({ ...form, programType: value as CitizenProgramType })}
-          className="flex flex-col gap-2 sm:flex-row sm:gap-6"
-        >
-          <RadioOption value="reading" id="type-reading" label="열린 낭독극 참여" />
-          <RadioOption value="short_play" id="type-short_play" label="열린 단막극 참여" />
-        </RadioGroup>
+        {isTypeLocked ? (
+          <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground">
+            {citizenProgramLabels[form.programType]} 참여
+          </p>
+        ) : (
+          <RadioGroup
+            value={form.programType}
+            onValueChange={(value) => setForm({ ...form, programType: value as CitizenProgramType })}
+            className="flex flex-col gap-2 sm:flex-row sm:gap-6"
+          >
+            <RadioOption value="reading" id="type-reading" label="열린 낭독극 참여" />
+            <RadioOption value="short_play" id="type-short_play" label="열린 단막극 참여" />
+          </RadioGroup>
+        )}
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">

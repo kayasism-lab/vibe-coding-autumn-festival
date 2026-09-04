@@ -19,6 +19,18 @@ import { ProgramFormDialog, type ProgramForm } from '@/components/admin/program-
 import { CENTER_FOCUS } from '@/lib/image-focus'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import { programTypeAccountLabel } from '@/lib/program-type-account'
+import {
+  resolveCitizenApplicationStatus,
+  type CitizenApplicationStatus,
+} from '@/lib/citizen-application-status'
+import type { ProgramApplicationMessages } from '@/components/admin/program-application-fields'
+
+// 문구를 한 번도 입력하지 않은 상태. 빈 값이면 저장 시 기본 문구가 쓰인다
+const emptyApplicationMessages: ProgramApplicationMessages = {
+  closed: '',
+  preparing: '',
+  ended: '',
+}
 
 type Program = {
   _id: string
@@ -34,6 +46,8 @@ type Program = {
   ageRating?: string
   isActive: boolean
   openForApplication: boolean
+  applicationStatus?: CitizenApplicationStatus | null
+  applicationMessages?: { closed?: string; preparing?: string; ended?: string } | null
   order: number
   posterUrl?: string
   posterFocus?: { x: number; y: number }
@@ -57,6 +71,8 @@ const emptyForm: ProgramForm = {
   ageRating: '',
   isActive: true,
   openForApplication: false,
+  applicationStatus: 'open',
+  applicationMessages: emptyApplicationMessages,
   order: 0,
   posterUrl: '',
   posterFocus: CENTER_FOCUS,
@@ -143,7 +159,14 @@ export default function AdminProgramsPage() {
             venueAddress: program.venueAddress || '',
             ageRating: program.ageRating || '',
             isActive: program.isActive,
-            openForApplication: program.openForApplication,
+            // 상태가 '신청마감'이면 openForApplication은 false가 되므로, 상태값이 저장돼 있으면
+            // 그것만으로도 시민참여 대상 작품으로 본다 (스위치가 저절로 꺼지는 것 방지)
+            openForApplication: Boolean(program.applicationStatus) || program.openForApplication,
+            applicationStatus: resolveCitizenApplicationStatus(program),
+            applicationMessages: {
+              ...emptyApplicationMessages,
+              ...(program.applicationMessages ?? {}),
+            },
             order: program.order,
             posterUrl: program.posterUrl || '',
             // 예전에 등록한 작품은 이 값이 없어 가운데로 본다 (지금까지의 모습 그대로)
@@ -191,6 +214,17 @@ export default function AdminProgramsPage() {
     ageRating: form.ageRating || undefined,
     isActive: form.isActive,
     openForApplication: form.openForApplication,
+    // 시민참여 대상이 아니면 상태·문구를 비워 저장한다.
+    // 대상이면 openForApplication은 서버가 상태에 맞춰 다시 맞춰준다
+    applicationStatus: form.openForApplication ? form.applicationStatus : null,
+    applicationMessages: form.openForApplication
+      ? {
+          // 빈 칸은 저장하지 않아 기본 문구가 쓰이게 한다
+          closed: form.applicationMessages.closed.trim() || undefined,
+          preparing: form.applicationMessages.preparing.trim() || undefined,
+          ended: form.applicationMessages.ended.trim() || undefined,
+        }
+      : undefined,
     order: form.order,
     posterUrl: form.posterUrl || undefined,
     // 포스터가 없으면 위치도 의미가 없다
