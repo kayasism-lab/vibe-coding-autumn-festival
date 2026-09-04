@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, ExternalLink, Info, Play, X } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { getProviderLabel, getVideoEmbedUrl } from '@/lib/video-thumbnail'
 import {
   getGalleryCategoryLabel,
@@ -93,6 +93,9 @@ export function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
         // 사진이 화면을 제대로 쓴다. sm:max-w-none이 없으면 512px에 갇힌다
         className="flex h-[92dvh] w-[96vw] max-w-none flex-col gap-0 overflow-hidden border-none bg-black/95 p-0 sm:max-w-none"
       >
+        {/* Radix Dialog는 제목이 없으면 스크린리더가 창의 정체를 알릴 수 없어 콘솔 경고를 낸다.
+            화면에는 사진만 보여야 하므로 sr-only로 숨겨서 넣는다 */}
+        <DialogTitle className="sr-only">{item ? `${item.title} 크게 보기` : '크게 보기'}</DialogTitle>
         {item && (
           <>
             {/* 사진 자리. 남는 공간을 전부 쓰되 비율은 건드리지 않는다.
