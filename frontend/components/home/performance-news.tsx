@@ -18,6 +18,9 @@ type Program = {
   venueAddress?: string
   posterUrl?: string
   posterFocus?: ImageFocus
+  // 카드 전용 이미지를 쓸지 여부. 값이 없는 예전 작품은 포스터를 쓴다
+  usePosterForCard?: boolean
+  cardImageUrl?: string
 }
 
 /** /api/schedules 응답 중 공연 기간 계산에 필요한 부분만 */
@@ -30,6 +33,19 @@ const typeLabels: Record<Program['type'], { text: string; style: string }> = {
   play: { text: '연극', style: 'bg-gradient-to-r from-orange-500 to-pink-500' },
   reading: { text: '낭독극', style: 'bg-gradient-to-r from-teal-500 to-emerald-500' },
   short_play: { text: '단막극', style: 'bg-gradient-to-r from-indigo-500 to-purple-500' },
+}
+
+/**
+ * 홈 카드에 보여줄 이미지를 고른다.
+ * 관리자가 '포스터 이미지 사용'을 끄고 카드 전용 이미지를 올렸으면 그것을 쓰고,
+ * 아니면 지금까지처럼 포스터를 쓴다.
+ * 카드 전용 이미지는 카드 비율에 맞춰 올린 것이라 위치 보정(objectPosition)이 필요 없다
+ */
+function pickCardImage(program: Program) {
+  if (program.usePosterForCard === false && program.cardImageUrl) {
+    return { src: program.cardImageUrl, objectPosition: undefined }
+  }
+  return { src: program.posterUrl, objectPosition: toObjectPosition(program.posterFocus) }
 }
 
 const cardStyles = [
@@ -93,16 +109,17 @@ export function PerformanceNews() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {programs.map((program, index) => {
               const style = cardStyles[index % cardStyles.length]
+              const cardImage = pickCardImage(program)
               return (
                 <Link key={program._id} href={`/programs/${program._id}`} className="group">
                   <article className={`${style.bgColor} overflow-hidden rounded-2xl border border-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}>
                     <div className={`relative h-32 overflow-hidden bg-gradient-to-br ${style.color}`}>
-                      {program.posterUrl ? (
+                      {cardImage.src ? (
                         <img
-                          src={program.posterUrl}
+                          src={cardImage.src}
                           alt={program.title}
-                          // 카드가 가로로 길어 세로 포스터는 잘린다. 관리자가 정해둔 지점을 중심에 둔다
-                          style={{ objectPosition: toObjectPosition(program.posterFocus) }}
+                          // 포스터를 쓸 때만 위치를 보정한다 (카드 전용 이미지는 이미 비율이 맞다)
+                          style={{ objectPosition: cardImage.objectPosition }}
                           className="h-full w-full object-cover opacity-80"
                         />
                       ) : (

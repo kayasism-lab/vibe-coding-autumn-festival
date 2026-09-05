@@ -20,6 +20,12 @@ export interface IProgram extends Document {
   // 홈 화면 카드처럼 가로로 긴 자리에 포스터를 넣을 때 어느 지점을 중심에 둘지.
   // 0~100(%) 좌표이며, 값이 없으면 가운데(50/50)로 본다.
   posterFocus?: { x: number; y: number }
+  // 홈 카드에 포스터를 그대로 쓸지 여부. 홈 카드는 가로로 길어(약 3:1)
+  // 세로 포스터를 넣으면 위아래가 크게 잘리므로, 끄면 카드 전용 이미지를 쓴다.
+  // 값이 없는 예전 작품은 true로 본다 (지금까지의 모습 그대로)
+  usePosterForCard?: boolean
+  // 위 값을 껐을 때 홈 카드에 쓰는 가로형 이미지
+  cardImageUrl?: string
   galleryUrls: string[]
   // 축제 팜플렛(리플렛) 스캔 이미지 - 공연 사진(galleryUrls)과는 별개
   pamphletUrls: string[]

@@ -24,6 +24,11 @@ const ProgramSchema = new Schema<IProgram>(
       x: { type: Number, min: 0, max: 100 },
       y: { type: Number, min: 0, max: 100 },
     },
+    // 홈 카드에 포스터를 그대로 쓸지 여부. 기본값 true로 두어
+    // 이 기능이 생기기 전에 등록한 작품도 지금까지와 똑같이 보인다
+    usePosterForCard: { type: Boolean, default: true },
+    // 위 값을 껐을 때 홈 카드에 쓰는 가로형 이미지
+    cardImageUrl: { type: String },
     galleryUrls: [{ type: String }],
     // 축제 팜플렛(리플렛) 스캔 이미지 - 공연 사진(galleryUrls)과는 별개
     pamphletUrls: [{ type: String }],

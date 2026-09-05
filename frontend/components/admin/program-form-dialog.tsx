@@ -47,6 +47,10 @@ export interface ProgramForm {
   posterUrl?: string
   // 홈 카드에서 포스터의 어느 부분을 보여줄지 (0~100%)
   posterFocus?: ImageFocus
+  // 홈 카드에 포스터를 그대로 쓸지. 끄면 아래 cardImageUrl을 쓴다
+  usePosterForCard: boolean
+  // 홈 카드 전용 가로형 이미지
+  cardImageUrl?: string
   ticketUrl?: string
   castText: string
   galleryUrls: string[]
@@ -196,18 +200,53 @@ export function ProgramFormDialog({
               aspectRatio={3 / 4}
             />
           </Field>
-          {/* 홈 카드는 가로로 길어 세로 포스터의 위아래가 잘린다. 어디를 보여줄지 직접 정한다 */}
-          {form.posterUrl && (
-            <Field label="홈 화면 카드에 보일 위치">
-              <ImageFocusPicker
-                src={form.posterUrl}
-                ratio={HOME_CARD_RATIO}
-                value={form.posterFocus}
-                onChange={(posterFocus) => onFormChange({ ...form, posterFocus })}
-                hint="홈 '참여 극단 & 공연' 카드에 이대로 보입니다. 원본 포스터는 그대로 보관됩니다."
+          {/* 홈 카드는 가로로 길어(약 3:1) 세로 포스터를 넣으면 위아래가 크게 잘린다.
+              그래서 포스터를 그대로 쓸지, 카드에 맞는 가로 이미지를 따로 올릴지 고르게 한다 */}
+          <div className="space-y-3 rounded-md border p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>홈 화면 카드에 포스터 이미지 사용</Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  끄면 홈 카드에만 쓰이는 가로형 이미지를 따로 올릴 수 있습니다.
+                </p>
+              </div>
+              <Switch
+                checked={form.usePosterForCard}
+                onCheckedChange={(usePosterForCard) => onFormChange({ ...form, usePosterForCard })}
               />
-            </Field>
-          )}
+            </div>
+
+            {form.usePosterForCard ? (
+              form.posterUrl ? (
+                <Field label="홈 화면 카드에 보일 위치">
+                  <ImageFocusPicker
+                    src={form.posterUrl}
+                    ratio={HOME_CARD_RATIO}
+                    value={form.posterFocus}
+                    onChange={(posterFocus) => onFormChange({ ...form, posterFocus })}
+                    hint="홈 '참여 극단 & 공연' 카드에 이대로 보입니다. 원본 포스터는 그대로 보관됩니다."
+                  />
+                </Field>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  포스터 이미지를 먼저 올리면 카드에 보일 위치를 정할 수 있습니다.
+                </p>
+              )
+            ) : (
+              <Field label="홈 카드 이미지">
+                <CloudinaryUpload
+                  value={form.cardImageUrl}
+                  onChange={(cardImageUrl) => onFormChange({ ...form, cardImageUrl: cardImageUrl as string })}
+                  folder="autumn_festival/programs/cards"
+                  placeholder="홈 카드용 가로 이미지 업로드"
+                  aspectRatio={HOME_CARD_RATIO}
+                />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  홈 카드는 가로로 깁니다. 가로가 긴 사진을 올리면 잘리지 않고 보입니다.
+                </p>
+              </Field>
+            )}
+          </div>
           <Field label="예매 URL"><Input value={form.ticketUrl} onChange={(e) => onFormChange({ ...form, ticketUrl: e.target.value })} /></Field>
           <Field label="공연 갤러리 이미지">
             <CloudinaryUpload
