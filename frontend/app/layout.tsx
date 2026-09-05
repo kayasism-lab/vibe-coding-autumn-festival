@@ -9,6 +9,8 @@ import {
   ORGANIZER,
   FESTIVAL_TITLE,
   OG_IMAGE,
+  NAVER_SITE_VERIFICATION,
+  GOOGLE_SITE_VERIFICATION,
 } from '@/lib/seo'
 import './globals.css'
 
@@ -61,9 +63,10 @@ export const metadata: Metadata = {
   // 구글·네이버 사이트 소유확인 코드. 각 서치콘솔에서 받은 값을 환경변수에
   // 넣으면 메타태그가 자동으로 붙는다 (값이 없으면 태그도 나가지 않는다)
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
-    other: process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION
-      ? { 'naver-site-verification': process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION }
+    // 값이 비어 있으면 태그를 내보내지 않는다 (구글은 아직 발급 전)
+    ...(GOOGLE_SITE_VERIFICATION ? { google: GOOGLE_SITE_VERIFICATION } : {}),
+    other: NAVER_SITE_VERIFICATION
+      ? { 'naver-site-verification': NAVER_SITE_VERIFICATION }
       : {},
   },
   icons: {

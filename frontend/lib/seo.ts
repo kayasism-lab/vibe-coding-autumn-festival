@@ -100,3 +100,20 @@ export const SITE_DESCRIPTION =
   '2026 가을연극축제 「직장인들의 이중생활」 — 전국직장인연극단체협의회(직연협) 주최·주관, 서울시 후원. ' +
   '2026년 9월 19일부터 11월 29일까지 서울 공연장 4곳에서 낮에는 직장인, 밤에는 배우인 사람들의 연극 2편과 ' +
   '시민 누구나 참여하는 열린 낭독극·열린 단막극을 전석 무료로 선보입니다.'
+
+/**
+ * 검색엔진 사이트 소유확인 코드.
+ *
+ * 네이버 서치어드바이저·구글 서치 콘솔이 "이 사이트가 정말 당신 것인가"를
+ * 확인하려고 요구하는 값이다. 페이지 소스에 그대로 노출되는 공개 값이라
+ * 비밀이 아니며, 코드에 둬도 안전하다.
+ *
+ * 환경변수가 있으면 그 값을 우선 쓰고, 없으면 아래 기본값을 쓴다
+ * (Vercel 대시보드를 건드리지 않아도 배포만 하면 동작하도록)
+ */
+export const NAVER_SITE_VERIFICATION =
+  process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ||
+  '73c924d450480b24f45ae7d2fc7890b7df9f7c56'
+
+// 구글 서치 콘솔은 아직 발급 전이라 비워 둔다. 값이 없으면 태그도 나가지 않는다
+export const GOOGLE_SITE_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || ''
