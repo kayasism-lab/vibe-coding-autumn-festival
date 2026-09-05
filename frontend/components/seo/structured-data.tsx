@@ -11,7 +11,7 @@
 import {
   SITE_URL,
   SITE_NAME,
-  SITE_DESCRIPTION,
+  SITE_DESCRIPTION_LONG,
   ORGANIZER,
   ORGANIZER_SHORT,
   FESTIVAL_TITLE,
@@ -39,7 +39,7 @@ const website = {
   url: SITE_URL,
   name: SITE_NAME,
   alternateName: ['가을연극축제', '가을 연극 축제', '직장인들의 이중생활'],
-  description: SITE_DESCRIPTION,
+  description: SITE_DESCRIPTION_LONG,
   inLanguage: 'ko-KR',
   publisher: { '@id': `${SITE_URL}/#organization` },
 }
@@ -55,7 +55,7 @@ const festivalEvent = {
     '제24회 가을연극축제',
     '직장인들의 이중생활',
   ],
-  description: SITE_DESCRIPTION,
+  description: SITE_DESCRIPTION_LONG,
   startDate: FESTIVAL.startDate,
   endDate: FESTIVAL.endDate,
   eventStatus: 'https://schema.org/EventScheduled',
