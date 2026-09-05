@@ -1,41 +1,70 @@
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
+import { StructuredData } from '@/components/seo/structured-data'
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  ORGANIZER,
+  FESTIVAL_TITLE,
+  OG_IMAGE,
+} from '@/lib/seo'
 import './globals.css'
 
 export const metadata: Metadata = {
+  // 상대경로 이미지·canonical을 절대 URL로 바꿔주는 기준 주소.
+  // 이게 없으면 OG 이미지가 깨져 카카오톡·페이스북 공유 썸네일이 안 뜬다
+  metadataBase: new URL(SITE_URL),
   title: {
     default: '2026 가을연극축제: 직장인들의 이중생활 | 제24회, 전석 무료',
     template: '%s | 2026 가을연극축제',
   },
-  description:
-    '전국직장인연극단체협의회 주최·주관, 서울시 후원. 2026년 9월 19일부터 11월 29일까지, 직장인 극단 연극 2편과 시민 누구나 참여할 수 있는 열린 낭독극·열린 단막극을 무료로 만나보세요.',
-  keywords: [
-    '가을연극축제',
-    '직장인들의 이중생활',
-    '직장인연극',
-    '전국직장인연극단체협의회',
-    '시민참여',
-    '열린낭독극',
-    '열린단막극',
-    '무료연극',
-    '서울연극',
-    '연극축제',
-  ],
-  authors: [{ name: '전국직장인연극단체협의회' }],
-  creator: '전국직장인연극단체협의회',
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  authors: [{ name: ORGANIZER }],
+  creator: ORGANIZER,
+  publisher: ORGANIZER,
+  applicationName: SITE_NAME,
+  category: '공연·예술',
+  // 대표 주소를 알려 중복 URL로 검색 순위가 갈리는 것을 막는다
+  alternates: {
+    canonical: '/',
+  },
+  // 모든 페이지를 색인해도 된다고 검색엔진에 명시한다
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
-    url: 'https://autumn-festival.vercel.app',
-    siteName: '2026 가을연극축제',
-    title: '2026 가을연극축제: 직장인들의 이중생활',
-    description:
-      '전국직장인연극단체협의회 주최·주관, 서울시 후원. 직장인 극단 연극 2편과 시민참여 열린 낭독극·열린 단막극을 9월 19일부터 11월 29일까지 무료로 만나보세요.',
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: FESTIVAL_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '2026 가을연극축제: 직장인들의 이중생활',
+    title: FESTIVAL_TITLE,
     description: '직장인 극단 연극과 시민참여 열린 낭독극·열린 단막극, 전석 무료',
+    images: [OG_IMAGE.url],
+  },
+  // 구글·네이버 사이트 소유확인 코드. 각 서치콘솔에서 받은 값을 환경변수에
+  // 넣으면 메타태그가 자동으로 붙는다 (값이 없으면 태그도 나가지 않는다)
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    other: process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION
+      ? { 'naver-site-verification': process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION }
+      : {},
   },
   icons: {
     icon: [
@@ -76,6 +105,8 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        {/* 검색엔진이 "축제 행사 + 주최 단체"로 인식하도록 구조화 데이터를 HTML에 직접 심는다 */}
+        <StructuredData />
         {/* 본문 서체: Pretendard Variable — dynamic subset이라 실제 쓰인 글자만 내려받는다 */}
         <link
           rel="stylesheet"

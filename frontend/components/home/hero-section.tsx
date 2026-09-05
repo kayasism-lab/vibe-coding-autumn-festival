@@ -221,10 +221,12 @@ export function HeroSection() {
               </p>
               
               <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-tight mb-6">
-                <span className="block">2026</span>
+                {/* 각 줄은 block이라 화면은 그대로지만, 사이에 공백이 없으면 검색엔진이
+                    "2026가을연극축제직장인들의…"처럼 한 단어로 읽는다. {' '}로 단어를 띄워준다 */}
+                <span className="block">2026</span>{' '}
                 <span className="block bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 bg-clip-text text-transparent">
                   가을연극축제
-                </span>
+                </span>{' '}
                 <span className="flex items-center justify-center lg:justify-start gap-2 mt-2">
                   <Image
                     src="/images/hero-subtitle-worker.png"
