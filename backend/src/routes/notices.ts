@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { Notice } from '../models/index.js'
-import { asyncHandler, fail, ok } from '../lib/http.js'
+import { asyncHandler, clampLimit, clampPage, escapeRegExp, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
 import { fetchLinkPreview } from '../lib/link-preview.js'
 import { sanitizeNoticeContent } from '../lib/sanitize-content.js'
@@ -17,8 +17,8 @@ function getKstYear(): number {
 noticesRouter.get(
   '/',
   asyncHandler(async (req, res) => {
-    const page = Number(req.query.page || 1)
-    const limit = Number(req.query.limit || 10)
+    const page = clampPage(req.query.page)
+    const limit = clampLimit(req.query.limit, 10)
     const query: Record<string, unknown> = {}
 
     if (req.query.category && req.query.category !== 'all') {
@@ -59,10 +59,12 @@ noticesRouter.get(
     }
 
     if (req.query.search) {
+      // 사용자 입력을 정규식 메타문자까지 이스케이프하고 길이를 제한해 ReDoS를 막는다
+      const keyword = escapeRegExp(String(req.query.search).slice(0, 100))
       conditions.push({
         $or: [
-          { title: { $regex: req.query.search, $options: 'i' } },
-          { content: { $regex: req.query.search, $options: 'i' } },
+          { title: { $regex: keyword, $options: 'i' } },
+          { content: { $regex: keyword, $options: 'i' } },
         ],
       })
     }

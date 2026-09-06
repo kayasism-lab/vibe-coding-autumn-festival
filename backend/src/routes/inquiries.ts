@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { Inquiry } from '../models/index.js'
-import { asyncHandler, fail, ok } from '../lib/http.js'
+import { asyncHandler, clampLimit, clampPage, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
 import { clearFailures, getBlockedMinutes, recordFailure } from '../lib/attempt-limiter.js'
 import { validatePassword } from '../lib/password-policy.js'
@@ -14,8 +14,8 @@ const attemptKey = (inquiryId: string) => `inquiry:${inquiryId}`
 inquiriesRouter.get(
   '/public',
   asyncHandler(async (req, res) => {
-    const page = Number(req.query.page || 1)
-    const limit = Number(req.query.limit || 20)
+    const page = clampPage(req.query.page)
+    const limit = clampLimit(req.query.limit, 20)
     const skip = (page - 1) * limit
 
     const [items, total] = await Promise.all([
@@ -36,9 +36,10 @@ inquiriesRouter.get(
   '/',
   requirePermission('inquiries'),
   asyncHandler(async (req, res) => {
-    const page = Number(req.query.page || 1)
-    const limit = Number(req.query.limit || 10)
-    const query = req.query.status && req.query.status !== 'all' ? { status: req.query.status } : {}
+    const page = clampPage(req.query.page)
+    const limit = clampLimit(req.query.limit, 10)
+    const query =
+      req.query.status && req.query.status !== 'all' ? { status: String(req.query.status) } : {}
     const skip = (page - 1) * limit
 
     const [items, total] = await Promise.all([
@@ -76,13 +77,21 @@ inquiriesRouter.post(
     }
 
     const hashedPassword = await bcrypt.hash(req.body.password, 10)
+    // 요청 본문을 통째로 넘기면 status·reply 같은 서버 관리 필드까지 조작되어
+    // 가짜 '답변완료'나 위조된 주최측 답변을 심을 수 있다. 허용 필드만 골라 저장한다
     const inquiry = await Inquiry.create({
-      ...req.body,
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+      title: req.body.title,
+      content: req.body.content,
+      isPrivate: req.body.isPrivate === true,
       password: hashedPassword,
       privacyAgreed: true,
       ageConfirmed: true,
       // 동의 시각은 클라이언트 값을 그대로 믿지 않고, 없으면 서버 시각으로 남긴다
       agreedAt: req.body.agreedAt ? new Date(req.body.agreedAt) : new Date(),
+      // status·reply는 서버 기본값/관리자 답변으로만 설정된다 (요청으로 받지 않음)
     })
     const result = inquiry.toObject() as Record<string, unknown>
     delete result.password
@@ -109,12 +118,22 @@ inquiriesRouter.get(
         isPrivate: true,
         createdAt: inquiry.createdAt,
         content: '',
-        email: '',
       })
       return
     }
 
-    ok(res, inquiry)
+    // 공개 문의라도 이메일·전화번호 등 개인정보는 무인증으로 내보내지 않는다.
+    // 공개 게시판 화면에 필요한 값만 골라 응답한다
+    ok(res, {
+      _id: inquiry._id,
+      title: inquiry.title,
+      name: inquiry.name,
+      content: inquiry.content,
+      status: inquiry.status,
+      isPrivate: false,
+      createdAt: inquiry.createdAt,
+      reply: inquiry.reply,
+    })
   })
 )
 

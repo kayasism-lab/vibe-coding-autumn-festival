@@ -39,6 +39,12 @@ programsRouter.post(
       if (context?.theaterGroupId) {
         payload.theaterGroup = context.theaterGroupId
         payload.company = context.theaterGroupName
+        // 시민참여 유형(낭독극·단막극)은 협의회 직접 주관이라 극단 계정이 만들 수 없다.
+        // 극단 계정이 가짜 낭독극/단막극 작품을 만들면 시민 신청이 그쪽으로 잘못 연결된다
+        if (payload.type === 'reading' || payload.type === 'short_play') {
+          fail(res, '낭독극·단막극 작품은 등록할 수 없습니다.', 403)
+          return
+        }
       } else if (context?.programType) {
         payload.theaterGroup = null
         payload.type = context.programType

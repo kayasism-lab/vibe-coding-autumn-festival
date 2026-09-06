@@ -15,6 +15,7 @@ import {
 } from '../lib/auth.js'
 import { requireAuth } from '../middleware/require-admin.js'
 import { resolveGroupPermissions } from '../lib/permissions.js'
+import { clearFailures, getBlockedMinutes, recordFailure } from '../lib/attempt-limiter.js'
 
 export const authRouter = Router()
 
@@ -123,16 +124,27 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const { email, password } = req.body
 
-    if (!email || !password) {
+    // 문자열이 아니면(예: { $ne: null }) 여기서 막는다. 필터로 흘러가기 전에 차단한다
+    if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
       fail(res, '이메일과 비밀번호를 입력해주세요.', 400)
+      return
+    }
+
+    // 로그인 무차별 대입을 막는다. 아이디(email) 기준으로 실패를 센다
+    const key = `login:${email}`
+    const blockedMinutes = getBlockedMinutes(key)
+    if (blockedMinutes !== null) {
+      fail(res, `로그인 시도가 많습니다. ${blockedMinutes}분 후에 다시 시도해주세요.`, 429)
       return
     }
 
     const user = await User.findOne({ email })
     if (!user || !(await verifyPassword(password, user.password))) {
+      recordFailure(key)
       fail(res, '이메일 또는 비밀번호가 올바르지 않습니다.', 401)
       return
     }
+    clearFailures(key)
 
     await issueAuth(res, user)
     ok(res, { user: publicUser(user) }, '로그인되었습니다.')

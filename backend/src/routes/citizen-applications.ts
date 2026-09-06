@@ -144,7 +144,9 @@ citizenApplicationsRouter.post(
   '/lookup',
   asyncHandler(async (req, res) => {
     const { phone, password } = req.body
-    if (!phone || !password) {
+    // 문자열이 아니면(예: { $ne: null }) 막는다. 필터로 흘러가 전체 신청자를
+    // 대상으로 비밀번호가 대입되는 것을 차단한다
+    if (typeof phone !== 'string' || typeof password !== 'string' || !phone || !password) {
       fail(res, '전화번호와 비밀번호를 입력해주세요.', 400)
       return
     }
@@ -203,13 +205,25 @@ citizenApplicationsRouter.put(
     }
     clearFailures(key)
 
-    delete updates.programId
-    delete updates.programType
-    delete updates.status
-    delete updates.adminNote
-    delete updates.qna
-
-    Object.assign(application, updates)
+    // 블랙리스트 대신 화이트리스트로 바꾼다. 신청자가 고칠 수 있는 값만 반영해
+    // 동의 기록(privacyAgreed·agreedAt)이나 연락처 조회키(phone)를 임의로 덮어쓰지 못하게 한다.
+    // 화면(apply/status)이 실제로 보내는 항목과 일치시킨다
+    const editableFields = [
+      'email',
+      'residence',
+      'age',
+      'gender',
+      'unavailableSchedules',
+      'respectAgreement',
+      'hasExperience',
+      'experienceDetail',
+      'motivation',
+    ] as const
+    for (const field of editableFields) {
+      if (updates[field] !== undefined) {
+        ;(application as Record<string, unknown>)[field] = updates[field]
+      }
+    }
     await application.save()
 
     ok(res, sanitize(application.toObject()), '신청 내역이 수정되었습니다.')

@@ -4,6 +4,7 @@ import { TheaterGroup, User } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin } from '../middleware/require-admin.js'
 import { normalizeGrantedPermissions } from '../lib/permissions.js'
+import { validatePassword } from '../lib/password-policy.js'
 import type { GroupAccountProgramType } from '../types/index.js'
 
 export const usersRouter = Router()
@@ -90,6 +91,19 @@ usersRouter.post(
       return
     }
 
+    // 관리자가 만드는 계정도 비밀번호 정책을 지켜야 한다 (약한 비밀번호로 뚫리는 것 방지)
+    const passwordError = validatePassword(password)
+    if (passwordError) {
+      fail(res, passwordError, 400)
+      return
+    }
+
+    // 총괄관리자(superadmin) 계정 생성은 총괄관리자만 할 수 있다 (일반 관리자의 셀프 승격 방지)
+    if (role === 'superadmin' && res.locals.user.role !== 'superadmin') {
+      fail(res, '총괄 관리자 계정은 총괄 관리자만 만들 수 있습니다.', 403)
+      return
+    }
+
     const exists = await User.findOne({ email })
     if (exists) {
       fail(res, '이미 사용 중인 아이디입니다.', 409)
@@ -131,6 +145,33 @@ usersRouter.put(
       return
     }
 
+    // 대상 계정의 현재 역할을 확인해 총괄관리자 계정 보호를 적용한다
+    const target = await User.findById(req.params.id).select('role').lean<{ role: string } | null>()
+    if (!target) {
+      fail(res, '사용자를 찾을 수 없습니다.', 404)
+      return
+    }
+    const isSuperAdmin = res.locals.user.role === 'superadmin'
+    // 총괄관리자 계정은 총괄관리자만 수정할 수 있다 (관리자끼리 계정 탈취 방지)
+    if (target.role === 'superadmin' && !isSuperAdmin) {
+      fail(res, '총괄 관리자 계정은 총괄 관리자만 수정할 수 있습니다.', 403)
+      return
+    }
+    // 총괄관리자로 승격하는 것도 총괄관리자만 할 수 있다 (셀프 승격 방지)
+    if (req.body.role === 'superadmin' && !isSuperAdmin) {
+      fail(res, '총괄 관리자 권한은 총괄 관리자만 부여할 수 있습니다.', 403)
+      return
+    }
+
+    // 비밀번호를 바꾸는 경우 정책을 검사한다
+    if (req.body.password) {
+      const passwordError = validatePassword(req.body.password)
+      if (passwordError) {
+        fail(res, passwordError, 400)
+        return
+      }
+    }
+
     const resolved = await resolveGroupOwnerFields(req.body.role, req.body.theaterGroup, req.body.programType)
     if (!resolved.ok) {
       fail(res, resolved.message, 400)
@@ -150,6 +191,8 @@ usersRouter.put(
 
     if (req.body.password) {
       update.password = await bcrypt.hash(req.body.password, 12)
+      // 비밀번호를 바꾸면 기존 세션(리프레시 토큰)을 끊어 옛 비밀번호로 남은 세션을 무효화한다
+      update.refreshToken = null
     }
 
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true })
@@ -168,12 +211,33 @@ usersRouter.put(
 usersRouter.delete(
   '/:id',
   asyncHandler(async (req, res) => {
-    const user = await User.findByIdAndDelete(req.params.id)
-    if (!user) {
+    // 자기 자신은 삭제할 수 없다 (실수로 자기 계정을 지워 잠기는 것 방지)
+    if (req.params.id === res.locals.user.userId) {
+      fail(res, '자기 자신은 삭제할 수 없습니다.', 400)
+      return
+    }
+
+    const target = await User.findById(req.params.id).select('role').lean<{ role: string } | null>()
+    if (!target) {
       fail(res, '사용자를 찾을 수 없습니다.', 404)
       return
     }
 
+    // 총괄관리자 계정은 총괄관리자만 삭제할 수 있다
+    if (target.role === 'superadmin' && res.locals.user.role !== 'superadmin') {
+      fail(res, '총괄 관리자 계정은 총괄 관리자만 삭제할 수 있습니다.', 403)
+      return
+    }
+    // 마지막 총괄관리자를 지우면 아무도 총괄 권한을 못 갖게 되므로 막는다
+    if (target.role === 'superadmin') {
+      const superAdminCount = await User.countDocuments({ role: 'superadmin' })
+      if (superAdminCount <= 1) {
+        fail(res, '마지막 총괄 관리자 계정은 삭제할 수 없습니다.', 400)
+        return
+      }
+    }
+
+    await User.findByIdAndDelete(req.params.id)
     ok(res, null, '사용자가 삭제되었습니다.')
   })
 )

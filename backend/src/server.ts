@@ -1,6 +1,7 @@
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
+import helmet from 'helmet'
 import { connectDB } from './lib/db.js'
 import { env } from './lib/env.js'
 import { fail } from './lib/http.js'
@@ -8,6 +9,9 @@ import { apiRouter } from './routes/index.js'
 
 const app = express()
 
+// 보안 응답 헤더(X-Content-Type-Options, X-Frame-Options 등)를 붙인다.
+// 이 백엔드는 JSON API만 응답하므로 HTML 페이지용 CSP는 프론트(Next)에서 담당한다.
+app.use(helmet())
 app.use(
   cors({
     origin: env.frontendOrigin,
