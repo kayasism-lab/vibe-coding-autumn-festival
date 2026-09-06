@@ -5,6 +5,8 @@ import type { GroupPermission } from '@/lib/admin-permissions'
 import type { ProgramTypeAccount } from '@/lib/program-type-account'
 
 interface AdminAccount {
+  /** 로그인한 계정의 id. 본인 계정인지 가려낼 때 쓴다 */
+  id: string
   role: string
   theaterGroup: string | null
   // 담당 극단이 없는 계정(낭독극·단막극 담당자)만 값이 있다
@@ -18,6 +20,7 @@ interface AdminAccount {
  */
 export function useAdminAccount() {
   const [account, setAccount] = useState<AdminAccount>({
+    id: '',
     role: '',
     theaterGroup: null,
     programType: null,
@@ -32,6 +35,7 @@ export function useAdminAccount() {
       .then((data) => {
         if (!mounted || !data.success) return
         setAccount({
+          id: data.data.id ?? '',
           role: data.data.role,
           theaterGroup: data.data.theaterGroup ?? null,
           programType: data.data.programType ?? null,

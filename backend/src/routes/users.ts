@@ -5,7 +5,8 @@ import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin } from '../middleware/require-admin.js'
 import { normalizeGrantedPermissions } from '../lib/permissions.js'
 import { validatePassword } from '../lib/password-policy.js'
-import type { GroupAccountProgramType } from '../types/index.js'
+import { canDeleteAccount, canEditAccount, isHigherRole } from '../lib/account-authority.js'
+import type { GroupAccountProgramType, UserRole } from '../types/index.js'
 
 export const usersRouter = Router()
 const roles = ['superadmin', 'admin', 'group', 'normal']
@@ -145,29 +146,64 @@ usersRouter.put(
       return
     }
 
-    // 대상 계정의 현재 역할을 확인해 총괄관리자 계정 보호를 적용한다
-    const target = await User.findById(req.params.id).select('role').lean<{ role: string } | null>()
+    const target = await User.findById(req.params.id)
+      .select('role')
+      .lean<{ role: UserRole } | null>()
     if (!target) {
       fail(res, '사용자를 찾을 수 없습니다.', 404)
       return
     }
-    const isSuperAdmin = res.locals.user.role === 'superadmin'
-    // 총괄관리자 계정은 총괄관리자만 수정할 수 있다 (관리자끼리 계정 탈취 방지)
-    if (target.role === 'superadmin' && !isSuperAdmin) {
-      fail(res, '총괄 관리자 계정은 총괄 관리자만 수정할 수 있습니다.', 403)
+
+    const actor = res.locals.user
+    const isSelf = actor.userId === req.params.id
+    const isSuperAdmin = actor.role === 'superadmin'
+
+    // 본인 계정이거나 자기보다 낮은 권한의 계정만 고칠 수 있다.
+    // 동급 관리자끼리 서로의 계정을 바꿔 로그인을 가로채는 것을 막는다
+    if (!canEditAccount(actor, { id: req.params.id, role: target.role })) {
+      fail(res, '본인 계정이거나 하위 권한 계정만 수정할 수 있습니다.', 403)
       return
     }
-    // 총괄관리자로 승격하는 것도 총괄관리자만 할 수 있다 (셀프 승격 방지)
+
+    // 총괄관리자로 승격하는 것은 총괄관리자만 할 수 있다 (셀프 승격 방지)
     if (req.body.role === 'superadmin' && !isSuperAdmin) {
       fail(res, '총괄 관리자 권한은 총괄 관리자만 부여할 수 있습니다.', 403)
       return
     }
 
-    // 비밀번호를 바꾸는 경우 정책을 검사한다
+    // 본인 계정을 수정할 때 자기 권한을 바꾸는 것은 막는다.
+    // 스스로 등급을 올리면 위 검사를 우회하게 되고, 내리면 관리자 화면에 못 들어간다
+    if (isSelf && req.body.role && req.body.role !== target.role) {
+      fail(res, '본인 계정의 권한은 바꿀 수 없습니다.', 403)
+      return
+    }
+
+    // 낮은 권한 계정이라도 자기와 같거나 높은 등급으로 올려줄 수는 없다
+    if (!isSelf && req.body.role && !isHigherRole(actor.role, req.body.role)) {
+      fail(res, '자신과 같거나 높은 권한은 부여할 수 없습니다.', 403)
+      return
+    }
+
+    // 비밀번호를 바꾸는 경우 정책을 검사하고, 요청자 본인임을 다시 확인한다.
+    // 관리자 화면이 열려 있기만 하면 남의 계정을 가로챌 수 있어, 자리를 비운 사이의
+    // 무단 변경을 막으려고 요청자의 현재 비밀번호를 함께 받는다
     if (req.body.password) {
       const passwordError = validatePassword(req.body.password)
       if (passwordError) {
         fail(res, passwordError, 400)
+        return
+      }
+
+      if (!req.body.currentPassword) {
+        fail(res, '현재 로그인한 계정의 비밀번호를 입력해주세요.', 400)
+        return
+      }
+
+      const actorAccount = await User.findById(actor.userId)
+        .select('password')
+        .lean<{ password: string } | null>()
+      if (!actorAccount || !(await bcrypt.compare(req.body.currentPassword, actorAccount.password))) {
+        fail(res, '현재 비밀번호가 일치하지 않습니다.', 401)
         return
       }
     }
@@ -217,15 +253,17 @@ usersRouter.delete(
       return
     }
 
-    const target = await User.findById(req.params.id).select('role').lean<{ role: string } | null>()
+    const target = await User.findById(req.params.id)
+      .select('role')
+      .lean<{ role: UserRole } | null>()
     if (!target) {
       fail(res, '사용자를 찾을 수 없습니다.', 404)
       return
     }
 
-    // 총괄관리자 계정은 총괄관리자만 삭제할 수 있다
-    if (target.role === 'superadmin' && res.locals.user.role !== 'superadmin') {
-      fail(res, '총괄 관리자 계정은 총괄 관리자만 삭제할 수 있습니다.', 403)
+    // 삭제는 되돌릴 수 없어 수정보다 좁게 잡는다. 자기보다 낮은 권한만 지울 수 있다
+    if (!canDeleteAccount(res.locals.user, { id: req.params.id, role: target.role })) {
+      fail(res, '하위 권한 계정만 삭제할 수 있습니다.', 403)
       return
     }
     // 마지막 총괄관리자를 지우면 아무도 총괄 권한을 못 갖게 되므로 막는다

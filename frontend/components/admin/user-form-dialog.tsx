@@ -36,6 +36,11 @@ export interface UserForm {
   permissions: GroupPermission[]
   role: UserRole
   password: string
+  /**
+   * 요청자(지금 로그인한 계정)의 현재 비밀번호.
+   * 비밀번호를 바꿀 때만 쓰며, 자리를 비운 사이 남이 계정을 가로채는 것을 막는다
+   */
+  currentPassword: string
 }
 
 // "담당 대상" 선택창에 극단·공연 유형을 한 목록에 섞어 보여주기 위한 값 인코딩.
@@ -238,6 +243,22 @@ export function UserFormDialog({
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
           </Field>
+
+          {/* 비밀번호를 실제로 바꿀 때만 본인 확인을 받는다.
+              남의 계정을 바꿀 때도 대상의 옛 암호가 아니라 '지금 로그인한 나'의 암호를 넣는다 */}
+          {isEditing && form.password.trim() !== '' && (
+            <Field label="현재 로그인한 계정의 비밀번호" required>
+              <Input
+                type="password"
+                autoComplete="current-password"
+                value={form.currentPassword}
+                onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                비밀번호를 바꾸려면 본인 확인이 필요합니다. 지금 로그인한 계정의 비밀번호를 입력해주세요.
+              </p>
+            </Field>
+          )}
 
           {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
         </div>

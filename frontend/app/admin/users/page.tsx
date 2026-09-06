@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { GROUP_PERMISSION_META, type GroupPermission } from '@/lib/admin-permissions'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
+import { useAdminAccount } from '@/lib/use-admin-account'
+import { canDeleteAccount, canEditAccount } from '@/lib/account-authority'
 
 type User = {
   _id: string
@@ -34,6 +36,7 @@ const emptyForm: UserForm = {
   permissions: [],
   role: 'normal',
   password: '',
+  currentPassword: '',
 }
 
 const roleLabels: Record<UserRole, string> = {
@@ -52,6 +55,9 @@ function grantedPermissionLabels(permissions?: GroupPermission[]) {
 }
 
 export default function AdminUsersPage() {
+  // 본인 계정과 하위 권한만 고치고 지울 수 있어, 로그인한 계정 정보가 필요하다
+  const me = useAdminAccount()
+  const actor = { id: me.id, role: me.role as UserRole }
   const [users, setUsers] = useState<User[]>([])
   const [theaterGroups, setTheaterGroups] = useState<TheaterGroupOption[]>([])
   const [form, setForm] = useState<UserForm>(emptyForm)
@@ -94,6 +100,7 @@ export default function AdminUsersPage() {
             ),
             role: user.role,
             password: '',
+            currentPassword: '',
           }
         : emptyForm
     )
@@ -116,6 +123,12 @@ export default function AdminUsersPage() {
 
     if (form.role === 'group' && !form.theaterGroup && !form.programType) {
       setErrorMessage('극단 담당자 계정은 담당 극단이나 담당 공연 유형을 선택해야 합니다.')
+      return
+    }
+
+    // 서버도 같은 검사를 하지만, 저장을 눌러보기 전에 알려주는 편이 낫다
+    if (editingUser && form.password.trim() && !form.currentPassword.trim()) {
+      setErrorMessage('비밀번호를 바꾸려면 현재 로그인한 계정의 비밀번호를 입력해주세요.')
       return
     }
 
@@ -207,8 +220,25 @@ export default function AdminUsersPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => openDialog(user)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(user._id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        {/* 본인 계정과 하위 권한만 다룰 수 있다. 서버도 같은 규칙으로 막는다 */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={!canEditAccount(actor, { id: user._id, role: user.role })}
+                          title={canEditAccount(actor, { id: user._id, role: user.role }) ? '수정' : '본인 계정이거나 하위 권한 계정만 수정할 수 있습니다'}
+                          onClick={() => openDialog(user)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={!canDeleteAccount(actor, { id: user._id, role: user.role })}
+                          title={canDeleteAccount(actor, { id: user._id, role: user.role }) ? '삭제' : '하위 권한 계정만 삭제할 수 있습니다'}
+                          onClick={() => handleDelete(user._id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   )
