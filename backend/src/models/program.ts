@@ -1,5 +1,26 @@
 import mongoose, { Schema } from 'mongoose'
 import type { IProgram } from '../types/index.js'
+import { CITIZEN_QUESTION_TYPES } from '../lib/citizen-application-questions.js'
+
+// 신청서 질문 한 건의 구조. 담당자가 만든 값이라 개수·구성이 정해져 있지 않다.
+// _id를 끄는 이유: 질문은 자체 id(답변 키)로 식별하므로 몽고 id가 따로 필요 없다
+const CitizenQuestionSchema = new Schema(
+  {
+    id: { type: String, required: true },
+    type: { type: String, enum: CITIZEN_QUESTION_TYPES, required: true },
+    label: { type: String, required: true },
+    required: { type: Boolean, default: false },
+    options: { type: [String], default: undefined },
+    notice: { type: String },
+    maxLength: { type: Number },
+    // 다른 질문의 답이 특정 값일 때만 보여주는 꼬리 질문 조건
+    showWhen: {
+      questionId: { type: String },
+      equals: { type: String },
+    },
+  },
+  { _id: false }
+)
 
 const ProgramSchema = new Schema<IProgram>(
   {
@@ -56,8 +77,11 @@ const ProgramSchema = new Schema<IProgram>(
       preparing: { type: String },
       ended: { type: String },
     },
-    // 신청서의 일정 체크 항목과 안내 문구. 담당자가 관리 화면에서 직접 고친다
+    // 신청서 질문 구성. 담당자가 작품 관리 화면에서 직접 만들고 고친다
     applicationForm: {
+      questions: { type: [CitizenQuestionSchema], default: undefined },
+      // questions가 생기기 전에 저장된 일정 목록·안내 문구.
+      // 지우면 담당자가 입력해둔 일정이 사라지므로, 기본 질문으로 옮겨 쓰기 위해 남겨둔다
       scheduleItems: { type: [String], default: undefined },
       scheduleNotice: { type: String },
     },

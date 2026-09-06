@@ -24,6 +24,11 @@ import {
   type CitizenApplicationStatus,
 } from '@/lib/citizen-application-status'
 import type { ProgramApplicationMessages } from '@/components/admin/program-application-fields'
+import {
+  resolveCitizenQuestions,
+  type CitizenApplicationFormConfig,
+} from '@/lib/citizen-application-questions'
+import { fromQuestionDrafts, toQuestionDrafts } from '@/lib/citizen-question-draft'
 
 // 문구를 한 번도 입력하지 않은 상태. 빈 값이면 저장 시 기본 문구가 쓰인다
 const emptyApplicationMessages: ProgramApplicationMessages = {
@@ -48,7 +53,7 @@ type Program = {
   openForApplication: boolean
   applicationStatus?: CitizenApplicationStatus | null
   applicationMessages?: { closed?: string; preparing?: string; ended?: string } | null
-  applicationForm?: { scheduleItems?: string[] | null; scheduleNotice?: string | null } | null
+  applicationForm?: CitizenApplicationFormConfig | null
   order: number
   posterUrl?: string
   posterFocus?: { x: number; y: number }
@@ -76,8 +81,8 @@ const emptyForm: ProgramForm = {
   openForApplication: false,
   applicationStatus: 'open',
   applicationMessages: emptyApplicationMessages,
-  scheduleItemsText: '',
-  scheduleNotice: '',
+  // 설정이 없는 새 작품에는 코드의 기본 질문이 들어간다
+  questionDrafts: toQuestionDrafts(resolveCitizenQuestions(null)),
   order: 0,
   posterUrl: '',
   posterFocus: CENTER_FOCUS,
@@ -174,9 +179,9 @@ export default function AdminProgramsPage() {
               ...emptyApplicationMessages,
               ...(program.applicationMessages ?? {}),
             },
-            // 저장은 배열, 편집은 여러 줄 입력이라 서로 바꿔준다
-            scheduleItemsText: (program.applicationForm?.scheduleItems ?? []).join('\n'),
-            scheduleNotice: program.applicationForm?.scheduleNotice || '',
+            // 질문을 아직 편집한 적이 없는 작품은 기본 질문이 채워진다.
+            // 예전 화면에서 입력해둔 일정도 첫 질문의 선택지로 옮겨 담긴다
+            questionDrafts: toQuestionDrafts(resolveCitizenQuestions(program.applicationForm)),
             order: program.order,
             posterUrl: program.posterUrl || '',
             // 예전에 등록한 작품은 이 값이 없어 가운데로 본다 (지금까지의 모습 그대로)
@@ -238,14 +243,13 @@ export default function AdminProgramsPage() {
           ended: form.applicationMessages.ended.trim() || undefined,
         }
       : undefined,
-    // 여러 줄 입력을 항목 배열로 되돌린다. 빈 줄은 버린다
+    // 편집 형태를 저장 형태로 되돌린다. 문구가 빈 질문은 저장하지 않는다.
+    // 예전 일정 필드는 questions로 옮겨졌으므로 비워서 두 곳이 어긋나지 않게 한다
     applicationForm: form.openForApplication
       ? {
-          scheduleItems: form.scheduleItemsText
-            .split('\n')
-            .map((item) => item.trim())
-            .filter(Boolean),
-          scheduleNotice: form.scheduleNotice.trim() || undefined,
+          questions: fromQuestionDrafts(form.questionDrafts),
+          scheduleItems: [],
+          scheduleNotice: undefined,
         }
       : undefined,
     order: form.order,

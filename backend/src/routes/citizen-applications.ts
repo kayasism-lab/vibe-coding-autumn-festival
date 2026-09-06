@@ -11,6 +11,11 @@ import {
   resolveCitizenApplicationMessage,
   resolveCitizenApplicationStatus,
 } from '../lib/citizen-application-status.js'
+import {
+  DEFAULT_CITIZEN_QUESTION_IDS,
+  resolveCitizenQuestions,
+} from '../lib/citizen-application-questions.js'
+import { normalizeCitizenAnswers, snapshotQuestions } from '../lib/citizen-application-answers.js'
 
 export const citizenApplicationsRouter = Router()
 
@@ -39,16 +44,14 @@ citizenApplicationsRouter.post(
       residence,
       age,
       gender,
-      unavailableSchedules,
-      respectAgreement,
-      hasExperience,
-      experienceDetail,
-      motivation,
+      answers,
       password,
       privacyAgreed,
       agreedAt,
     } = req.body
 
+    // 이름·연락처 같은 고정 항목만 여기서 본다.
+    // 질문 항목은 작품마다 구성이 달라, 작품을 찾은 뒤 질문 정의를 기준으로 따로 검증한다
     if (
       !['reading', 'short_play'].includes(programType) ||
       !name ||
@@ -57,9 +60,6 @@ citizenApplicationsRouter.post(
       !residence ||
       !age ||
       !gender ||
-      typeof respectAgreement !== 'boolean' ||
-      typeof hasExperience !== 'boolean' ||
-      !motivation ||
       !password
     ) {
       fail(res, '필수 항목을 모두 입력해주세요.', 400)
@@ -84,16 +84,6 @@ citizenApplicationsRouter.post(
       return
     }
 
-    if (hasExperience && !experienceDetail) {
-      fail(res, '경험 내용을 입력해주세요.', 400)
-      return
-    }
-
-    if (experienceDetail && experienceDetail.length > 1000) {
-      fail(res, '경험 내용은 1000자 이내로 입력해주세요.', 400)
-      return
-    }
-
     // 클라이언트가 programId를 직접 지정하지 못하도록 서버에서 해당 유형의 프로그램을 조회한다
     const program = await Program.findOne({ type: programType, isActive: true })
       .sort({ order: 1, createdAt: -1 })
@@ -112,6 +102,15 @@ citizenApplicationsRouter.post(
       return
     }
 
+    // 담당자가 작품 관리 화면에서 만든 질문을 기준으로 답을 정리·검증한다.
+    // 화면에서 막아도 요청은 직접 보낼 수 있어 필수 입력·선택지 검사는 여기서 다시 한다
+    const questions = resolveCitizenQuestions(program.applicationForm)
+    const normalized = normalizeCitizenAnswers(questions, answers ?? req.body)
+    if (normalized.error) {
+      fail(res, normalized.error, 400)
+      return
+    }
+
     const application = await CitizenApplication.create({
       programId: program._id,
       programType,
@@ -121,14 +120,11 @@ citizenApplicationsRouter.post(
       residence,
       age,
       gender,
-      // 화면에 없는 값이 섞여 들어오지 않도록 문자열만 추려서 저장한다
-      unavailableSchedules: Array.isArray(unavailableSchedules)
-        ? unavailableSchedules.filter((item: unknown): item is string => typeof item === 'string')
-        : [],
-      respectAgreement,
-      hasExperience,
-      experienceDetail: hasExperience ? experienceDetail : undefined,
-      motivation,
+      answers: normalized.answers,
+      answeredQuestions: snapshotQuestions(questions, normalized.answers),
+      // 기본 질문의 답은 예전 필드에도 같이 넣는다.
+      // 관리자 조회 화면과 이미 접수된 신청서가 같은 자리에서 값을 읽을 수 있어야 한다
+      ...normalized.legacyFields,
       password: await bcrypt.hash(password, 10),
       // 동의 시각은 클라이언트 값을 그대로 믿지 않고, 없으면 서버 시각으로 남긴다
       privacyAgreed: true,
@@ -208,22 +204,33 @@ citizenApplicationsRouter.put(
     // 블랙리스트 대신 화이트리스트로 바꾼다. 신청자가 고칠 수 있는 값만 반영해
     // 동의 기록(privacyAgreed·agreedAt)이나 연락처 조회키(phone)를 임의로 덮어쓰지 못하게 한다.
     // 화면(apply/status)이 실제로 보내는 항목과 일치시킨다
-    const editableFields = [
-      'email',
-      'residence',
-      'age',
-      'gender',
-      'unavailableSchedules',
-      'respectAgreement',
-      'hasExperience',
-      'experienceDetail',
-      'motivation',
-    ] as const
+    const editableFields = ['email', 'residence', 'age', 'gender'] as const
     for (const field of editableFields) {
       if (updates[field] !== undefined) {
         ;(application as Record<string, unknown>)[field] = updates[field]
       }
     }
+
+    // 질문 항목은 작품에 저장된 질문 정의를 기준으로 다시 검증한다.
+    // 접수 때와 같은 규칙을 써야 수정으로 필수 항목을 비우고 빠져나가는 일이 없다
+    if (updates.answers !== undefined) {
+      const program = await Program.findById(application.programId).lean()
+      const questions = resolveCitizenQuestions(program?.applicationForm)
+      const normalized = normalizeCitizenAnswers(questions, updates.answers)
+      if (normalized.error) {
+        fail(res, normalized.error, 400)
+        return
+      }
+
+      application.answers = normalized.answers
+      application.answeredQuestions = snapshotQuestions(questions, normalized.answers)
+      // 기본 질문의 답은 예전 필드에도 함께 반영한다.
+      // 이번 수정에서 답이 빠진 기본 질문은 값을 지워, 화면과 저장값이 어긋나지 않게 한다
+      for (const id of DEFAULT_CITIZEN_QUESTION_IDS) {
+        ;(application as Record<string, unknown>)[id] = normalized.legacyFields[id]
+      }
+    }
+
     await application.save()
 
     ok(res, sanitize(application.toObject()), '신청 내역이 수정되었습니다.')

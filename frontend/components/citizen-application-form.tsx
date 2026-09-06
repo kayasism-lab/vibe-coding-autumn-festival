@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup } from '@/components/ui/radio-group'
 import { Loader2 } from 'lucide-react'
-import { Field, RadioOption, ScheduleCheckField, YesNoField } from '@/components/citizen-application-fields'
+import { Field, RadioOption } from '@/components/citizen-application-fields'
+import { CitizenQuestionFields } from '@/components/citizen-question-fields'
 import {
   PrivacyConsent,
   emptyConsent,
@@ -17,11 +17,15 @@ import { formatPhoneInput } from '@/lib/phone'
 import { PASSWORD_HINT, PASSWORD_MIN_LENGTH, validatePassword } from '@/lib/password-policy'
 import {
   citizenProgramLabels,
-  resolveCitizenScheduleItems,
-  resolveCitizenScheduleNotice,
-  type CitizenApplicationFormConfig,
   type CitizenProgramType,
 } from '@/lib/citizen-application-status'
+import {
+  emptyCitizenAnswers,
+  resolveCitizenQuestions,
+  validateCitizenAnswers,
+  type CitizenAnswers,
+  type CitizenApplicationFormConfig,
+} from '@/lib/citizen-application-questions'
 
 // 시민참여 행사(낭독극·단막극)는 만 20세 이상만 신청할 수 있다.
 const MIN_AGE = 20
@@ -29,6 +33,7 @@ const MIN_AGE = 20
 // 유형 정의는 lib/citizen-application-status로 옮겼다. 기존 import 경로를 쓰는 곳이 있어 다시 내보낸다
 export type { CitizenProgramType }
 
+/** 담당자가 고칠 수 없는 고정 항목. 질문 항목의 답은 answers에 따로 담는다 */
 interface FormState {
   programType: CitizenProgramType
   name: string
@@ -37,12 +42,6 @@ interface FormState {
   residence: string
   age: string
   gender: 'male' | 'female' | ''
-  /** 참여할 수 없다고 체크한 일정 (전부 참여 가능하면 빈 배열) */
-  unavailableSchedules: string[]
-  respectAgreement: boolean | ''
-  hasExperience: boolean | ''
-  experienceDetail: string
-  motivation: string
   password: string
 }
 
@@ -55,11 +54,6 @@ function emptyForm(initialType: CitizenProgramType): FormState {
     residence: '',
     age: '',
     gender: '',
-    unavailableSchedules: [],
-    respectAgreement: '',
-    hasExperience: '',
-    experienceDetail: '',
-    motivation: '',
     password: '',
   }
 }
@@ -77,34 +71,35 @@ export function CitizenApplicationForm({
    * 접수를 안 받는 유형으로 잘못 신청하는 일이 생겨 진입 경로의 유형으로 고정한다.
    */
   isTypeLocked?: boolean
-  /** 담당자가 작품 관리 화면에서 입력한 일정 항목·안내 문구 */
+  /** 담당자가 작품 관리 화면에서 만든 질문 구성 */
   formConfig?: CitizenApplicationFormConfig | null
   onSuccess: () => void
 }) {
   const [form, setForm] = useState<FormState>(() => emptyForm(initialType))
+  // 담당자가 만든 질문 목록. 설정이 없으면 코드의 기본 질문이 나온다
+  const questions = useMemo(() => resolveCitizenQuestions(formConfig), [formConfig])
+  const [answers, setAnswers] = useState<CitizenAnswers>(() => emptyCitizenAnswers(questions))
   const [consent, setConsent] = useState<PrivacyConsentValue>(emptyConsent)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-
-  // 담당자가 일정을 등록하지 않았으면 체크 항목 자체를 보여주지 않는다
-  const scheduleItems = resolveCitizenScheduleItems(formConfig)
-  const scheduleNotice = resolveCitizenScheduleNotice(formConfig)
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError('')
 
-    if (form.gender === '' || form.respectAgreement === '' || form.hasExperience === '') {
+    if (form.gender === '') {
       setError('필수 항목을 모두 선택해주세요.')
+      return
+    }
+    // 질문 항목은 담당자가 정한 필수 여부에 따라 검사한다
+    const answerError = validateCitizenAnswers(questions, answers)
+    if (answerError) {
+      setError(answerError)
       return
     }
     const passwordError = validatePassword(form.password)
     if (passwordError) {
       setError(passwordError)
-      return
-    }
-    if (form.hasExperience && !form.experienceDetail.trim()) {
-      setError('어떤 경험이 있으신지 입력해주세요.')
       return
     }
     // 나이를 숫자로 직접 받으므로 별도 연령 확인 체크박스 없이 입력값으로 검증한다
@@ -131,12 +126,8 @@ export function CitizenApplicationForm({
           residence: form.residence,
           age: Number(form.age),
           gender: form.gender,
-          // 일정 항목이 없는 프로그램이면 빈 배열이 그대로 나간다
-          unavailableSchedules: form.unavailableSchedules,
-          respectAgreement: form.respectAgreement,
-          hasExperience: form.hasExperience,
-          experienceDetail: form.hasExperience ? form.experienceDetail : undefined,
-          motivation: form.motivation,
+          // 질문 항목의 답은 서버가 작품의 질문 정의로 다시 검증한다
+          answers,
           password: form.password,
           // 동의를 받았다는 입증 책임이 운영자에게 있어 동의 여부와 시각을 함께 남긴다
           privacyAgreed: consent.privacyAgreed,
@@ -204,46 +195,8 @@ export function CitizenApplicationForm({
         </Field>
       </div>
 
-      {scheduleItems.length > 0 && (
-        <ScheduleCheckField
-          label="아래 일정 중 참여 불가한 일정이 있을 경우 체크해주세요."
-          notice={scheduleNotice}
-          items={scheduleItems}
-          value={form.unavailableSchedules}
-          onChange={(unavailableSchedules) => setForm({ ...form, unavailableSchedules })}
-        />
-      )}
-
-      <YesNoField
-        label="함께하는 강사 및 동료분을 존중해주는 자세가 필요합니다. *"
-        value={form.respectAgreement}
-        onChange={(value) => setForm({ ...form, respectAgreement: value })}
-        name="respectAgreement"
-      />
-
-      <YesNoField
-        label="연극 관련 경험이 있으신가요? *"
-        value={form.hasExperience}
-        onChange={(value) => setForm({ ...form, hasExperience: value })}
-        name="hasExperience"
-      />
-
-      {form.hasExperience && (
-        <Field label="어떤 경험이 있으신가요? (1000자 이내) *">
-          <Textarea
-            required
-            rows={4}
-            maxLength={1000}
-            value={form.experienceDetail}
-            onChange={(e) => setForm({ ...form, experienceDetail: e.target.value })}
-            placeholder="연극·낭독·공연 관련 경험을 자유롭게 작성해주세요."
-          />
-        </Field>
-      )}
-
-      <Field label="신청동기 및 각오 *">
-        <Textarea required rows={4} value={form.motivation} onChange={(e) => setForm({ ...form, motivation: e.target.value })} placeholder="참여하고 싶은 이유와 각오를 작성해주세요." />
-      </Field>
+      {/* 담당자가 작품 관리 화면에서 만든 질문들 */}
+      <CitizenQuestionFields questions={questions} answers={answers} onChange={setAnswers} idPrefix="apply" />
 
       <Field label="비밀번호 *" hint={PASSWORD_HINT}>
         <Input required minLength={PASSWORD_MIN_LENGTH} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="신청 내역 조회·수정 시 사용합니다" />
@@ -251,7 +204,7 @@ export function CitizenApplicationForm({
 
       <PrivacyConsent
         purpose="시민참여 행사 신청 접수, 참가 자격 확인 및 선발, 연습 일정 등 참가자 연락"
-        items="이름, 연락처, 이메일주소, 거주지, 나이, 성별, 연극 관련 경험, 신청 동기"
+        items="이름, 연락처, 이메일주소, 거주지, 나이, 성별, 신청서 질문 답변"
         retention="축제 종료일로부터 1년 (기간 경과 후 지체 없이 파기)"
         disadvantage="신청이 접수되지 않습니다."
         ageLabel={null}

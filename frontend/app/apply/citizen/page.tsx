@@ -13,10 +13,10 @@ import { CitizenApplicationNoticeDialog } from '@/components/citizen-application
 import {
   resolveCitizenApplicationMessage,
   resolveCitizenApplicationStatus,
-  type CitizenApplicationFormConfig,
   type CitizenApplicationStatus,
   type CitizenProgramType,
 } from '@/lib/citizen-application-status'
+import type { CitizenApplicationFormConfig } from '@/lib/citizen-application-questions'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 
 /** 접수 상태 판정에 필요한 만큼만 추린 프로그램 값 */

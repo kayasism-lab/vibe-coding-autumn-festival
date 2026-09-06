@@ -1,4 +1,6 @@
 import type { Document, Types } from 'mongoose'
+import type { CitizenFormQuestion, CitizenQuestionType } from '../lib/citizen-application-questions.js'
+import type { CitizenAnswerValue } from '../lib/citizen-application-answers.js'
 
 // Program (공연)
 export type ProgramType = 'play' | 'short_play' | 'reading'
@@ -51,11 +53,13 @@ export interface IProgram extends Document {
     ended?: string
   }
   // 신청서에서 담당자가 직접 고칠 수 있는 부분.
-  // 연습 일정은 해마다 바뀌는데 코드에 박아두면 담당자가 손댈 수 없어 프로그램 문서에 둔다
+  // 질문 문구와 항목 구성은 해마다 바뀌는데 코드에 박아두면 담당자가 손댈 수 없어 프로그램 문서에 둔다
   applicationForm?: {
-    // 신청자가 '참여 불가'로 체크할 일정 목록. 비어 있으면 신청서에 항목 자체가 안 나온다
+    // 담당자가 관리 화면에서 만든 질문 목록. 비어 있으면 코드의 기본 질문을 쓴다
+    questions?: CitizenFormQuestion[]
+    // questions가 생기기 전에 저장된 일정 목록·안내 문구.
+    // 담당자가 입력해둔 값이 사라지지 않도록 기본 질문의 선택지로 옮겨 쓴다
     scheduleItems?: string[]
-    // 일정 목록 아래에 붙는 안내 문구
     scheduleNotice?: string
   }
   isActive: boolean
@@ -190,6 +194,8 @@ export interface IUser extends Document {
   role: UserRole
   refreshToken?: string
   lastLoginAt?: Date
+  // 마지막으로 관리 화면을 조작한 시각 (유휴 시간 판정에 쓴다)
+  lastActiveAt?: Date
   // 개인정보 수집·이용 동의 기록 (가입 시점에 받은 동의를 입증하기 위해 보관)
   privacyAgreed: boolean
   ageConfirmed: boolean
@@ -310,12 +316,25 @@ export interface ICitizenApplication extends Document {
   // 낭독극=주2회, 단막극=주3회 연습 참여 가능 여부.
   // 2026-09-06에 신청서에서 뺐고, 그전에 접수된 신청서를 계속 보여주기 위해 필드는 남겨둔다
   practiceAvailable?: boolean
-  // 참여할 수 없다고 체크한 일정. 프로그램의 applicationForm.scheduleItems 중에서 고른 값이 들어간다
+  // 아래 네 항목은 기본 질문의 답이 저장되는 자리다.
+  // 담당자가 관리 화면에서 해당 질문을 지울 수 있어 모두 선택 항목으로 둔다.
+  // (기존 신청서를 그대로 읽고, 관리자 화면도 지금까지처럼 동작하게 하려고 필드를 유지한다)
   unavailableSchedules?: string[]
-  respectAgreement: boolean
-  hasExperience: boolean
+  respectAgreement?: boolean
+  hasExperience?: boolean
   experienceDetail?: string
-  motivation: string
+  motivation?: string
+  // 담당자가 만든 질문의 답 전체 (질문 id -> 답).
+  // 기본 질문의 답은 위 필드에도 같은 값이 함께 저장된다
+  answers?: Record<string, CitizenAnswerValue>
+  // 접수 당시의 질문 문구 스냅샷.
+  // 담당자가 나중에 질문을 고치면 예전 답이 무슨 질문의 답인지 알 수 없어 함께 남긴다
+  answeredQuestions?: {
+    id: string
+    type: CitizenQuestionType
+    label: string
+    options?: string[]
+  }[]
   password: string
   // 개인정보 수집·이용 동의 기록.
   // 연령은 age 필드로 직접 확인하므로 별도의 연령 확인 체크는 두지 않는다.

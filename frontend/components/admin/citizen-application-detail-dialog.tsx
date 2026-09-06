@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Check, Loader2, Mail, MapPin, Phone, X } from 'lucide-react'
 import { CitizenApplicationQna, type QnaEntry } from '@/components/citizen-application-qna'
+import { CitizenApplicationAnswers } from '@/components/admin/citizen-application-answers'
+import type { AnsweredQuestion, CitizenAnswers } from '@/lib/citizen-application-questions'
 
 type Status = 'pending' | 'approved' | 'rejected'
 type ProgramType = 'reading' | 'short_play'
@@ -23,11 +25,15 @@ export interface CitizenApplication {
   gender: 'male' | 'female'
   // 2026-09-06 신청서에서 뺀 항목. 그전에 접수된 신청서에만 값이 있다
   practiceAvailable?: boolean
+  // 아래 항목은 기본 질문의 답이 저장되는 자리. 담당자가 질문을 지웠으면 값이 없을 수 있다
   unavailableSchedules?: string[]
-  respectAgreement: boolean
-  hasExperience: boolean
+  respectAgreement?: boolean
+  hasExperience?: boolean
   experienceDetail?: string
-  motivation: string
+  motivation?: string
+  // 담당자가 만든 질문의 답과, 접수 당시의 질문 문구 스냅샷
+  answers?: CitizenAnswers
+  answeredQuestions?: AnsweredQuestion[]
   status: Status
   adminNote?: string
   qna: QnaEntry[]
@@ -111,49 +117,18 @@ export function CitizenApplicationDetailDialog({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {/* 연습 참여 항목은 신청서에서 뺐지만, 그전에 받은 신청서에는 값이 남아 있어 있을 때만 보여준다 */}
-                {typeof selected.practiceAvailable === 'boolean' && (
-                  <div>
-                    <p className="text-muted-foreground">
-                      {selected.programType === 'reading' ? '주 2회 연습 가능' : '주 3회 연습 가능'}
-                    </p>
-                    <p className="font-medium">{yesNo(selected.practiceAvailable)}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-muted-foreground">동료 존중 자세</p>
-                  <p className="font-medium">{yesNo(selected.respectAgreement)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">연극 관련 경험</p>
-                  <p className="font-medium">{yesNo(selected.hasExperience)}</p>
-                </div>
-              </div>
-
-              {/* 선발·일정 조율에 바로 쓰는 정보라 신청동기보다 위에 둔다 */}
-              {selected.unavailableSchedules && selected.unavailableSchedules.length > 0 && (
-                <div>
-                  <p className="mb-2 text-sm text-muted-foreground">참여 불가 일정</p>
-                  <ul className="space-y-1 rounded-md border p-3 text-sm">
-                    {selected.unavailableSchedules.map((schedule) => (
-                      <li key={schedule}>· {schedule}</li>
-                    ))}
-                  </ul>
+              {/* 연습 참여 항목은 신청서에서 뺐지만, 그전에 받은 신청서에는 값이 남아 있어 있을 때만 보여준다 */}
+              {typeof selected.practiceAvailable === 'boolean' && (
+                <div className="text-sm">
+                  <p className="text-muted-foreground">
+                    {selected.programType === 'reading' ? '주 2회 연습 가능' : '주 3회 연습 가능'}
+                  </p>
+                  <p className="font-medium">{yesNo(selected.practiceAvailable)}</p>
                 </div>
               )}
 
-              <div>
-                <p className="mb-2 text-sm text-muted-foreground">신청동기 및 각오</p>
-                <p className="whitespace-pre-wrap rounded-lg bg-muted/50 p-4 text-sm">{selected.motivation}</p>
-              </div>
-
-              {selected.hasExperience && selected.experienceDetail && (
-                <div>
-                  <p className="mb-2 text-sm text-muted-foreground">관련 경험 내용</p>
-                  <p className="whitespace-pre-wrap rounded-lg bg-muted/50 p-4 text-sm">{selected.experienceDetail}</p>
-                </div>
-              )}
+              {/* 담당자가 만든 질문과 답. 신청 당시의 질문 문구를 그대로 따라 그린다 */}
+              <CitizenApplicationAnswers application={selected} />
 
               <CitizenApplicationQna
                 qna={selected.qna}

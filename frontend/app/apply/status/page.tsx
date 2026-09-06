@@ -1,24 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup } from '@/components/ui/radio-group'
 import { Loader2 } from 'lucide-react'
-import { Field, RadioOption, ScheduleCheckField, YesNoField } from '@/components/citizen-application-fields'
+import { Field, RadioOption } from '@/components/citizen-application-fields'
+import { CitizenQuestionFields } from '@/components/citizen-question-fields'
 import { CitizenApplicationQna, type QnaEntry } from '@/components/citizen-application-qna'
 import { formatPhoneInput } from '@/lib/phone'
 import {
-  resolveCitizenScheduleItems,
-  resolveCitizenScheduleNotice,
+  resolveCitizenQuestions,
+  toCitizenAnswers,
+  validateCitizenAnswers,
+  type CitizenAnswers,
   type CitizenApplicationFormConfig,
-} from '@/lib/citizen-application-status'
+} from '@/lib/citizen-application-questions'
 
 type ApplicationStatus = 'pending' | 'approved' | 'rejected'
 type ProgramType = 'reading' | 'short_play'
@@ -34,11 +36,14 @@ interface Application {
   gender: 'male' | 'female'
   // 2026-09-06 신청서에서 뺀 항목. 그전에 접수된 신청서에만 값이 있다
   practiceAvailable?: boolean
+  // 아래 항목은 기본 질문의 답이 저장되는 자리. 담당자가 질문을 지웠으면 값이 없을 수 있다
   unavailableSchedules?: string[]
-  respectAgreement: boolean
-  hasExperience: boolean
+  respectAgreement?: boolean
+  hasExperience?: boolean
   experienceDetail?: string
-  motivation: string
+  motivation?: string
+  // 담당자가 만든 질문의 답 전체. 질문 구성이 자유로워지기 전 신청서에는 없다
+  answers?: CitizenAnswers
   status: ApplicationStatus
   adminNote?: string
   qna: QnaEntry[]
@@ -58,7 +63,7 @@ const programTypeLabel: Record<ProgramType, string> = {
 export default function ApplyStatusPage() {
   const [lookupForm, setLookupForm] = useState({ phone: '', password: '' })
   const [application, setApplication] = useState<Application | null>(null)
-  // 수정 화면의 일정 체크 항목 (작품 정보에서 받아온다)
+  // 수정 화면에 그릴 질문 구성 (작품 정보에서 받아온다)
   const [formConfig, setFormConfig] = useState<CitizenApplicationFormConfig | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -67,14 +72,14 @@ export default function ApplyStatusPage() {
     residence: '',
     age: '',
     gender: 'male' as 'male' | 'female',
-    unavailableSchedules: [] as string[],
-    respectAgreement: true,
-    hasExperience: false,
-    experienceDetail: '',
-    motivation: '',
   })
+  // 질문 항목의 답. 조회한 신청서 값으로 채운다
+  const [answers, setAnswers] = useState<CitizenAnswers>({})
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
+
+  // 신청 화면과 같은 질문을 같은 순서로 보여준다
+  const questions = useMemo(() => resolveCitizenQuestions(formConfig), [formConfig])
 
   const handleLookup = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -91,24 +96,24 @@ export default function ApplyStatusPage() {
     if (data.success) {
       const app: Application = data.data
       setApplication(app)
-      // 일정 항목은 작품 정보에 들어 있어, 수정 화면에서 체크박스를 그리려면 따로 받아와야 한다.
+      // 질문 구성은 작품 정보에 들어 있어, 수정 화면을 그리려면 따로 받아와야 한다.
+      // 답변은 질문 구성이 정해진 뒤에 채워야 새로 추가된 질문의 빈 칸까지 함께 나온다.
       // 실패해도 나머지 수정은 되어야 하므로 조회 자체는 막지 않는다
+      const applyConfig = (config: CitizenApplicationFormConfig | null) => {
+        setFormConfig(config)
+        setAnswers(toCitizenAnswers(resolveCitizenQuestions(config), app))
+      }
       fetch(`/api/programs?type=${app.programType}`)
         .then((res) => res.json())
         .then((programData) => {
-          setFormConfig(programData.success ? (programData.data?.[0]?.applicationForm ?? null) : null)
+          applyConfig(programData.success ? (programData.data?.[0]?.applicationForm ?? null) : null)
         })
-        .catch(() => setFormConfig(null))
+        .catch(() => applyConfig(null))
       setEditForm({
         email: app.email,
         residence: app.residence,
         age: String(app.age),
         gender: app.gender,
-        unavailableSchedules: app.unavailableSchedules ?? [],
-        respectAgreement: app.respectAgreement,
-        hasExperience: app.hasExperience,
-        experienceDetail: app.experienceDetail || '',
-        motivation: app.motivation,
       })
     } else {
       setError(data.error || '조회에 실패했습니다.')
@@ -119,6 +124,14 @@ export default function ApplyStatusPage() {
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!application) return
+
+    // 접수 때와 같은 규칙으로 필수 항목을 먼저 확인한다
+    const answerError = validateCitizenAnswers(questions, answers)
+    if (answerError) {
+      setMessage(answerError)
+      return
+    }
+
     setIsSaving(true)
     setMessage('')
 
@@ -131,11 +144,7 @@ export default function ApplyStatusPage() {
         residence: editForm.residence,
         age: Number(editForm.age),
         gender: editForm.gender,
-        unavailableSchedules: editForm.unavailableSchedules,
-        respectAgreement: editForm.respectAgreement,
-        hasExperience: editForm.hasExperience,
-        experienceDetail: editForm.hasExperience ? editForm.experienceDetail : undefined,
-        motivation: editForm.motivation,
+        answers,
       }),
     })
     const data = await res.json()
@@ -155,9 +164,6 @@ export default function ApplyStatusPage() {
     if (!data.success) return data.error || '문의 등록에 실패했습니다.'
     setApplication(data.data)
   }
-
-  // 담당자가 일정을 등록하지 않았으면 수정 화면에도 체크 항목을 띄우지 않는다
-  const scheduleItems = resolveCitizenScheduleItems(formConfig)
 
   return (
     <>
@@ -256,44 +262,13 @@ export default function ApplyStatusPage() {
                         <RadioOption value="female" id="edit-gender-female" label="여성" />
                       </RadioGroup>
                     </Field>
-                    {scheduleItems.length > 0 && (
-                      <ScheduleCheckField
-                        label="아래 일정 중 참여 불가한 일정이 있을 경우 체크해주세요."
-                        notice={resolveCitizenScheduleNotice(formConfig)}
-                        items={scheduleItems}
-                        value={editForm.unavailableSchedules}
-                        onChange={(unavailableSchedules) => setEditForm({ ...editForm, unavailableSchedules })}
-                      />
-                    )}
-                    <YesNoField
-                      label="함께하는 강사 및 동료분을 존중해주는 자세가 필요합니다."
-                      value={editForm.respectAgreement}
-                      onChange={(value) => setEditForm({ ...editForm, respectAgreement: value })}
-                      name="edit-respect"
+                    {/* 담당자가 작품 관리 화면에서 만든 질문들 */}
+                    <CitizenQuestionFields
+                      questions={questions}
+                      answers={answers}
+                      onChange={setAnswers}
+                      idPrefix="edit"
                     />
-                    <YesNoField
-                      label="연극 관련 경험이 있으신가요?"
-                      value={editForm.hasExperience}
-                      onChange={(value) => setEditForm({ ...editForm, hasExperience: value })}
-                      name="edit-experience"
-                    />
-                    {editForm.hasExperience && (
-                      <Field label="어떤 경험이 있으신가요? (1000자 이내)">
-                        <Textarea
-                          rows={3}
-                          maxLength={1000}
-                          value={editForm.experienceDetail}
-                          onChange={(e) => setEditForm({ ...editForm, experienceDetail: e.target.value })}
-                        />
-                      </Field>
-                    )}
-                    <Field label="신청동기 및 각오">
-                      <Textarea
-                        rows={4}
-                        value={editForm.motivation}
-                        onChange={(e) => setEditForm({ ...editForm, motivation: e.target.value })}
-                      />
-                    </Field>
                     {message && <p className="text-sm text-primary">{message}</p>}
                     <Button type="submit" className="w-full" disabled={isSaving}>
                       {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

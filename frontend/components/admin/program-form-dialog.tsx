@@ -21,6 +21,7 @@ import {
   ProgramApplicationFields,
   type ProgramApplicationMessages,
 } from '@/components/admin/program-application-fields'
+import type { QuestionDraft } from '@/lib/citizen-question-draft'
 import type { CitizenApplicationStatus } from '@/lib/citizen-application-status'
 
 export type ProgramFormType = 'play' | 'short_play' | 'reading'
@@ -43,10 +44,8 @@ export interface ProgramForm {
   openForApplication: boolean
   applicationStatus: CitizenApplicationStatus
   applicationMessages: ProgramApplicationMessages
-  // 신청서 일정 체크 항목. 화면에서 한 줄에 하나씩 입력받는다
-  scheduleItemsText: string
-  // 일정 목록 아래에 붙는 안내 문구
-  scheduleNotice: string
+  // 담당자가 편집 중인 신청서 질문 목록
+  questionDrafts: QuestionDraft[]
   order: number
   posterUrl?: string
   // 홈 카드에서 포스터의 어느 부분을 보여줄지 (0~100%)
@@ -282,8 +281,7 @@ export function ProgramFormDialog({
               isCitizenApplication: form.openForApplication,
               applicationStatus: form.applicationStatus,
               applicationMessages: form.applicationMessages,
-              scheduleItemsText: form.scheduleItemsText,
-              scheduleNotice: form.scheduleNotice,
+              questionDrafts: form.questionDrafts,
             }}
             onChange={(value) =>
               onFormChange({
@@ -291,8 +289,7 @@ export function ProgramFormDialog({
                 openForApplication: value.isCitizenApplication,
                 applicationStatus: value.applicationStatus,
                 applicationMessages: value.applicationMessages,
-                scheduleItemsText: value.scheduleItemsText,
-                scheduleNotice: value.scheduleNotice,
+                questionDrafts: value.questionDrafts,
               })
             }
           />
