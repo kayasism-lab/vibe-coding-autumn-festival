@@ -76,13 +76,25 @@ export function normalizeCitizenAnswers(
   raw: unknown
 ): NormalizedAnswers {
   const source = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {}
+
+  // 먼저 순서와 상관없이 모든 답을 유형에 맞게 정리한다.
+  // 앞에서부터 차례로 판정하면, 담당자가 꼬리 질문을 부모 질문보다 앞으로 옮겼을 때
+  // 부모의 답을 아직 모르는 상태로 판정해 그 질문을 영영 숨겨버린다.
+  // 화면은 답 전체를 보고 판정하므로, 입력칸은 보이는데 서버는 저장하지 않는
+  // 어긋남이 생긴다(신청자가 쓴 내용이 조용히 사라진다). 그래서 두 단계로 나눈다.
+  const normalizedAll: Record<string, CitizenAnswerValue> = {}
+  for (const question of questions) {
+    const value = normalizeAnswer(question, source[question.id])
+    if (value !== undefined) normalizedAll[question.id] = value
+  }
+
   const answers: Record<string, CitizenAnswerValue> = {}
 
   for (const question of questions) {
-    // 앞 질문의 답에 따라 보일지가 정해지므로, 지금까지 정리한 답으로 판정한다
-    if (!isQuestionVisible(question, answers)) continue
+    // 답 전체를 기준으로 판정한다 (화면과 같은 규칙)
+    if (!isQuestionVisible(question, normalizedAll)) continue
 
-    const value = normalizeAnswer(question, source[question.id])
+    const value = normalizedAll[question.id]
     if (isEmpty(value)) {
       if (question.required) {
         return { answers, legacyFields: {}, error: `'${question.label}' 항목을 입력해주세요.` }

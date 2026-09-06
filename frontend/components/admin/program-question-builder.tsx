@@ -17,12 +17,18 @@ import {
   type QuestionDraft,
 } from '@/lib/citizen-question-draft'
 
-/** 목록에서 두 항목의 자리를 바꾼다 (질문 순서 이동) */
-function move(drafts: QuestionDraft[], index: number, step: number): QuestionDraft[] {
-  const target = index + step
-  if (target < 0 || target >= drafts.length) return drafts
+/**
+ * 질문을 원하는 자리로 옮긴다.
+ *
+ * 두 질문의 자리를 맞바꾸지 않고 뽑아서 끼워 넣는다.
+ * 5번을 2번으로 보낼 때 2번과 통째로 뒤바뀌면 담당자가 의도한 순서가 아니다.
+ * 사이에 있던 질문들이 한 칸씩 밀려나야 목록을 다시 읽었을 때 자연스럽다.
+ */
+function moveTo(drafts: QuestionDraft[], from: number, to: number): QuestionDraft[] {
+  if (to < 0 || to >= drafts.length || from === to) return drafts
   const next = [...drafts]
-  ;[next[index], next[target]] = [next[target], next[index]]
+  const [moved] = next.splice(from, 1)
+  next.splice(to, 0, moved)
   return next
 }
 
@@ -32,7 +38,7 @@ function QuestionCard({
   total,
   drafts,
   onChange,
-  onMove,
+  onMoveTo,
   onRemove,
 }: {
   draft: QuestionDraft
@@ -41,30 +47,50 @@ function QuestionCard({
   /** 꼬리 질문 안내에 쓸 전체 목록 (조건이 가리키는 질문의 문구를 찾는다) */
   drafts: QuestionDraft[]
   onChange: (draft: QuestionDraft) => void
-  onMove: (step: number) => void
+  /** 이 질문을 몇 번째 자리로 옮길지 (0부터 센다) */
+  onMoveTo: (index: number) => void
   onRemove: () => void
 }) {
   const needsOptions = draft.type === 'select' || draft.type === 'checkbox'
   // 기본 질문은 기존 신청서 필드와 연결돼 있어 유형을 바꾸면 예전 답을 읽을 수 없게 된다
   const isDefault = isDefaultQuestion(draft.id)
-  const parent = draft.showWhen
-    ? drafts.find((item) => item.id === draft.showWhen?.questionId)
-    : undefined
+  const parentIndex = draft.showWhen
+    ? drafts.findIndex((item) => item.id === draft.showWhen?.questionId)
+    : -1
+  const parent = parentIndex >= 0 ? drafts[parentIndex] : undefined
+  // 조건이 되는 질문보다 앞에 두면 '경험 내용'을 묻고 나서 '경험이 있나요'를 묻는 꼴이 된다
+  const isBeforeParent = parent !== undefined && parentIndex > index
 
   return (
     <div className="space-y-3 rounded-md border bg-background p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">{index + 1}번 질문</span>
+          {/* 번호를 직접 골라 그 자리로 보낸다. 질문이 많을 때 화살표만으로는 여러 번 눌러야 한다 */}
+          <Select
+            value={String(index + 1)}
+            disabled={total < 2}
+            onValueChange={(value) => onMoveTo(Number(value) - 1)}
+          >
+            <SelectTrigger className="h-7 w-[5.25rem] text-xs" aria-label="질문 순서">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: total }, (_, position) => (
+                <SelectItem key={position} value={String(position + 1)}>
+                  {position + 1}번째
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {isDefault && (
             <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">기본 항목</span>
           )}
         </div>
         <div className="flex gap-1">
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" disabled={index === 0} onClick={() => onMove(-1)}>
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="한 칸 위로" disabled={index === 0} onClick={() => onMoveTo(index - 1)}>
             <ChevronUp className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" disabled={index === total - 1} onClick={() => onMove(1)}>
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="한 칸 아래로" disabled={index === total - 1} onClick={() => onMoveTo(index + 1)}>
             <ChevronDown className="h-4 w-4" />
           </Button>
           <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onRemove}>
@@ -120,6 +146,13 @@ function QuestionCard({
         <p className="text-xs text-muted-foreground">
           &lsquo;{parent.label || '앞 질문'}&rsquo;에 &lsquo;
           {draft.showWhen?.equals === 'yes' ? '예' : '아니오'}&rsquo;라고 답한 분에게만 보입니다.
+        </p>
+      )}
+
+      {isBeforeParent && (
+        <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
+          이 질문이 조건이 되는 &lsquo;{parent?.label || '앞 질문'}&rsquo;보다 앞에 있습니다.
+          답을 묻기 전에 먼저 나오게 되어 신청자가 헷갈릴 수 있으니 뒤로 옮겨주세요.
         </p>
       )}
 
@@ -199,7 +232,7 @@ export function ProgramQuestionBuilder({
               total={drafts.length}
               drafts={drafts}
               onChange={(next) => onChange(drafts.map((item, i) => (i === index ? next : item)))}
-              onMove={(step) => onChange(move(drafts, index, step))}
+              onMoveTo={(target) => onChange(moveTo(drafts, index, target))}
               onRemove={() => onChange(drafts.filter((_, i) => i !== index))}
             />
           ))}
