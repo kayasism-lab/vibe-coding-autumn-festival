@@ -89,6 +89,10 @@ export default function AdminLoginPage() {
             <CardTitle className="text-2xl">관리자 로그인</CardTitle>
             <CardDescription>
               2026 가을연극축제 관리자 페이지입니다.
+              {/* 갑자기 로그아웃된 것으로 오해하지 않도록 미리 알려준다 */}
+              <span className="mt-1 block text-xs">
+                10분 이상 아무 작업이 없으면 자동으로 로그아웃됩니다.
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { User } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
+import { isSessionIdleExpired } from '../lib/session-policy.js'
 import { validatePassword } from '../lib/password-policy.js'
 import {
   clearAuthCookies,
@@ -15,6 +16,7 @@ import {
 } from '../lib/auth.js'
 import { requireAuth } from '../middleware/require-admin.js'
 import { resolveGroupPermissions } from '../lib/permissions.js'
+import type { UserRole } from '../types/index.js'
 import { clearFailures, getBlockedMinutes, recordFailure } from '../lib/attempt-limiter.js'
 
 export const authRouter = Router()
@@ -48,7 +50,8 @@ function publicUser(user: {
 async function issueAuth(res: Parameters<typeof setAuthCookies>[0], user: {
   _id: { toString(): string }
   email: string
-  role: 'superadmin' | 'admin' | 'normal'
+  // 극단 담당자(group)도 관리 화면에 로그인하므로 함께 다룬다
+  role: UserRole
 }) {
   const payload = {
     userId: user._id.toString(),
@@ -61,9 +64,11 @@ async function issueAuth(res: Parameters<typeof setAuthCookies>[0], user: {
   await User.findByIdAndUpdate(user._id, {
     refreshToken,
     lastLoginAt: new Date(),
+    // 로그인 직후를 첫 조작으로 본다. 이 시각부터 유휴 시간을 잰다
+    lastActiveAt: new Date(),
   })
 
-  setAuthCookies(res, accessToken, refreshToken)
+  setAuthCookies(res, accessToken, refreshToken, user.role)
 }
 
 authRouter.post(
@@ -183,12 +188,22 @@ authRouter.post(
       return
     }
 
+    // 관리 화면 계정이 오래 아무 조작도 하지 않았다면 세션을 잇지 않는다.
+    // 화면을 열어둔 것만으로 로그인이 유지되던 문제를 여기서 끊는다
+    if (isSessionIdleExpired(user.role, user.lastActiveAt)) {
+      clearAuthCookies(res)
+      fail(res, '오랫동안 사용하지 않아 로그아웃되었습니다. 다시 로그인해주세요.', 401)
+      return
+    }
+
     const accessToken = await generateAccessToken({
       userId: String(user._id),
       email: user.email,
       role: user.role,
     })
-    setAccessCookie(res, accessToken)
+    setAccessCookie(res, accessToken, user.role)
+    // 세션을 이었다는 것은 사용 중이라는 뜻이라 유휴 시간을 다시 센다
+    await User.updateOne({ _id: user._id }, { lastActiveAt: new Date() })
 
     ok(res, { user: publicUser(user) }, '세션이 연장되었습니다.')
   })

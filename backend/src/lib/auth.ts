@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose'
 import bcrypt from 'bcryptjs'
 import type { Response } from 'express'
 import { env } from './env.js'
+import { accessCookieMaxAge, accessTokenLifetime } from './session-policy.js'
 
 const JWT_SECRET = new TextEncoder().encode(env.jwtSecret)
 const JWT_REFRESH_SECRET = new TextEncoder().encode(env.jwtRefreshSecret)
@@ -19,7 +20,8 @@ export async function generateAccessToken(payload: Omit<AuthPayload, 'iat' | 'ex
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('15m')
+    // 관리 화면 계정은 유휴 제한(10분)과 같은 길이로 짧게 준다
+    .setExpirationTime(accessTokenLifetime(payload.role as UserRole))
     .sign(JWT_SECRET)
 }
 
@@ -57,7 +59,12 @@ export async function verifyPassword(password: string, hashedPassword: string) {
   return bcrypt.compare(password, hashedPassword)
 }
 
-export function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+export function setAuthCookies(
+  res: Response,
+  accessToken: string,
+  refreshToken: string,
+  role: UserRole
+) {
   const base = {
     httpOnly: true,
     secure: env.isProduction,
@@ -65,7 +72,7 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
     path: '/',
   }
 
-  res.cookie('admin_token', accessToken, { ...base, maxAge: 15 * 60 * 1000 })
+  res.cookie('admin_token', accessToken, { ...base, maxAge: accessCookieMaxAge(role) })
   res.cookie('admin_refresh_token', refreshToken, { ...base, maxAge: 7 * 24 * 60 * 60 * 1000 })
 }
 
@@ -76,13 +83,13 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
  * 관리자 화면을 여러 탭에 열어둔 경우 한쪽이 다른 쪽 토큰을 무효로 만든다.
  * 리프레시 토큰의 만료 시각은 로그인 시점 기준이라 7일 뒤에는 다시 로그인하게 된다.
  */
-export function setAccessCookie(res: Response, accessToken: string) {
+export function setAccessCookie(res: Response, accessToken: string, role: UserRole) {
   res.cookie('admin_token', accessToken, {
     httpOnly: true,
     secure: env.isProduction,
     sameSite: 'lax' as const,
     path: '/',
-    maxAge: 15 * 60 * 1000,
+    maxAge: accessCookieMaxAge(role),
   })
 }
 

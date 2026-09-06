@@ -2,7 +2,32 @@ import type { NextFunction, Request, Response } from 'express'
 import { fail } from '../lib/http.js'
 import { verifyAccessToken } from '../lib/auth.js'
 import { hasAdminPermission } from '../lib/ownership.js'
+import { isAdminSessionRole } from '../lib/session-policy.js'
+import { User } from '../models/index.js'
 import type { GroupPermission } from '../lib/permissions.js'
+import type { UserRole } from '../types/index.js'
+
+// 활동 시각을 마지막으로 기록한 때. 요청마다 DB에 쓰면 부담이 커서 일정 간격으로만 남긴다
+const activityWriteAt = new Map<string, number>()
+const ACTIVITY_WRITE_INTERVAL_MS = 60 * 1000
+
+/**
+ * 관리 화면 계정이 무언가를 했다는 것을 남긴다.
+ * 이 값이 오래되면 세션 연장이 거절돼 다시 로그인하게 된다.
+ */
+function markActive(userId: string, role: UserRole) {
+  if (!isAdminSessionRole(role)) return
+
+  const now = Date.now()
+  const wroteAt = activityWriteAt.get(userId) ?? 0
+  if (now - wroteAt < ACTIVITY_WRITE_INTERVAL_MS) return
+  activityWriteAt.set(userId, now)
+
+  // 기록에 실패해도 요청 자체는 진행시킨다 (세션 유지가 목적이지 인증 조건이 아니다)
+  void User.updateOne({ _id: userId }, { lastActiveAt: new Date() }).catch(() => {
+    activityWriteAt.delete(userId)
+  })
+}
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const header = req.header('authorization')
@@ -21,6 +46,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   res.locals.user = user
+  markActive(user.userId, user.role)
   next()
 }
 
