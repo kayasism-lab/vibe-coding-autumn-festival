@@ -43,6 +43,10 @@ export interface ProgramForm {
   openForApplication: boolean
   applicationStatus: CitizenApplicationStatus
   applicationMessages: ProgramApplicationMessages
+  // 신청서 일정 체크 항목. 화면에서 한 줄에 하나씩 입력받는다
+  scheduleItemsText: string
+  // 일정 목록 아래에 붙는 안내 문구
+  scheduleNotice: string
   order: number
   posterUrl?: string
   // 홈 카드에서 포스터의 어느 부분을 보여줄지 (0~100%)
@@ -278,6 +282,8 @@ export function ProgramFormDialog({
               isCitizenApplication: form.openForApplication,
               applicationStatus: form.applicationStatus,
               applicationMessages: form.applicationMessages,
+              scheduleItemsText: form.scheduleItemsText,
+              scheduleNotice: form.scheduleNotice,
             }}
             onChange={(value) =>
               onFormChange({
@@ -285,6 +291,8 @@ export function ProgramFormDialog({
                 openForApplication: value.isCitizenApplication,
                 applicationStatus: value.applicationStatus,
                 applicationMessages: value.applicationMessages,
+                scheduleItemsText: value.scheduleItemsText,
+                scheduleNotice: value.scheduleNotice,
               })
             }
           />

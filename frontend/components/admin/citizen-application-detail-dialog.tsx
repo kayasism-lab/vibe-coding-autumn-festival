@@ -21,7 +21,9 @@ export interface CitizenApplication {
   residence: string
   age: number
   gender: 'male' | 'female'
-  practiceAvailable: boolean
+  // 2026-09-06 신청서에서 뺀 항목. 그전에 접수된 신청서에만 값이 있다
+  practiceAvailable?: boolean
+  unavailableSchedules?: string[]
   respectAgreement: boolean
   hasExperience: boolean
   experienceDetail?: string
@@ -110,12 +112,15 @@ export function CitizenApplicationDetailDialog({
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">
-                    {selected.programType === 'reading' ? '주 2회 연습 가능' : '주 3회 연습 가능'}
-                  </p>
-                  <p className="font-medium">{yesNo(selected.practiceAvailable)}</p>
-                </div>
+                {/* 연습 참여 항목은 신청서에서 뺐지만, 그전에 받은 신청서에는 값이 남아 있어 있을 때만 보여준다 */}
+                {typeof selected.practiceAvailable === 'boolean' && (
+                  <div>
+                    <p className="text-muted-foreground">
+                      {selected.programType === 'reading' ? '주 2회 연습 가능' : '주 3회 연습 가능'}
+                    </p>
+                    <p className="font-medium">{yesNo(selected.practiceAvailable)}</p>
+                  </div>
+                )}
                 <div>
                   <p className="text-muted-foreground">동료 존중 자세</p>
                   <p className="font-medium">{yesNo(selected.respectAgreement)}</p>
@@ -125,6 +130,18 @@ export function CitizenApplicationDetailDialog({
                   <p className="font-medium">{yesNo(selected.hasExperience)}</p>
                 </div>
               </div>
+
+              {/* 선발·일정 조율에 바로 쓰는 정보라 신청동기보다 위에 둔다 */}
+              {selected.unavailableSchedules && selected.unavailableSchedules.length > 0 && (
+                <div>
+                  <p className="mb-2 text-sm text-muted-foreground">참여 불가 일정</p>
+                  <ul className="space-y-1 rounded-md border p-3 text-sm">
+                    {selected.unavailableSchedules.map((schedule) => (
+                      <li key={schedule}>· {schedule}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div>
                 <p className="mb-2 text-sm text-muted-foreground">신청동기 및 각오</p>

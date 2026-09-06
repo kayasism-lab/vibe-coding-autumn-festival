@@ -11,9 +11,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup } from '@/components/ui/radio-group'
 import { Loader2 } from 'lucide-react'
-import { Field, RadioOption, YesNoField } from '@/components/citizen-application-fields'
+import { Field, RadioOption, ScheduleCheckField, YesNoField } from '@/components/citizen-application-fields'
 import { CitizenApplicationQna, type QnaEntry } from '@/components/citizen-application-qna'
 import { formatPhoneInput } from '@/lib/phone'
+import {
+  resolveCitizenScheduleItems,
+  resolveCitizenScheduleNotice,
+  type CitizenApplicationFormConfig,
+} from '@/lib/citizen-application-status'
 
 type ApplicationStatus = 'pending' | 'approved' | 'rejected'
 type ProgramType = 'reading' | 'short_play'
@@ -27,7 +32,9 @@ interface Application {
   residence: string
   age: number
   gender: 'male' | 'female'
-  practiceAvailable: boolean
+  // 2026-09-06 신청서에서 뺀 항목. 그전에 접수된 신청서에만 값이 있다
+  practiceAvailable?: boolean
+  unavailableSchedules?: string[]
   respectAgreement: boolean
   hasExperience: boolean
   experienceDetail?: string
@@ -51,6 +58,8 @@ const programTypeLabel: Record<ProgramType, string> = {
 export default function ApplyStatusPage() {
   const [lookupForm, setLookupForm] = useState({ phone: '', password: '' })
   const [application, setApplication] = useState<Application | null>(null)
+  // 수정 화면의 일정 체크 항목 (작품 정보에서 받아온다)
+  const [formConfig, setFormConfig] = useState<CitizenApplicationFormConfig | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [editForm, setEditForm] = useState({
@@ -58,7 +67,7 @@ export default function ApplyStatusPage() {
     residence: '',
     age: '',
     gender: 'male' as 'male' | 'female',
-    practiceAvailable: true,
+    unavailableSchedules: [] as string[],
     respectAgreement: true,
     hasExperience: false,
     experienceDetail: '',
@@ -82,12 +91,20 @@ export default function ApplyStatusPage() {
     if (data.success) {
       const app: Application = data.data
       setApplication(app)
+      // 일정 항목은 작품 정보에 들어 있어, 수정 화면에서 체크박스를 그리려면 따로 받아와야 한다.
+      // 실패해도 나머지 수정은 되어야 하므로 조회 자체는 막지 않는다
+      fetch(`/api/programs?type=${app.programType}`)
+        .then((res) => res.json())
+        .then((programData) => {
+          setFormConfig(programData.success ? (programData.data?.[0]?.applicationForm ?? null) : null)
+        })
+        .catch(() => setFormConfig(null))
       setEditForm({
         email: app.email,
         residence: app.residence,
         age: String(app.age),
         gender: app.gender,
-        practiceAvailable: app.practiceAvailable,
+        unavailableSchedules: app.unavailableSchedules ?? [],
         respectAgreement: app.respectAgreement,
         hasExperience: app.hasExperience,
         experienceDetail: app.experienceDetail || '',
@@ -114,7 +131,7 @@ export default function ApplyStatusPage() {
         residence: editForm.residence,
         age: Number(editForm.age),
         gender: editForm.gender,
-        practiceAvailable: editForm.practiceAvailable,
+        unavailableSchedules: editForm.unavailableSchedules,
         respectAgreement: editForm.respectAgreement,
         hasExperience: editForm.hasExperience,
         experienceDetail: editForm.hasExperience ? editForm.experienceDetail : undefined,
@@ -139,16 +156,8 @@ export default function ApplyStatusPage() {
     setApplication(data.data)
   }
 
-  const practiceLabel = application
-    ? application.programType === 'reading'
-      ? '주 2회 연습 가능'
-      : '주 3회 연습 가능'
-    : ''
-  const practiceQuestionLabel = application
-    ? application.programType === 'reading'
-      ? '주 2회 연습이 가능하신가요?'
-      : '주 3회 연습이 가능하신가요?'
-    : ''
+  // 담당자가 일정을 등록하지 않았으면 수정 화면에도 체크 항목을 띄우지 않는다
+  const scheduleItems = resolveCitizenScheduleItems(formConfig)
 
   return (
     <>
@@ -200,7 +209,7 @@ export default function ApplyStatusPage() {
                     <div>
                       <p className="text-sm text-muted-foreground">신청 구분</p>
                       <p className="font-semibold text-foreground">
-                        {programTypeLabel[application.programType]} · {practiceLabel}
+                        {programTypeLabel[application.programType]}
                       </p>
                     </div>
                     <Badge className={statusConfig[application.status].className}>
@@ -247,12 +256,15 @@ export default function ApplyStatusPage() {
                         <RadioOption value="female" id="edit-gender-female" label="여성" />
                       </RadioGroup>
                     </Field>
-                    <YesNoField
-                      label={practiceQuestionLabel}
-                      value={editForm.practiceAvailable}
-                      onChange={(value) => setEditForm({ ...editForm, practiceAvailable: value })}
-                      name="edit-practice"
-                    />
+                    {scheduleItems.length > 0 && (
+                      <ScheduleCheckField
+                        label="아래 일정 중 참여 불가한 일정이 있을 경우 체크해주세요."
+                        notice={resolveCitizenScheduleNotice(formConfig)}
+                        items={scheduleItems}
+                        value={editForm.unavailableSchedules}
+                        onChange={(unavailableSchedules) => setEditForm({ ...editForm, unavailableSchedules })}
+                      />
+                    )}
                     <YesNoField
                       label="함께하는 강사 및 동료분을 존중해주는 자세가 필요합니다."
                       value={editForm.respectAgreement}

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup } from '@/components/ui/radio-group'
 import { Loader2 } from 'lucide-react'
-import { Field, RadioOption, YesNoField } from '@/components/citizen-application-fields'
+import { Field, RadioOption, ScheduleCheckField, YesNoField } from '@/components/citizen-application-fields'
 import {
   PrivacyConsent,
   emptyConsent,
@@ -15,7 +15,13 @@ import {
 } from '@/components/shared/privacy-consent'
 import { formatPhoneInput } from '@/lib/phone'
 import { PASSWORD_HINT, PASSWORD_MIN_LENGTH, validatePassword } from '@/lib/password-policy'
-import { citizenProgramLabels, type CitizenProgramType } from '@/lib/citizen-application-status'
+import {
+  citizenProgramLabels,
+  resolveCitizenScheduleItems,
+  resolveCitizenScheduleNotice,
+  type CitizenApplicationFormConfig,
+  type CitizenProgramType,
+} from '@/lib/citizen-application-status'
 
 // 시민참여 행사(낭독극·단막극)는 만 20세 이상만 신청할 수 있다.
 const MIN_AGE = 20
@@ -31,7 +37,8 @@ interface FormState {
   residence: string
   age: string
   gender: 'male' | 'female' | ''
-  practiceAvailable: boolean | ''
+  /** 참여할 수 없다고 체크한 일정 (전부 참여 가능하면 빈 배열) */
+  unavailableSchedules: string[]
   respectAgreement: boolean | ''
   hasExperience: boolean | ''
   experienceDetail: string
@@ -48,7 +55,7 @@ function emptyForm(initialType: CitizenProgramType): FormState {
     residence: '',
     age: '',
     gender: '',
-    practiceAvailable: '',
+    unavailableSchedules: [],
     respectAgreement: '',
     hasExperience: '',
     experienceDetail: '',
@@ -60,6 +67,7 @@ function emptyForm(initialType: CitizenProgramType): FormState {
 export function CitizenApplicationForm({
   initialType,
   isTypeLocked = false,
+  formConfig,
   onSuccess,
 }: {
   initialType: CitizenProgramType
@@ -69,6 +77,8 @@ export function CitizenApplicationForm({
    * 접수를 안 받는 유형으로 잘못 신청하는 일이 생겨 진입 경로의 유형으로 고정한다.
    */
   isTypeLocked?: boolean
+  /** 담당자가 작품 관리 화면에서 입력한 일정 항목·안내 문구 */
+  formConfig?: CitizenApplicationFormConfig | null
   onSuccess: () => void
 }) {
   const [form, setForm] = useState<FormState>(() => emptyForm(initialType))
@@ -76,14 +86,15 @@ export function CitizenApplicationForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const practiceLabel =
-    form.programType === 'reading' ? '주 2회 연습이 가능하신가요?' : '주 3회 연습이 가능하신가요?'
+  // 담당자가 일정을 등록하지 않았으면 체크 항목 자체를 보여주지 않는다
+  const scheduleItems = resolveCitizenScheduleItems(formConfig)
+  const scheduleNotice = resolveCitizenScheduleNotice(formConfig)
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError('')
 
-    if (form.gender === '' || form.practiceAvailable === '' || form.respectAgreement === '' || form.hasExperience === '') {
+    if (form.gender === '' || form.respectAgreement === '' || form.hasExperience === '') {
       setError('필수 항목을 모두 선택해주세요.')
       return
     }
@@ -120,7 +131,8 @@ export function CitizenApplicationForm({
           residence: form.residence,
           age: Number(form.age),
           gender: form.gender,
-          practiceAvailable: form.practiceAvailable,
+          // 일정 항목이 없는 프로그램이면 빈 배열이 그대로 나간다
+          unavailableSchedules: form.unavailableSchedules,
           respectAgreement: form.respectAgreement,
           hasExperience: form.hasExperience,
           experienceDetail: form.hasExperience ? form.experienceDetail : undefined,
@@ -192,12 +204,15 @@ export function CitizenApplicationForm({
         </Field>
       </div>
 
-      <YesNoField
-        label={`${practiceLabel} *`}
-        value={form.practiceAvailable}
-        onChange={(value) => setForm({ ...form, practiceAvailable: value })}
-        name="practiceAvailable"
-      />
+      {scheduleItems.length > 0 && (
+        <ScheduleCheckField
+          label="아래 일정 중 참여 불가한 일정이 있을 경우 체크해주세요."
+          notice={scheduleNotice}
+          items={scheduleItems}
+          value={form.unavailableSchedules}
+          onChange={(unavailableSchedules) => setForm({ ...form, unavailableSchedules })}
+        />
+      )}
 
       <YesNoField
         label="함께하는 강사 및 동료분을 존중해주는 자세가 필요합니다. *"

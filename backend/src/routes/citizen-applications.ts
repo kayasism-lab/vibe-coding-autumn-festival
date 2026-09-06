@@ -39,7 +39,7 @@ citizenApplicationsRouter.post(
       residence,
       age,
       gender,
-      practiceAvailable,
+      unavailableSchedules,
       respectAgreement,
       hasExperience,
       experienceDetail,
@@ -57,7 +57,6 @@ citizenApplicationsRouter.post(
       !residence ||
       !age ||
       !gender ||
-      typeof practiceAvailable !== 'boolean' ||
       typeof respectAgreement !== 'boolean' ||
       typeof hasExperience !== 'boolean' ||
       !motivation ||
@@ -122,7 +121,10 @@ citizenApplicationsRouter.post(
       residence,
       age,
       gender,
-      practiceAvailable,
+      // 화면에 없는 값이 섞여 들어오지 않도록 문자열만 추려서 저장한다
+      unavailableSchedules: Array.isArray(unavailableSchedules)
+        ? unavailableSchedules.filter((item: unknown): item is string => typeof item === 'string')
+        : [],
       respectAgreement,
       hasExperience,
       experienceDetail: hasExperience ? experienceDetail : undefined,

@@ -56,6 +56,11 @@ const ProgramSchema = new Schema<IProgram>(
       preparing: { type: String },
       ended: { type: String },
     },
+    // 신청서의 일정 체크 항목과 안내 문구. 담당자가 관리 화면에서 직접 고친다
+    applicationForm: {
+      scheduleItems: { type: [String], default: undefined },
+      scheduleNotice: { type: String },
+    },
     isActive: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
   },

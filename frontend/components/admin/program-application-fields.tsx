@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  CITIZEN_SCHEDULE_NOTICE_DEFAULT,
   citizenApplicationDefaultMessages,
   citizenApplicationStatusOptions,
   type CitizenApplicationBlockedStatus,
@@ -19,6 +20,10 @@ export interface ProgramApplicationValue {
   isCitizenApplication: boolean
   applicationStatus: CitizenApplicationStatus
   applicationMessages: ProgramApplicationMessages
+  /** 신청서의 일정 체크 항목. 화면에서는 한 줄에 하나씩 입력받는다 */
+  scheduleItemsText: string
+  /** 일정 목록 아래에 붙는 안내 문구 */
+  scheduleNotice: string
 }
 
 /** 문구를 입력받는 상태 목록. '신청가능'은 폼이 그대로 뜨므로 안내 문구가 없다 */
@@ -113,6 +118,37 @@ export function ProgramApplicationFields({
                 />
               </div>
             ))}
+          </div>
+
+          {/* 신청서에서 담당자가 직접 고치는 부분.
+              연습 일정은 해마다 바뀌는데 코드에 두면 담당자가 손댈 수 없어 여기서 입력받는다 */}
+          <div className="space-y-3 border-t pt-3">
+            <div>
+              <Label>신청서 일정 항목</Label>
+              <p className="text-xs text-muted-foreground">
+                한 줄에 일정 하나씩 적어주세요. 신청자가 참여 불가한 일정을 체크할 수 있게 됩니다.
+                비워두면 신청서에 이 항목이 나오지 않습니다.
+              </p>
+            </div>
+            <Textarea
+              rows={6}
+              value={value.scheduleItemsText}
+              placeholder={'9/29(화) 20:00-22:00\n10/6(화) 20:00-22:00\n10/13(화) 20:00-22:00 (필참)'}
+              onChange={(e) => onChange({ ...value, scheduleItemsText: e.target.value })}
+            />
+
+            <div className="space-y-1">
+              <Label className="text-xs font-normal text-muted-foreground">일정 안내 문구</Label>
+              <Textarea
+                rows={2}
+                value={value.scheduleNotice}
+                placeholder={CITIZEN_SCHEDULE_NOTICE_DEFAULT}
+                onChange={(e) => onChange({ ...value, scheduleNotice: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                일정 목록 아래에 작게 붙습니다. 비워두면 기본 문구가 나갑니다.
+              </p>
+            </div>
           </div>
         </div>
       )}

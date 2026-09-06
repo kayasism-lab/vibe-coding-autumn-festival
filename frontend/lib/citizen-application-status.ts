@@ -46,6 +46,32 @@ export const citizenApplicationDefaultMessages: Record<CitizenApplicationBlocked
   ended: '행사가 종료되었습니다. 함께해 주셔서 감사합니다.',
 }
 
+/**
+ * 담당자가 관리 화면에서 고치는 신청서 설정.
+ * 연습 일정은 해마다 바뀌어 코드에 두면 담당자가 손댈 수 없으므로 작품 정보에 저장한다.
+ */
+export interface CitizenApplicationFormConfig {
+  /** 신청자가 '참여 불가'로 체크할 일정 목록 */
+  scheduleItems?: string[] | null
+  /** 일정 목록 아래에 붙는 안내 문구 */
+  scheduleNotice?: string | null
+}
+
+/** 담당자가 안내 문구를 비워뒀을 때 신청서에 나가는 기본 문구 */
+export const CITIZEN_SCHEDULE_NOTICE_DEFAULT =
+  '일정 일부는 진행상황 및 전체 행사 일정에 따라 변동 될 수도 있습니다.'
+
+/** 일정 체크 항목을 정리해서 돌려준다. 빈 줄과 앞뒤 공백은 버린다 */
+export function resolveCitizenScheduleItems(config?: CitizenApplicationFormConfig | null): string[] {
+  if (!Array.isArray(config?.scheduleItems)) return []
+  return config.scheduleItems.map((item) => item.trim()).filter(Boolean)
+}
+
+/** 일정 안내 문구를 고른다. 담당자가 입력한 문구가 있으면 그것을 쓴다 */
+export function resolveCitizenScheduleNotice(config?: CitizenApplicationFormConfig | null): string {
+  return config?.scheduleNotice?.trim() || CITIZEN_SCHEDULE_NOTICE_DEFAULT
+}
+
 interface ProgramLike {
   applicationStatus?: string | null
   openForApplication?: boolean | null

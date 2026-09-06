@@ -50,6 +50,14 @@ export interface IProgram extends Document {
     preparing?: string
     ended?: string
   }
+  // 신청서에서 담당자가 직접 고칠 수 있는 부분.
+  // 연습 일정은 해마다 바뀌는데 코드에 박아두면 담당자가 손댈 수 없어 프로그램 문서에 둔다
+  applicationForm?: {
+    // 신청자가 '참여 불가'로 체크할 일정 목록. 비어 있으면 신청서에 항목 자체가 안 나온다
+    scheduleItems?: string[]
+    // 일정 목록 아래에 붙는 안내 문구
+    scheduleNotice?: string
+  }
   isActive: boolean
   order: number
   createdAt: Date
@@ -299,8 +307,11 @@ export interface ICitizenApplication extends Document {
   residence: string
   age: number
   gender: 'male' | 'female'
-  // 낭독극=주2회, 단막극=주3회 연습 참여 가능 여부 (질문 라벨은 programType으로 분기)
-  practiceAvailable: boolean
+  // 낭독극=주2회, 단막극=주3회 연습 참여 가능 여부.
+  // 2026-09-06에 신청서에서 뺐고, 그전에 접수된 신청서를 계속 보여주기 위해 필드는 남겨둔다
+  practiceAvailable?: boolean
+  // 참여할 수 없다고 체크한 일정. 프로그램의 applicationForm.scheduleItems 중에서 고른 값이 들어간다
+  unavailableSchedules?: string[]
   respectAgreement: boolean
   hasExperience: boolean
   experienceDetail?: string

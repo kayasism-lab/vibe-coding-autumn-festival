@@ -13,6 +13,7 @@ import { CitizenApplicationNoticeDialog } from '@/components/citizen-application
 import {
   resolveCitizenApplicationMessage,
   resolveCitizenApplicationStatus,
+  type CitizenApplicationFormConfig,
   type CitizenApplicationStatus,
   type CitizenProgramType,
 } from '@/lib/citizen-application-status'
@@ -23,6 +24,7 @@ interface ApplicationProgram {
   applicationStatus?: string | null
   openForApplication?: boolean | null
   applicationMessages?: { closed?: string; preparing?: string; ended?: string } | null
+  applicationForm?: CitizenApplicationFormConfig | null
 }
 
 export default function CitizenApplyPage() {
@@ -122,6 +124,7 @@ function CitizenApplyPageContent() {
                   <CitizenApplicationForm
                     initialType={initialType}
                     isTypeLocked
+                    formConfig={program?.applicationForm}
                     onSuccess={() => setIsSubmitted(true)}
                   />
                 </CardContent>

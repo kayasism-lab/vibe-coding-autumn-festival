@@ -20,7 +20,10 @@ const CitizenApplicationSchema = new Schema<ICitizenApplication>(
     residence: { type: String, required: true },
     age: { type: Number, required: true },
     gender: { type: String, enum: ['male', 'female'], required: true },
-    practiceAvailable: { type: Boolean, required: true },
+    // 2026-09-06 신청서에서 뺀 항목. 예전 신청서를 열어볼 수 있게 필수 조건만 풀고 필드는 남긴다
+    practiceAvailable: { type: Boolean },
+    // 참여할 수 없는 일정으로 체크한 항목들
+    unavailableSchedules: { type: [String], default: [] },
     respectAgreement: { type: Boolean, required: true },
     hasExperience: { type: Boolean, required: true },
     experienceDetail: { type: String, maxlength: 1000 },
