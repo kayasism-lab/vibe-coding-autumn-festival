@@ -122,10 +122,19 @@ export const SITE_DESCRIPTION_LONG =
  *
  * 환경변수가 있으면 그 값을 우선 쓰고, 없으면 아래 기본값을 쓴다
  * (Vercel 대시보드를 건드리지 않아도 배포만 하면 동작하도록)
+ *
+ * 네이버는 도메인마다 다른 소유확인 코드를 발급한다.
+ * 그래서 옛 주소(vercel.app)와 새 주소(or.kr)의 코드를 둘 다 내보낸다.
+ * 하나만 남기면 나머지 한쪽의 소유확인이 풀려버린다.
+ * 쉼표로 구분해 넣으면 meta 태그가 그 개수만큼 나간다.
  */
-export const NAVER_SITE_VERIFICATION =
+export const NAVER_SITE_VERIFICATIONS = (
   process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ||
-  '73c924d450480b24f45ae7d2fc7890b7df9f7c56'
+  '73c924d450480b24f45ae7d2fc7890b7df9f7c56,695427befc221703f408945aae3db906ca12b881'
+)
+  .split(',')
+  .map((code) => code.trim())
+  .filter(Boolean)
 
 // 구글 서치 콘솔은 아직 발급 전이라 비워 둔다. 값이 없으면 태그도 나가지 않는다
 export const GOOGLE_SITE_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || ''

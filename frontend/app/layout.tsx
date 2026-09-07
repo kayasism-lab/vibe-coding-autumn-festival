@@ -9,7 +9,7 @@ import {
   ORGANIZER,
   FESTIVAL_TITLE,
   OG_IMAGE,
-  NAVER_SITE_VERIFICATION,
+  NAVER_SITE_VERIFICATIONS,
   GOOGLE_SITE_VERIFICATION,
 } from '@/lib/seo'
 import './globals.css'
@@ -65,8 +65,8 @@ export const metadata: Metadata = {
   verification: {
     // 값이 비어 있으면 태그를 내보내지 않는다 (구글은 아직 발급 전)
     ...(GOOGLE_SITE_VERIFICATION ? { google: GOOGLE_SITE_VERIFICATION } : {}),
-    other: NAVER_SITE_VERIFICATION
-      ? { 'naver-site-verification': NAVER_SITE_VERIFICATION }
+    other: NAVER_SITE_VERIFICATIONS.length
+      ? { 'naver-site-verification': NAVER_SITE_VERIFICATIONS }
       : {},
   },
   icons: {
