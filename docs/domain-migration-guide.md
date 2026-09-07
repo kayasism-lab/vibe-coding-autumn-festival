@@ -3,26 +3,29 @@
 > 목적: 구글 검색에 `vercel.app`이 노출되는 문제를 없애고 `or.kr` 대표 도메인으로 옮기되,
 > **SNS·보도자료에 이미 뿌려둔 기존 주소로 들어와도 아무 조치 없이 사이트가 열리게** 한다.
 
-대표 주소: `https://jik-autumn-festival.or.kr` (2026-09-07 이전)
+대표 주소: `https://www.jik-autumn-festival.or.kr` (2026-09-07 이전, **www 포함이 대표**)
 옛 주소: `https://jik-autumn-festival.vercel.app` — **삭제하지 않고** 301 자동 이동으로 살려둠
 
-## 진행 현황 (2026-09-07)
+## 진행 현황 (2026-09-07 — 이전 완료)
 
 | 단계 | 상태 | 비고 |
 |---|---|---|
-| 1. or.kr 도메인 등록 | ✅ | 가비아, 2027-09-07 만료 |
-| 2. Vercel 도메인 연결 | ✅ | HTTPS 인증서 자동 발급됨 |
-| 3. 가비아 DNS 설정 | ✅ | A레코드 `216.198.79.1` |
-| 4. 환경변수·코드 반영 | ⏳ | **www 제거 + 재배포가 남음** (아래 참고) |
-| 5. 검증 | ⏳ | 새 주소는 이미 정상. 옛 주소 자동 이동은 재배포 후 확인 |
-| 6. 검색엔진 이전 | ⬜ | 서치콘솔 주소 변경 신고 |
+| 1. or.kr 도메인 등록 | ✅ | 가비아, **2027-09-07 만료 — 갱신 필수** |
+| 2. Vercel 도메인 연결 | ✅ | HTTPS 인증서 자동 발급, www가 대표(Primary) |
+| 3. 가비아 DNS 설정 | ✅ | A `216.198.79.1` / CNAME `www` / TXT(구글 소유확인) |
+| 4. 환경변수·코드 반영 | ✅ | `NEXT_PUBLIC_SITE_URL` = `https://www.jik-autumn-festival.or.kr` |
+| 5. 검증 | ✅ | 옛 주소 → 새 주소 301 이동, 하위 경로 유지 확인 |
+| 6. 검색엔진 이전 | ✅ | 구글·네이버 완료, 다음 검토중 |
 
-> **남은 작업 요약**
-> 1. Vercel Domains에서 `jik-autumn-festival.or.kr`(www 없는 쪽)을 **Primary**로 지정
-> 2. Vercel 환경변수 `NEXT_PUBLIC_SITE_URL`을 **삭제**하거나 값에서 `www.`를 제거
->    (삭제하면 코드 기본값인 www 없는 주소가 자동 적용된다)
-> 3. **Redeploy** — 환경변수는 저장만으로 반영되지 않는다
+> **지우면 안 되는 것 세 가지**
+> 1. Vercel Domains의 `jik-autumn-festival.vercel.app` — 지우면 SNS에 뿌린 링크가 전부 죽는다
+> 2. 가비아 DNS의 TXT 레코드 — 구글 소유확인이 풀리고 주소 변경 신고까지 무효가 된다
+> 3. 코드의 옛 네이버 인증 코드 — 옛 사이트의 소유확인이 풀린다
 
+> **남은 일**
+> - 네이버 검색광고: 비즈채널 승인 후 기존 광고그룹 OFF (자세한 내용은 `handoff.md` 2-18)
+> - Cloudtype `FRONTEND_ORIGIN`을 새 주소로 갱신
+> - 색인 이전은 2~8주 소요. 그 전까지 검색결과에 옛 주소가 보여도 정상
 ---
 
 ## 동작 방식 요약
@@ -31,7 +34,7 @@
 방문자가 옛 주소 클릭
    https://jik-autumn-festival.vercel.app/programs
               ↓  (301 영구 이동 · 자동)
-   https://jik-autumn-festival.or.kr/programs   ← 같은 경로 그대로 열림
+   https://www.jik-autumn-festival.or.kr/programs   ← 같은 경로 그대로 열림
 ```
 
 - 옛 주소는 **삭제하지 않고 그대로 살려둡니다.** 링크가 죽지 않습니다.
@@ -126,7 +129,7 @@ Settings → Environment Variables
 
 | 변수명 | 새 값 | 적용 환경 |
 |---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | `https://jik-autumn-festival.or.kr` | **Production만** 체크 |
+| `NEXT_PUBLIC_SITE_URL` | `https://www.jik-autumn-festival.or.kr` | **Production만** 체크 |
 
 > ⚠️ Preview/Development에는 체크하지 마세요. 미리보기 배포까지 옛 주소에서
 > 이동해버려 배포 전 확인이 불가능해집니다.
@@ -139,7 +142,7 @@ Settings → Environment Variables
 
 | 변수명 | 새 값 |
 |---|---|
-| `FRONTEND_ORIGIN` | `https://jik-autumn-festival.or.kr` |
+| `FRONTEND_ORIGIN` | `https://www.jik-autumn-festival.or.kr` |
 
 > 실제로 API는 Next.js가 서버끼리 중계(`/api/*` rewrite)하므로 이 값이 틀려도
 > 당장 사이트가 멈추지는 않습니다. 다만 값을 맞춰두지 않으면 나중에 원인을
@@ -158,20 +161,20 @@ Settings → Environment Variables
 
 ```powershell
 # 1) 새 주소가 정상(200)으로 열리는지
-curl.exe -I https://jik-autumn-festival.or.kr
+curl.exe -I https://www.jik-autumn-festival.or.kr
 
 # 2) 옛 주소가 새 주소로 301 이동하는지  ← 가장 중요
 curl.exe -I https://jik-autumn-festival.vercel.app
 #   기대: HTTP/2 308  또는 301
-#         location: https://jik-autumn-festival.or.kr/
+#         location: https://www.jik-autumn-festival.or.kr/
 
 # 3) 하위 경로도 같은 경로로 따라가는지
 curl.exe -I https://jik-autumn-festival.vercel.app/programs
-#   기대: location: https://jik-autumn-festival.or.kr/programs
+#   기대: location: https://www.jik-autumn-festival.or.kr/programs
 
 # 4) 검색엔진용 파일이 새 주소를 가리키는지
-curl.exe https://jik-autumn-festival.or.kr/robots.txt
-curl.exe https://jik-autumn-festival.or.kr/sitemap.xml
+curl.exe https://www.jik-autumn-festival.or.kr/robots.txt
+curl.exe https://www.jik-autumn-festival.or.kr/sitemap.xml
 ```
 
 ### 눈으로 확인할 것
@@ -191,7 +194,7 @@ curl.exe https://jik-autumn-festival.or.kr/sitemap.xml
 301만 걸어둬도 결국 옮겨지지만, 아래를 하면 훨씬 빨라집니다.
 
 ### 구글 서치 콘솔
-1. 새 도메인을 **속성 추가** → URL 접두어에 `https://jik-autumn-festival.or.kr` 입력
+1. 새 도메인을 **속성 추가** → URL 접두어에 `https://www.jik-autumn-festival.or.kr` 입력
 2. 소유권 확인 (Vercel에 DNS TXT 레코드 추가 또는 HTML 파일 방식)
 3. `sitemap.xml` 제출
 4. 기존 vercel.app 속성에서 **설정 → 주소 변경** 도구로 새 도메인 지정
