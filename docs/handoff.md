@@ -80,7 +80,8 @@
 
 | 구성 요소 | 플랫폼 | 주소 | 상태 |
 |---|---|---|---|
-| 프론트엔드 | Vercel | https://jik-autumn-festival.vercel.app | Ready, GitHub main 브랜치 push 시 **자동 재배포 확인됨** |
+| 프론트엔드 | Vercel | https://jik-autumn-festival.or.kr | Ready, GitHub main 브랜치 push 시 **자동 재배포 확인됨** |
+| 대표 도메인 | 가비아 (or.kr) | https://jik-autumn-festival.or.kr | 2026-09-07 등록. **2027-09-07 만료 — 갱신 안 하면 사이트 전체가 죽음.** 옛 `jik-autumn-festival.vercel.app`은 삭제하지 않고 살려둔 채 301 자동 이동 |
 | 백엔드 | Cloudtype | https://port-0-vibe-coding-autumn-festival-mstu4cssd1ffbfff.sel3.cloudtype.app | 실행 중. **자동 배포가 동작하지 않음 — push 후 대시보드에서 수동 재배포 필요** (2026-08-16 확인) |
 | DB | MongoDB Atlas | 클러스터를 shopping-mall-demo와 **공유**, DB 이름만 `autumn_festival`로 분리 | 정상 |
 | GitHub | kayasism-lab/vibe-coding-autumn-festival | 비공개 저장소, `main` 브랜치가 곧 배포 브랜치 | - |
@@ -1408,6 +1409,6 @@ git checkout HEAD -- frontend/next-env.d.ts   # 자동 생성 변경분 되돌�
 **배포 절차 요약**
 1. 위 검증 통과 확인
 2. 커밋 → `git push origin main`
-3. 프론트엔드는 Vercel이 자동 반영 (`https://jik-autumn-festival.vercel.app`)
+3. 프론트엔드는 Vercel이 자동 반영 (`https://jik-autumn-festival.or.kr`)
 4. **백엔드가 바뀌었다면 Cloudtype 대시보드에서 수동 재배포** (자동 아님)
 5. 배포 후 실제 주소로 응답/동작 확인

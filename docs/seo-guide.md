@@ -47,7 +47,7 @@
 ### 3-1. 네이버 서치어드바이저 등록 — **가장 효과 큼**
 
 1. https://searchadvisor.naver.com 접속 → 네이버 계정 로그인
-2. **웹마스터 도구** → 사이트 등록에 `https://jik-autumn-festival.vercel.app` 입력
+2. **웹마스터 도구** → 사이트 등록에 `https://jik-autumn-festival.or.kr` 입력
 3. **사이트 소유확인** 화면에서 `HTML 태그` 방식을 선택
    → `<meta name="naver-site-verification" content="여기가긴문자열" />` 이 나옵니다
 4. 그 **`content` 안의 문자열만** 복사
@@ -62,7 +62,7 @@
 ### 3-2. 구글 서치 콘솔 등록
 
 1. https://search.google.com/search-console 접속 → 구글 계정 로그인
-2. 속성 추가 → **URL 접두어**에 `https://jik-autumn-festival.vercel.app` 입력
+2. 속성 추가 → **URL 접두어**에 `https://jik-autumn-festival.or.kr` 입력
 3. 소유권 확인에서 **HTML 태그** 선택 → `content` 값만 복사
 4. Vercel 환경변수에 `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` 으로 추가 → Redeploy
 5. 확인 후 **Sitemaps** 메뉴에서 `sitemap.xml` 제출
@@ -78,7 +78,7 @@
 Vercel 환경변수에 아래를 추가해두면 도메인이 바뀌어도 코드 수정 없이 따라갑니다.
 
 - Name: `NEXT_PUBLIC_SITE_URL`
-- Value: `https://jik-autumn-festival.vercel.app`
+- Value: `https://jik-autumn-festival.or.kr`
 
 > 값을 안 넣어도 `lib/seo.ts`의 기본값으로 동작합니다.
 
@@ -101,8 +101,8 @@ Vercel 환경변수에 아래를 추가해두면 도메인이 바뀌어도 코�
 
 배포 후 아래 주소가 정상적으로 열리면 준비가 끝난 것입니다.
 
-- https://jik-autumn-festival.vercel.app/robots.txt
-- https://jik-autumn-festival.vercel.app/sitemap.xml
+- https://jik-autumn-festival.or.kr/robots.txt
+- https://jik-autumn-festival.or.kr/sitemap.xml
 
 공유 썸네일 확인:
 - 카카오톡: 나에게 보내기로 링크를 보내 썸네일 확인
@@ -123,7 +123,7 @@ Vercel 환경변수에 아래를 추가해두면 도메인이 바뀌어도 코�
 | 다음 | 보통 2주 ~ 1개월 |
 
 **등록 직후에 검색해서 안 나온다고 잘못된 게 아닙니다.** 색인에 시간이 걸립니다.
-`site:jik-autumn-festival.vercel.app` 로 검색하면 현재 색인된 페이지 수를 볼 수 있습니다.
+`site:jik-autumn-festival.or.kr` 로 검색하면 현재 색인된 페이지 수를 볼 수 있습니다.
 
 ---
 

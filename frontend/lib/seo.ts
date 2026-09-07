@@ -5,9 +5,10 @@
  * (주소나 축제 정보가 바뀌면 이 파일만 고치면 된다)
  */
 
-// 실제 배포 주소. Vercel 도메인이 바뀌면 환경변수 NEXT_PUBLIC_SITE_URL로 덮어쓸 수 있다
+// 실제 배포 주소(대표 도메인). 2026-09-07 vercel.app → or.kr 로 이전했다.
+// 주소가 또 바뀌면 코드 수정 없이 환경변수 NEXT_PUBLIC_SITE_URL로 덮어쓸 수 있다
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://jik-autumn-festival.vercel.app'
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://jik-autumn-festival.or.kr'
 
 export const SITE_NAME = '2026 가을연극축제'
 export const ORGANIZER = '전국직장인연극단체협의회'
