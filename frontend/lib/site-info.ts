@@ -25,7 +25,7 @@ export const defaultSiteInfo: SiteInfo = {
   organizer: '전국직장인연극단체협의회',
   year: '2026',
   contactEmail: 'kayasism@naver.com',
-  contactPhone: '010-9073-8894',
+  contactPhone: '010-2205-8894',
   address: '서울 관악구 남부순환로272길 22 2층',
   snsLinks: {
     instagram: 'https://www.instagram.com/jikplay1997',

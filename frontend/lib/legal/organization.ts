@@ -5,7 +5,7 @@
 export const ORGANIZATION = '전국직장인연극단체협의회'
 export const SERVICE_NAME = '가을연극축제 홈페이지'
 export const CONTACT_EMAIL = 'kayasism@naver.com'
-export const CONTACT_PHONE = '010-9073-8894'
+export const CONTACT_PHONE = '010-2205-8894'
 export const OFFICE_ADDRESS = '서울특별시 관악구 남부순환로272길 22, 2층'
 
 // 개인정보 보호책임자 (개인정보 보호법 제31조에 따라 지정·공개)

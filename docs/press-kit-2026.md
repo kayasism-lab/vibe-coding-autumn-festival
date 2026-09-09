@@ -221,7 +221,7 @@
 |---|---|
 | 주최·주관 | 전국직장인연극단체협의회(직연협) |
 | 사무국 주소 | 서울 관악구 남부순환로272길 22 2층 |
-| 전화 | 010-9073-8894 |
+| 전화 | 010-2205-8894 |
 | 이메일 | kayasism@naver.com |
 | 홈페이지 | https://jik-autumn-festival.vercel.app |
 | 인스타그램 | https://www.instagram.com/jikplay1997 |
