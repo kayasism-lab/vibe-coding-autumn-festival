@@ -80,7 +80,7 @@ export function CitizenApplicationDetailDialog({
   saveError: string
   onUpdateStatus: (status: 'approved' | 'rejected') => void
   onQnaSubmit: (message: string) => Promise<string | void>
-  /** 승인·반려·관리자 메모는 총괄 관리자만 다룰 수 있다. false면 열람과 문의 답변만 보여준다 */
+  /** 승인·반려·관리자 메모를 다룰 수 있는지. false면 열람과 문의 답변만 보여준다 */
   canDecide: boolean
 }) {
   return (

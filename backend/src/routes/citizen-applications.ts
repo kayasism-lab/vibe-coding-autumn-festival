@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import type { Response } from 'express'
 import type { Types } from 'mongoose'
 import bcrypt from 'bcryptjs'
 import { CitizenApplication, Program } from '../models/index.js'
@@ -30,6 +31,41 @@ const attemptKey = (phone: string) => `citizen:${phone}`
 function sanitize(application: Record<string, unknown>) {
   const { password, ...safe } = application
   return { ...safe, qna: safe.qna ?? [] }
+}
+
+// 신청 건 하나를 불러오면서 지금 로그인한 계정이 그것을 다룰 수 있는지까지 확인한다.
+// requirePermission은 '메뉴에 들어올 수 있는가'까지만 보므로, 낭독극 담당자가 단막극
+// 신청을 건드리지 못하게 작품의 공연 유형을 여기서 한 번 더 대조한다(관리자는 항상 통과).
+// 찾지 못했거나 권한이 없으면 이 함수가 응답까지 마치고 null을 돌려준다.
+async function findManageableApplication(res: Response, id: string) {
+  const application = await CitizenApplication.findById(id).populate(
+    'programId',
+    'company theaterGroup type'
+  )
+  if (!application) {
+    fail(res, '신청 내역을 찾을 수 없습니다.', 404)
+    return null
+  }
+
+  const program = application.programId as unknown as {
+    company?: string
+    theaterGroup?: Types.ObjectId | string | null
+    type?: string
+  } | null
+  if (
+    !program?.company ||
+    !program.type ||
+    !(await canManageProgram(res.locals.user, {
+      company: program.company,
+      theaterGroup: program.theaterGroup,
+      type: program.type,
+    }))
+  ) {
+    fail(res, '권한이 없습니다.', 403)
+    return null
+  }
+
+  return application
 }
 
 // 시민참여 열린 낭독극/열린 단막극 신청 접수 (공개)
@@ -334,32 +370,8 @@ citizenApplicationsRouter.post(
       return
     }
 
-    const application = await CitizenApplication.findById(req.params.id).populate(
-      'programId',
-      'company theaterGroup type'
-    )
-    if (!application) {
-      fail(res, '신청 내역을 찾을 수 없습니다.', 404)
-      return
-    }
-
-    const program = application.programId as unknown as {
-      company?: string
-      theaterGroup?: Types.ObjectId | string | null
-      type?: string
-    } | null
-    if (
-      !program?.company ||
-      !program.type ||
-      !(await canManageProgram(res.locals.user, {
-        company: program.company,
-        theaterGroup: program.theaterGroup,
-        type: program.type,
-      }))
-    ) {
-      fail(res, '권한이 없습니다.', 403)
-      return
-    }
+    const application = await findManageableApplication(res, req.params.id)
+    if (!application) return
 
     if (application.status !== 'pending') {
       fail(res, '심사가 완료된 신청에는 문의를 남길 수 없습니다.', 400)
@@ -375,10 +387,12 @@ citizenApplicationsRouter.post(
   })
 )
 
-// 신청 승인/반려 (총괄 관리자 전용)
+// 신청 승인/반려.
+// 총괄 관리자와, 그 공연 유형을 맡은 담당 계정(낭독극·단막극)이 할 수 있다.
+// 담당 계정이 자기 유형이 아닌 신청을 건드리는 것은 findManageableApplication이 막는다.
 citizenApplicationsRouter.put(
   '/:id/status',
-  requireAdmin,
+  requirePermission('citizen-applications'),
   asyncHandler(async (req, res) => {
     const { status, adminNote } = req.body
     if (!['pending', 'approved', 'rejected'].includes(status)) {
@@ -386,20 +400,15 @@ citizenApplicationsRouter.put(
       return
     }
 
-    const application = await CitizenApplication.findByIdAndUpdate(
-      req.params.id,
-      { status, adminNote },
-      { new: true }
-    )
-      .select('-password')
-      .lean()
+    const application = await findManageableApplication(res, req.params.id)
+    if (!application) return
 
-    if (!application) {
-      fail(res, '신청 내역을 찾을 수 없습니다.', 404)
-      return
-    }
+    application.status = status
+    // 메모를 함께 보내지 않은 요청이 기존 메모를 지우지 않도록 값이 있을 때만 반영한다
+    if (adminNote !== undefined) application.adminNote = adminNote
+    await application.save()
 
-    ok(res, application, '신청 상태가 변경되었습니다.')
+    ok(res, sanitize(application.toObject()), '신청 상태가 변경되었습니다.')
   })
 )
 

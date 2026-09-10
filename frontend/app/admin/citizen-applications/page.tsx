@@ -46,7 +46,8 @@ export default function AdminCitizenApplicationsPage() {
   const [isUpdating, setIsUpdating] = useState(false)
   // 심사 결과 저장에 실패한 사유. 값이 있으면 창을 닫지 않고 그대로 보여준다
   const [saveError, setSaveError] = useState('')
-  // 승인·반려는 총괄 관리자만 가능하다. 담당 계정은 열람·문의 답변까지만.
+  // 승인·반려는 총괄 관리자와 참여 신청자 관리 권한을 가진 담당 계정(낭독극·단막극)이 할 수 있다.
+  // 담당 계정이 다른 유형의 신청을 승인하는 것은 서버에서 담당 유형을 대조해 막는다.
   const [canDecide, setCanDecide] = useState(false)
   const [heading, setHeading] = useState({ title: '시민 참여 신청 관리', description: '열린 낭독극·열린 단막극 시민 참여 신청을 검토합니다.' })
 
@@ -68,7 +69,11 @@ export default function AdminCitizenApplicationsPage() {
       .then((data) => {
         if (!data.success) return
         const role = data.data?.role
-        setCanDecide(role === 'superadmin' || role === 'admin')
+        // 권한 배열은 백엔드가 기본 권한까지 합쳐 내려준 최종 값이라 그대로 믿고 쓴다
+        const permissions = (data.data?.permissions ?? []) as string[]
+        setCanDecide(
+          role === 'superadmin' || role === 'admin' || permissions.includes('citizen-applications')
+        )
         const programType = data.data?.programType as string | undefined
         if (programType && pageHeadingByProgramType[programType]) {
           setHeading(pageHeadingByProgramType[programType])

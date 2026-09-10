@@ -65,7 +65,7 @@ export const GROUP_PERMISSION_META: PermissionMeta[] = [
   {
     key: 'citizen-applications',
     label: '참여 신청자 관리',
-    description: '담당 공연 유형(낭독극·단막극)에 들어온 시민 참여 신청자를 확인하고 문의에 답변합니다. 승인·반려는 총괄 관리자만 할 수 있습니다.',
+    description: '담당 공연 유형(낭독극·단막극)에 들어온 시민 참여 신청자를 확인하고, 문의 답변과 승인·반려를 합니다. 신청 내역 삭제는 총괄 관리자만 할 수 있습니다.',
     grantable: false,
   },
 ]
