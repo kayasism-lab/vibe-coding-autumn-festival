@@ -8,7 +8,7 @@ import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, Clock, ExternalLink, ShieldCheck, Users } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Calendar, Clock, ExternalLink, ShieldCheck, Users } from 'lucide-react'
 import {
   programTypeConfig,
   resolveSeatStatus,
@@ -278,9 +278,19 @@ export default function ProgramDetailPage() {
                   <Link href="/tickets">관람 안내 보기</Link>
                 </Button>
 
+                {/* 시민참여를 받는 작품에서는 이것이 관객이 할 주요 행동이다.
+                    secondary(연한 베이지)로 두면 바로 위 '예약 오픈 예정' 비활성 버튼과
+                    구분이 안 돼 꺼진 버튼처럼 보여, 헤더 예매 버튼과 같은 강조색을 쓴다 */}
                 {program.openForApplication && (
-                  <Button asChild variant="secondary" className="w-full" size="lg">
-                    <Link href={`/apply/citizen?type=${program.type}`}>시민 참여 신청하기</Link>
+                  <Button
+                    asChild
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md hover:from-amber-600 hover:to-orange-600"
+                    size="lg"
+                  >
+                    <Link href={`/apply/citizen?type=${program.type}`}>
+                      시민 참여 신청하기
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                 )}
               </aside>
