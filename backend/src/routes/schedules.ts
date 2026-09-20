@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import mongoose from 'mongoose'
 import { Program, Schedule } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
@@ -30,14 +31,19 @@ schedulesRouter.get(
 
     if (typeof req.query.month === 'string') {
       const [year, monthNum] = req.query.month.split('-').map(Number)
-      query.date = {
-        $gte: new Date(year, monthNum - 1, 1),
-        $lte: new Date(year, monthNum, 0, 23, 59, 59),
+      // 'YYYY-MM' 형식이 아니면 날짜 계산이 깨져 조회 자체가 실패한다. 그때는 이 조건을 건너뛴다
+      if (Number.isInteger(year) && Number.isInteger(monthNum) && monthNum >= 1 && monthNum <= 12) {
+        // sanitizeFilter가 켜져 있어 그냥 두면 연산자를 값으로 오해해 감싸버린다.
+        // 위에서 숫자임을 확인했으므로 코드가 만든 조건임을 알린다
+        query.date = mongoose.trusted({
+          $gte: new Date(year, monthNum - 1, 1),
+          $lte: new Date(year, monthNum, 0, 23, 59, 59),
+        })
       }
     }
 
     if (req.query.upcoming === 'true') {
-      query.date = { $gte: new Date() }
+      query.date = mongoose.trusted({ $gte: new Date() })
     }
 
     const schedules = await Schedule.find(query)

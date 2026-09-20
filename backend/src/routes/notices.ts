@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import mongoose from 'mongoose'
 import { Notice } from '../models/index.js'
 import { asyncHandler, clampLimit, clampPage, escapeRegExp, fail, ok } from '../lib/http.js'
 import { requireAdmin, requirePermission } from '../middleware/require-admin.js'
@@ -6,6 +7,14 @@ import { fetchLinkPreview } from '../lib/link-preview.js'
 import { sanitizeNoticeContent } from '../lib/sanitize-content.js'
 
 export const noticesRouter = Router()
+
+/**
+ * 목록에서 고를 수 있는 분류.
+ *
+ * 아래 `mongoose.trusted()`로 넘기는 값이므로 사용자가 보낸 문자열을 그대로 쓰지 않고
+ * 이 목록에 있는 것만 남긴다. 모델의 enum과 같은 값을 쓴다.
+ */
+const NOTICE_CATEGORIES = ['notice', 'press', 'event', 'media']
 
 /** 한국 시각 기준 올해. 서버가 어느 지역에 떠 있어도 같은 값이 나오게 한다 */
 function getKstYear(): number {
@@ -23,9 +32,19 @@ noticesRouter.get(
 
     if (req.query.category && req.query.category !== 'all') {
       // 'notice,event'처럼 여러 개를 한 번에 받을 수 있게 한다.
-      // 공지 게시판과 보도·미디어 게시판이 각각 두 종류씩 묶어 쓰기 때문이다
-      const categories = String(req.query.category).split(',').filter(Boolean)
-      query.category = categories.length > 1 ? { $in: categories } : categories[0]
+      // 공지 게시판과 보도·미디어 게시판이 각각 두 종류씩 묶어 쓰기 때문이다.
+      // 아는 분류만 남긴다. 모르는 값이 섞여도 무시하고 아는 것으로만 찾는다
+      const categories = String(req.query.category)
+        .split(',')
+        .filter((value) => NOTICE_CATEGORIES.includes(value))
+
+      if (categories.length > 1) {
+        // sanitizeFilter가 켜져 있어 $in을 그대로 두면 값으로 오해해 감싸버린다.
+        // 위에서 아는 분류만 걸러냈으므로 코드가 만든 조건임을 알린다 (아래 $or·$gte도 같다)
+        query.category = mongoose.trusted({ $in: categories })
+      } else if (categories.length === 1) {
+        query.category = categories[0]
+      }
     }
 
     // 연도와 검색 조건은 둘 다 $or를 쓰므로 $and로 묶는다.
@@ -42,20 +61,29 @@ noticesRouter.get(
       const boundary = new Date(Date.UTC(getKstYear(), 0, 1, -9))
       conditions.push({
         $or: [
-          { publishedAt: { $lt: boundary } },
-          { publishedAt: { $exists: false }, createdAt: { $lt: boundary } },
+          { publishedAt: mongoose.trusted({ $lt: boundary }) },
+          {
+            publishedAt: mongoose.trusted({ $exists: false }),
+            createdAt: mongoose.trusted({ $lt: boundary }),
+          },
         ],
       })
     } else if (req.query.year && req.query.year !== 'all') {
       const year = Number(req.query.year)
-      const from = new Date(Date.UTC(year, 0, 1, -9))
-      const to = new Date(Date.UTC(year + 1, 0, 1, -9))
-      conditions.push({
-        $or: [
-          { publishedAt: { $gte: from, $lt: to } },
-          { publishedAt: { $exists: false }, createdAt: { $gte: from, $lt: to } },
-        ],
-      })
+      // 숫자가 아닌 값이 오면 날짜 계산이 깨져 조회 자체가 실패한다. 그때는 연도 조건을 건너뛴다
+      if (Number.isInteger(year) && year >= 1900 && year <= 2200) {
+        const from = new Date(Date.UTC(year, 0, 1, -9))
+        const to = new Date(Date.UTC(year + 1, 0, 1, -9))
+        conditions.push({
+          $or: [
+            { publishedAt: mongoose.trusted({ $gte: from, $lt: to }) },
+            {
+              publishedAt: mongoose.trusted({ $exists: false }),
+              createdAt: mongoose.trusted({ $gte: from, $lt: to }),
+            },
+          ],
+        })
+      }
     }
 
     if (req.query.search) {
@@ -63,8 +91,8 @@ noticesRouter.get(
       const keyword = escapeRegExp(String(req.query.search).slice(0, 100))
       conditions.push({
         $or: [
-          { title: { $regex: keyword, $options: 'i' } },
-          { content: { $regex: keyword, $options: 'i' } },
+          { title: mongoose.trusted({ $regex: keyword, $options: 'i' }) },
+          { content: mongoose.trusted({ $regex: keyword, $options: 'i' }) },
         ],
       })
     }
