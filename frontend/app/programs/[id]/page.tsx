@@ -144,14 +144,21 @@ export default function ProgramDetailPage() {
                     type="button"
                     onClick={() => setIsPosterOpen(true)}
                     aria-label={`${program.title} 포스터 크게 보기`}
-                    className="relative mb-8 block aspect-[3/4] w-full max-w-md overflow-hidden rounded-xl bg-muted transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="relative mb-8 block w-full max-w-md overflow-hidden rounded-xl bg-muted transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
-                    <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-full w-full object-cover" />
+                    {/* 틀을 3:4로 고정하면 가로로 긴 포스터가 잘려 세로로 보인다.
+                        올린 그대로 나오도록 비율을 정하지 않고 이미지에 맡긴다 */}
+                    <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-auto w-full" />
                   </button>
                 ) : (
-                  <div className="relative mb-8 aspect-[3/4] max-w-md overflow-hidden rounded-xl bg-muted">
+                  <div
+                    className={`relative mb-8 max-w-md overflow-hidden rounded-xl bg-muted${
+                      // 포스터가 아직 없을 때만 자리를 잡아둔다. 있으면 그 이미지의 비율을 그대로 쓴다
+                      program.posterUrl ? '' : ' aspect-[3/4]'
+                    }`}
+                  >
                     {program.posterUrl ? (
-                      <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-full w-full object-cover" />
+                      <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-auto w-full" />
                     ) : (
                       <PosterPlaceholder />
                     )}
