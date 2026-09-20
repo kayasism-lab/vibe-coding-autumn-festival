@@ -84,6 +84,7 @@ citizenApplicationsRouter.post(
       password,
       privacyAgreed,
       agreedAt,
+      scriptAgreed,
     } = req.body
 
     // 이름·연락처 같은 고정 항목만 여기서 본다.
@@ -111,6 +112,13 @@ citizenApplicationsRouter.post(
     // 화면에서만 막으면 요청을 직접 보내 우회할 수 있어 서버에서도 검증한다
     if (privacyAgreed !== true) {
       fail(res, '개인정보 수집·이용에 동의해주세요.', 400)
+      return
+    }
+
+    // 단막극은 참가자에게 대본을 나눠주므로 유출 금지 서약을 함께 받는다.
+    // 낭독극에는 이 항목이 없어 유형을 가려서 검증한다
+    if (programType === 'short_play' && scriptAgreed !== true) {
+      fail(res, '대본 유출 금지에 동의해주세요.', 400)
       return
     }
 
@@ -165,6 +173,8 @@ citizenApplicationsRouter.post(
       // 동의 시각은 클라이언트 값을 그대로 믿지 않고, 없으면 서버 시각으로 남긴다
       privacyAgreed: true,
       agreedAt: agreedAt ? new Date(agreedAt) : new Date(),
+      // 대본 서약은 단막극에서만 받으므로, 낭독극에는 값을 남기지 않는다
+      ...(programType === 'short_play' ? { scriptAgreed: true } : {}),
     })
 
     ok(res, sanitize(application.toObject()), '신청이 접수되었습니다.', 201)
@@ -238,7 +248,8 @@ citizenApplicationsRouter.put(
     clearFailures(key)
 
     // 블랙리스트 대신 화이트리스트로 바꾼다. 신청자가 고칠 수 있는 값만 반영해
-    // 동의 기록(privacyAgreed·agreedAt)이나 연락처 조회키(phone)를 임의로 덮어쓰지 못하게 한다.
+    // 동의 기록(privacyAgreed·agreedAt·scriptAgreed)이나 연락처 조회키(phone)를
+    // 임의로 덮어쓰지 못하게 한다.
     // 화면(apply/status)이 실제로 보내는 항목과 일치시킨다
     const editableFields = ['email', 'residence', 'age', 'gender'] as const
     for (const field of editableFields) {

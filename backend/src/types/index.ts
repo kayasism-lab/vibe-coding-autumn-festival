@@ -340,6 +340,9 @@ export interface ICitizenApplication extends Document {
   // 연령은 age 필드로 직접 확인하므로 별도의 연령 확인 체크는 두지 않는다.
   privacyAgreed: boolean
   agreedAt?: Date
+  // 대본 보호 서약. 단막극은 참가자에게 대본을 나눠주므로 유출 금지 동의를 함께 받는다.
+  // 낭독극 신청서에는 이 항목이 없고 예전 신청서에도 없어 선택 필드로 둔다
+  scriptAgreed?: boolean
   status: CitizenApplicationStatus
   adminNote?: string
   // 심사중 상태에서 관리자-신청자가 주고받는 문의/답변 이력

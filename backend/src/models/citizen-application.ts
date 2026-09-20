@@ -50,6 +50,8 @@ const CitizenApplicationSchema = new Schema<ICitizenApplication>(
     // 개인정보 수집·이용 동의 기록. 연령은 age 필드로 확인하므로 연령 확인 항목은 두지 않는다.
     privacyAgreed: { type: Boolean, default: false },
     agreedAt: { type: Date },
+    // 대본 보호 서약(단막극 전용). 낭독극·예전 신청서에는 이 값이 없으므로 기본값을 두지 않는다
+    scriptAgreed: { type: Boolean },
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],

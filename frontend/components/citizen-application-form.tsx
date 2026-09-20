@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup } from '@/components/ui/radio-group'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Loader2 } from 'lucide-react'
 import { Field, RadioOption } from '@/components/citizen-application-fields'
 import { CitizenQuestionFields } from '@/components/citizen-question-fields'
@@ -80,6 +81,10 @@ export function CitizenApplicationForm({
   const questions = useMemo(() => resolveCitizenQuestions(formConfig), [formConfig])
   const [answers, setAnswers] = useState<CitizenAnswers>(() => emptyCitizenAnswers(questions))
   const [consent, setConsent] = useState<PrivacyConsentValue>(emptyConsent)
+  // 단막극 전용 대본 보호 서약. 반드시 미체크 상태에서 시작한다
+  const [scriptAgreed, setScriptAgreed] = useState(false)
+  // 단막극은 참가자에게 대본을 나눠주므로 유출 금지 동의를 함께 받는다
+  const needsScriptConsent = form.programType === 'short_play'
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -112,6 +117,10 @@ export function CitizenApplicationForm({
       setError(consentError)
       return
     }
+    if (needsScriptConsent && !scriptAgreed) {
+      setError('대본 유출 금지에 동의해주세요.')
+      return
+    }
 
     setIsSubmitting(true)
     try {
@@ -132,6 +141,8 @@ export function CitizenApplicationForm({
           // 동의를 받았다는 입증 책임이 운영자에게 있어 동의 여부와 시각을 함께 남긴다
           privacyAgreed: consent.privacyAgreed,
           agreedAt: new Date().toISOString(),
+          // 단막극일 때만 보낸다. 서버도 유형을 보고 같은 기준으로 검증한다
+          ...(needsScriptConsent ? { scriptAgreed } : {}),
         }),
       })
       const data = await res.json()
@@ -157,7 +168,11 @@ export function CitizenApplicationForm({
         ) : (
           <RadioGroup
             value={form.programType}
-            onValueChange={(value) => setForm({ ...form, programType: value as CitizenProgramType })}
+            onValueChange={(value) => {
+              setForm({ ...form, programType: value as CitizenProgramType })
+              // 유형을 바꿨다 되돌아와도 동의가 체크된 채 남지 않게 되돌린다
+              setScriptAgreed(false)
+            }}
             className="flex flex-col gap-2 sm:flex-row sm:gap-6"
           >
             <RadioOption value="reading" id="type-reading" label="열린 낭독극 참여" />
@@ -211,6 +226,23 @@ export function CitizenApplicationForm({
         value={consent}
         onChange={setConsent}
       />
+
+      {/* 단막극은 대본을 나눠주므로 유출 금지 서약을 따로 받는다 */}
+      {needsScriptConsent && (
+        <div className="rounded-lg border bg-muted/30 p-5">
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm">
+            <Checkbox
+              checked={scriptAgreed}
+              onCheckedChange={(checked) => setScriptAgreed(checked as boolean)}
+              className="mt-0.5"
+            />
+            <span>
+              제공받은 대본을 허가 없이 외부에 유출하지 않겠습니다.{' '}
+              <span className="font-medium text-destructive">(필수)</span>
+            </span>
+          </label>
+        </div>
+      )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
