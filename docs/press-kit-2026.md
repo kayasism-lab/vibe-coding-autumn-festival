@@ -1,6 +1,6 @@
 # 2026 가을연극축제 보도자료 (프레스 킷)
 
-> **배포용 문서입니다.** 홈페이지(https://jik-autumn-festival.vercel.app)에 공개된 정보를
+> **배포용 문서입니다.** 홈페이지(https://www.jik-autumn-festival.or.kr)에 공개된 정보를
 > 기자 배포용으로 간추린 것으로, 그대로 인용하거나 발췌해 사용하실 수 있습니다.
 > 작성 기준일: 2026년 9월 6일
 
@@ -18,7 +18,7 @@
 | 주최·주관 | 전국직장인연극단체협의회(직연협) |
 | 후원 | 서울특별시 |
 | 참여 극단 | 아해 · 연극패청년 · 놀이터 · 좋은사람들 · 함바꿈 (5개 극단) |
-| 홈페이지 | https://jik-autumn-festival.vercel.app |
+| 홈페이지 | https://www.jik-autumn-festival.or.kr |
 | 인스타그램 | https://www.instagram.com/jikplay1997 |
 
 ---
@@ -95,7 +95,7 @@
 | 러닝타임 | 60분 |
 | 모집 | 만 19세 이상 성인 시민 10명 내외 |
 | 참가비 | 무료 |
-| 신청 | https://jik-autumn-festival.vercel.app/apply/citizen?type=reading |
+| 신청 | https://www.jik-autumn-festival.or.kr/apply/citizen?type=reading |
 
 연극 경험이 없는 시민도 전문 강사진과 약 3주간의 과정을 통해 자신의 이야기를 대본으로
 완성하고 무대에서 발표한다. 총 12차시 중 6회 이상 참여 가능한 사람이 대상이며,
@@ -223,9 +223,9 @@
 | 사무국 주소 | 서울 관악구 남부순환로272길 22 2층 |
 | 전화 | 010-2205-8894 |
 | 이메일 | kayasism@naver.com |
-| 홈페이지 | https://jik-autumn-festival.vercel.app |
+| 홈페이지 | https://www.jik-autumn-festival.or.kr |
 | 인스타그램 | https://www.instagram.com/jikplay1997 |
-| 문의 페이지 | https://jik-autumn-festival.vercel.app/inquiries |
+| 문의 페이지 | https://www.jik-autumn-festival.or.kr/inquiries |
 
 - **포스터·공연 사진 등 보도용 이미지**는 홈페이지 갤러리에서 내려받거나 사무국으로 요청하시면
   원본 파일을 보내드립니다.
