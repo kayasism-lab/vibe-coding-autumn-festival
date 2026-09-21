@@ -3,6 +3,11 @@
 // - User.theaterGroupName 과 일치하는 극단을 찾아 User.theaterGroup 을 채운다
 // 이미 연결된 문서는 건드리지 않으므로 여러 번 실행해도 안전하다.
 // 실행: npm run migrate:groups --workspace backend
+//
+// [주의] 전역 sanitizeFilter 때문에 코드가 만든 $연산자 조건은 mongoose.trusted()로
+// 감싸야 한다. 안 감싸면 { $eq: { $exists: false } } 로 바뀌어 에러 없이 0건만 매치된다.
+
+import mongoose from 'mongoose'
 
 import { connectDB } from '../lib/db.js'
 import { Program, TheaterGroup, User } from '../models/index.js'
@@ -15,7 +20,7 @@ export async function migrateTheaterGroupLinks() {
   console.log(`등록된 극단 ${groups.length}개를 기준으로 연결합니다.`)
 
   // 1) 작품 → 소유 극단
-  const programs = await Program.find({ theaterGroup: { $exists: false } })
+  const programs = await Program.find({ theaterGroup: mongoose.trusted({ $exists: false }) })
     .select('title company')
     .lean<{ _id: unknown; title: string; company: string }[]>()
 
@@ -36,7 +41,10 @@ export async function migrateTheaterGroupLinks() {
   }
 
   // 2) 극단 담당자 계정 → 담당 극단
-  const groupUsers = await User.find({ role: 'group', theaterGroup: { $exists: false } })
+  const groupUsers = await User.find({
+    role: 'group',
+    theaterGroup: mongoose.trusted({ $exists: false }),
+  })
     .select('name theaterGroupName')
     .lean<{ _id: unknown; name: string; theaterGroupName: string }[]>()
 
@@ -57,7 +65,7 @@ export async function migrateTheaterGroupLinks() {
 
   // 3) permissions 필드가 없는 기존 계정 보정
   const permissionResult = await User.updateMany(
-    { permissions: { $exists: false } },
+    { permissions: mongoose.trusted({ $exists: false }) },
     { $set: { permissions: [] } }
   )
 
