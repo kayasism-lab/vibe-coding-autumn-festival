@@ -191,11 +191,16 @@ export default function ApplyStatusPage() {
                         onChange={(e) => setLookupForm({ ...lookupForm, phone: formatPhoneInput(e.target.value) })}
                       />
                     </Field>
-                    <Field label="비밀번호 (4자 이상, 문자/특수문자 가능)">
+                    {/*
+                      조회는 이미 저장된 비밀번호를 대조하는 곳이라 신청 폼의 규칙(8자·특수문자)을
+                      안내하지 않는다. 2026-08-28 규칙 강화 이전에 신청한 사람은 4자 비밀번호를
+                      그대로 쓰고 있어, 여기서 길이를 올리면 본인 신청 내역을 못 보게 된다.
+                    */}
+                    <Field label="비밀번호">
                       <Input
                         required
-                        minLength={4}
                         type="password"
+                        placeholder="신청할 때 정하신 비밀번호"
                         value={lookupForm.password}
                         onChange={(e) => setLookupForm({ ...lookupForm, password: e.target.value })}
                       />
