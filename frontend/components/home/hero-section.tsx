@@ -15,6 +15,7 @@ import { ArrowRight, Calendar, MapPin, Sparkles, Users, Award, ExternalLink, Pla
 import { UpcomingShowInfo } from '@/components/home/upcoming-show-info'
 import type { UpcomingShow } from '@/types/index'
 import { useSiteInfo } from '@/lib/site-info'
+import { useCitizenApplicationOpen } from '@/lib/use-citizen-application-open'
 
 // 참여 극단 정보 타입
 interface TheaterGroup {
@@ -96,6 +97,9 @@ export function HeroSection() {
   const [selectedGroup, setSelectedGroup] = useState<TheaterGroup | null>(null)
   // 배지의 인스타그램 링크는 관리자 설정 값을 따른다 (미설정 시 기존 값 유지)
   const siteInfo = useSiteInfo()
+  // 낭독극·단막극 중 하나라도 접수 중이면 신청 버튼에 '모집중'을 붙인다
+  const citizenApply = useCitizenApplicationOpen()
+  const isCitizenApplyOpen = citizenApply.shortPlay || citizenApply.reading
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
 
@@ -295,14 +299,26 @@ export function HeroSection() {
                     무료 관람 안내
                   </Link>
                 </Button>
+                {/* 예전에는 낭독극 신청으로 곧장 보냈지만, 단막극 배우 모집이 함께 열리면서
+                    유형을 고르는 화면으로 보낸다. 지금 접수 중이면 버튼에 '모집중'을 띄워
+                    버튼을 늘리지 않고도 신청이 열려 있다는 것을 알린다 */}
                 <Button
                   asChild
                   size="lg"
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-full px-8 shadow-lg shadow-amber-500/30 border-0"
+                  className="relative bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-full px-8 shadow-lg shadow-amber-500/30 border-0"
                 >
-                  <Link href="/apply/citizen?type=reading">
+                  <Link href="/apply/citizen">
                     <HeartHandshake className="mr-2 h-4 w-4" />
                     시민참여 신청
+                    {isCitizenApplyOpen && (
+                      <span className="absolute -right-2 -top-2 flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-orange-600 shadow-md">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-500 opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-orange-500" />
+                        </span>
+                        모집중
+                      </span>
+                    )}
                   </Link>
                 </Button>
               </div>
