@@ -56,8 +56,11 @@ export function CitizenApplyStrip() {
         </span>
 
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold text-white">
-            {/* 깜빡이는 점으로 '지금 진행 중'이라는 느낌을 준다 (참여 극단 배지와 같은 방식) */}
+          {/* 띠 배경이 앰버·오렌지라 반투명 흰 배지는 배경에 묻힌다.
+              히어로 버튼의 배지와 같은 빨강으로 맞추고 배지째 깜빡이게 해서
+              '지금 모집 중'이라는 것이 한눈에 들어오게 한다 */}
+          <span className="inline-flex animate-pulse items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md shadow-red-900/30 ring-1 ring-white/60">
+            {/* 안쪽 점은 배지보다 빠르게 깜빡여 신호등처럼 보이게 한다 */}
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />

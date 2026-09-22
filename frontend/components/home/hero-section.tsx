@@ -15,7 +15,7 @@ import { ArrowRight, Calendar, MapPin, Sparkles, Users, Award, ExternalLink, Pla
 import { UpcomingShowInfo } from '@/components/home/upcoming-show-info'
 import type { UpcomingShow } from '@/types/index'
 import { useSiteInfo } from '@/lib/site-info'
-import { useCitizenApplicationOpen } from '@/lib/use-citizen-application-open'
+import { citizenApplyHref, useCitizenApplicationOpen } from '@/lib/use-citizen-application-open'
 
 // 참여 극단 정보 타입
 interface TheaterGroup {
@@ -300,21 +300,24 @@ export function HeroSection() {
                   </Link>
                 </Button>
                 {/* 예전에는 낭독극 신청으로 곧장 보냈지만, 단막극 배우 모집이 함께 열리면서
-                    유형을 고르는 화면으로 보낸다. 지금 접수 중이면 버튼에 '모집중'을 띄워
-                    버튼을 늘리지 않고도 신청이 열려 있다는 것을 알린다 */}
+                    지금 접수 중인 유형으로 보낸다. 유형을 지정하지 않으면 신청 화면이
+                    낭독극으로 열려, 낭독극이 마감된 동안에는 마감 안내부터 받게 된다.
+                    접수 중이면 버튼에 '모집중'을 띄워 버튼을 늘리지 않고도 알린다.
+                    배지를 빨강으로 둔 이유: 버튼이 앰버·오렌지라 같은 계열 배지는 묻힌다.
+                    흰 테두리로 버튼과 떼어놓고 배지째 깜빡여 먼저 눈에 들어오게 했다 */}
                 <Button
                   asChild
                   size="lg"
                   className="relative bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-full px-8 shadow-lg shadow-amber-500/30 border-0"
                 >
-                  <Link href="/apply/citizen">
+                  <Link href={citizenApplyHref(citizenApply)}>
                     <HeartHandshake className="mr-2 h-4 w-4" />
                     시민참여 신청
                     {isCitizenApplyOpen && (
-                      <span className="absolute -right-2 -top-2 flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-orange-600 shadow-md">
+                      <span className="absolute -right-2 -top-2 flex animate-pulse items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg shadow-red-500/50 ring-2 ring-white/80">
                         <span className="relative flex h-1.5 w-1.5">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-500 opacity-75" />
-                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-orange-500" />
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
                         </span>
                         모집중
                       </span>

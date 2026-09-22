@@ -63,6 +63,21 @@ function fetchOpenState(): Promise<CitizenApplicationOpenState> {
   return cachedRequest
 }
 
+/**
+ * 지금 접수 중인 유형으로 신청 화면 주소를 만든다.
+ *
+ * 신청 화면은 유형을 지정하지 않으면 낭독극으로 연다.
+ * 그래서 단막극만 모집 중일 때 유형 없이 보내면 마감된 낭독극 안내가 뜬다.
+ * 화면에서 유형을 바꿀 수 있으므로, 여는 순간에는 접수 중인 쪽을 보여준다.
+ * 둘 다 열려 있으면 최근에 모집을 시작한 단막극을 먼저 보여준다.
+ */
+export function citizenApplyHref(state: CitizenApplicationOpenState): string {
+  if (state.shortPlay) return '/apply/citizen?type=short_play'
+  if (state.reading) return '/apply/citizen?type=reading'
+  // 둘 다 닫혀 있으면 기본 화면으로 보내 마감 안내를 그대로 받게 둔다
+  return '/apply/citizen'
+}
+
 export function useCitizenApplicationOpen(): CitizenApplicationOpenState {
   const [state, setState] = useState<CitizenApplicationOpenState>({
     shortPlay: false,
