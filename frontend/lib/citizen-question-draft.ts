@@ -34,10 +34,15 @@ function newQuestionId(): string {
   return `q${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`
 }
 
+/**
+ * 새 질문의 기본 입력 방식은 '여러 개 고르기'다.
+ * 신청서에 새로 넣는 항목은 대개 선택지를 주는 질문이고, 하나만 고르게 할지는
+ * 그때그때 다르다. 넓은 쪽(복수 선택)을 기본으로 두고 좁히는 편이 실수가 적다.
+ */
 export function createQuestionDraft(): QuestionDraft {
   return {
     id: newQuestionId(),
-    type: 'text',
+    type: 'checkbox',
     label: '',
     required: false,
     optionsText: '',

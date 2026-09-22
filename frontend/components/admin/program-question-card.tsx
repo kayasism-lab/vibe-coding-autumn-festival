@@ -53,6 +53,7 @@ export function ProgramQuestionCard({
   onRemove: () => void
 }) {
   const needsOptions = draft.type === 'select' || draft.type === 'checkbox'
+  const typeHint = citizenQuestionTypeOptions.find((option) => option.value === draft.type)?.hint
   // 기본 질문은 기존 신청서 필드와 연결돼 있어 유형을 바꾸면 예전 답을 읽을 수 없게 된다
   const isDefault = isDefaultQuestion(draft.id)
 
@@ -109,8 +110,11 @@ export function ProgramQuestionCard({
         onChange={(e) => onChange({ ...draft, label: e.target.value })}
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-[9rem] flex-1">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-[9rem] flex-1 space-y-1">
+          {/* 예전에는 이 선택 상자에 제목이 없어, 하나만 고르는 질문과 여러 개 고르는
+              질문을 여기서 나눈다는 것을 알아보기 어려웠다 */}
+          <Label className="text-xs font-normal text-muted-foreground">입력 방식</Label>
           <Select
             value={draft.type}
             disabled={isDefault}
@@ -128,7 +132,7 @@ export function ProgramQuestionCard({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pb-2">
           <Checkbox
             id={`required-${draft.id}`}
             checked={draft.required}
@@ -139,6 +143,10 @@ export function ProgramQuestionCard({
           </Label>
         </div>
       </div>
+
+      {/* 고른 입력 방식이 신청자에게 어떻게 보이는지 한 줄로 알려준다.
+          설명 문구는 전부터 있었지만 화면에 쓰이지 않고 있었다 */}
+      {typeHint && <p className="text-xs text-muted-foreground">{typeHint}</p>}
 
       {isDefault && (
         <p className="text-xs text-muted-foreground">
@@ -194,7 +202,13 @@ export function ProgramQuestionCard({
 
       {needsOptions && (
         <div className="space-y-1">
-          <Label className="text-xs font-normal text-muted-foreground">선택지 (한 줄에 하나씩)</Label>
+          {/* 선택지를 적는 자리에서도 몇 개까지 고를 수 있는 질문인지 바로 보이게 한다 */}
+          <Label className="text-xs font-normal text-muted-foreground">
+            선택지 (한 줄에 하나씩) ·{' '}
+            <span className="font-medium text-foreground">
+              {draft.type === 'checkbox' ? '여러 개 고를 수 있음' : '하나만 고를 수 있음'}
+            </span>
+          </Label>
           <Textarea
             rows={4}
             value={draft.optionsText}
