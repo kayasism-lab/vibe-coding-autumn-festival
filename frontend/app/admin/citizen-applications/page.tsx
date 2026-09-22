@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Eye, Loader2 } from 'lucide-react'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import {
@@ -30,6 +31,11 @@ const programTypeLabels = {
   reading: '열린 낭독극',
   short_play: '열린 단막극',
 }
+
+/** 신청 구분 거르개에서 '전체'를 가리키는 값. 빈 문자열은 선택 상자가 쓰지 못한다 */
+const ALL_PROGRAM_TYPES = 'all'
+
+type ProgramTypeFilter = typeof ALL_PROGRAM_TYPES | keyof typeof programTypeLabels
 
 // 낭독극·단막극 담당 계정은 페이지 제목도 담당 유형에 맞게 보여준다. 그 외(관리자)는 전체를 다룬다는 원래 문구 그대로.
 const pageHeadingByProgramType: Record<string, { title: string; description: string }> = {
@@ -134,7 +140,19 @@ export default function AdminCitizenApplicationsPage() {
     }
   }
 
-  const pendingCount = applications.filter((a) => a.status === 'pending').length
+  // 낭독극과 단막극이 한 목록에 섞여 나와 담당자가 찾기 어려웠다. 구분별로 걸러본다
+  const [programTypeFilter, setProgramTypeFilter] = useState<ProgramTypeFilter>(ALL_PROGRAM_TYPES)
+
+  const visibleApplications =
+    programTypeFilter === ALL_PROGRAM_TYPES
+      ? applications
+      : applications.filter((app) => app.programType === programTypeFilter)
+
+  // 낭독극·단막극 담당 계정에는 서버가 담당 유형만 내려준다.
+  // 고를 것이 한 종류뿐이면 거르개를 두는 것이 오히려 방해가 되므로 감춘다
+  const hasBothTypes = new Set(applications.map((app) => app.programType)).size > 1
+
+  const pendingCount = visibleApplications.filter((a) => a.status === 'pending').length
 
   return (
     <div className="flex min-h-screen bg-muted/30">
@@ -149,8 +167,13 @@ export default function AdminCitizenApplicationsPage() {
           <div className="mb-8 grid grid-cols-2 gap-4">
             <Card>
               <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">전체 신청</p>
-                <p className="text-3xl font-bold">{applications.length}</p>
+                {/* 거르개를 걸면 숫자도 그 구분만 세므로, 무엇을 센 값인지 제목에 밝힌다 */}
+                <p className="text-sm text-muted-foreground">
+                  {programTypeFilter === ALL_PROGRAM_TYPES
+                    ? '전체 신청'
+                    : `${programTypeLabels[programTypeFilter]} 신청`}
+                </p>
+                <p className="text-3xl font-bold">{visibleApplications.length}</p>
               </CardContent>
             </Card>
             <Card>
@@ -163,15 +186,40 @@ export default function AdminCitizenApplicationsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>신청 목록</CardTitle>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>신청 목록</CardTitle>
+                {hasBothTypes && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">신청 구분</span>
+                    <Select
+                      value={programTypeFilter}
+                      onValueChange={(value) => setProgramTypeFilter(value as ProgramTypeFilter)}
+                    >
+                      <SelectTrigger className="h-9 w-[10rem]" aria-label="신청 구분으로 거르기">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={ALL_PROGRAM_TYPES}>전체</SelectItem>
+                        <SelectItem value="reading">{programTypeLabels.reading}</SelectItem>
+                        <SelectItem value="short_play">{programTypeLabels.short_play}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : applications.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground">접수된 신청이 없습니다.</div>
+              ) : visibleApplications.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground">
+                  {/* 접수가 아예 없는 것과 거르개에 걸려 안 보이는 것은 원인이 달라 문구를 나눈다 */}
+                  {applications.length === 0
+                    ? '접수된 신청이 없습니다.'
+                    : '고른 신청 구분에 해당하는 신청이 없습니다.'}
+                </div>
               ) : (
                 <Table>
                   <TableHeader>
@@ -185,7 +233,7 @@ export default function AdminCitizenApplicationsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {applications.map((app) => (
+                    {visibleApplications.map((app) => (
                       <TableRow key={app._id}>
                         <TableCell className="font-medium">{app.name}</TableCell>
                         <TableCell>{programTypeLabels[app.programType]}</TableCell>
