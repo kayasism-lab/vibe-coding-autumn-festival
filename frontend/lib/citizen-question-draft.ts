@@ -87,9 +87,13 @@ export function fromQuestionDrafts(drafts: QuestionDraft[]): CitizenFormQuestion
 
 /**
  * 조건(꼬리 질문) 값을 선택 상자 한 칸으로 주고받기 위한 인코딩.
- * '항상 보여주기'는 빈 값, 조건이 있으면 '질문id:yes' 형태로 쓴다.
+ * '항상 보여주기'는 'always', 조건이 있으면 '질문id:yes' 형태로 쓴다.
+ *
+ * 빈 문자열을 쓰지 않는 이유: 선택 상자(Radix Select)는 빈 문자열을
+ * '고르지 않음'을 뜻하는 값으로 쓰기 때문에, 항목 값으로 주면 오류를 내고
+ * 작품 수정 화면 전체가 열리지 않는다.
  */
-export const ALWAYS_VISIBLE = ''
+export const ALWAYS_VISIBLE = 'always'
 
 export function encodeShowWhen(showWhen?: { questionId: string; equals: string }): string {
   return showWhen ? `${showWhen.questionId}:${showWhen.equals}` : ALWAYS_VISIBLE

@@ -164,7 +164,9 @@ export function ProgramQuestionCard({
             }}
           >
             <SelectTrigger className="h-9">
-              <SelectValue />
+              {/* 조건이 깨진 질문은 고를 수 있는 항목에 지금 값이 없어 빈칸으로 보인다.
+                  무엇을 해야 하는지 대신 알려준다 */}
+              <SelectValue placeholder="조건을 다시 골라주세요" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALWAYS_VISIBLE}>항상 보여주기</SelectItem>
