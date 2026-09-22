@@ -1,21 +1,10 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
-import {
-  citizenQuestionTypeOptions,
-  type CitizenQuestionType,
-} from '@/lib/citizen-application-questions'
-import {
-  createQuestionDraft,
-  isDefaultQuestion,
-  type QuestionDraft,
-} from '@/lib/citizen-question-draft'
+import { Plus } from 'lucide-react'
+import { ProgramQuestionCard } from '@/components/admin/program-question-card'
+import { createQuestionDraft, pruneShowWhen, type QuestionDraft } from '@/lib/citizen-question-draft'
 
 /**
  * 질문을 원하는 자리로 옮긴다.
@@ -32,158 +21,6 @@ function moveTo(drafts: QuestionDraft[], from: number, to: number): QuestionDraf
   return next
 }
 
-function QuestionCard({
-  draft,
-  index,
-  total,
-  drafts,
-  onChange,
-  onMoveTo,
-  onRemove,
-}: {
-  draft: QuestionDraft
-  index: number
-  total: number
-  /** 꼬리 질문 안내에 쓸 전체 목록 (조건이 가리키는 질문의 문구를 찾는다) */
-  drafts: QuestionDraft[]
-  onChange: (draft: QuestionDraft) => void
-  /** 이 질문을 몇 번째 자리로 옮길지 (0부터 센다) */
-  onMoveTo: (index: number) => void
-  onRemove: () => void
-}) {
-  const needsOptions = draft.type === 'select' || draft.type === 'checkbox'
-  // 기본 질문은 기존 신청서 필드와 연결돼 있어 유형을 바꾸면 예전 답을 읽을 수 없게 된다
-  const isDefault = isDefaultQuestion(draft.id)
-  const parentIndex = draft.showWhen
-    ? drafts.findIndex((item) => item.id === draft.showWhen?.questionId)
-    : -1
-  const parent = parentIndex >= 0 ? drafts[parentIndex] : undefined
-  // 조건이 되는 질문보다 앞에 두면 '경험 내용'을 묻고 나서 '경험이 있나요'를 묻는 꼴이 된다
-  const isBeforeParent = parent !== undefined && parentIndex > index
-
-  return (
-    <div className="space-y-3 rounded-md border bg-background p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {/* 번호를 직접 골라 그 자리로 보낸다. 질문이 많을 때 화살표만으로는 여러 번 눌러야 한다 */}
-          <Select
-            value={String(index + 1)}
-            disabled={total < 2}
-            onValueChange={(value) => onMoveTo(Number(value) - 1)}
-          >
-            <SelectTrigger className="h-7 w-[5.25rem] text-xs" aria-label="질문 순서">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: total }, (_, position) => (
-                <SelectItem key={position} value={String(position + 1)}>
-                  {position + 1}번째
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {isDefault && (
-            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">기본 항목</span>
-          )}
-        </div>
-        <div className="flex gap-1">
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="한 칸 위로" disabled={index === 0} onClick={() => onMoveTo(index - 1)}>
-            <ChevronUp className="h-4 w-4" />
-          </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="한 칸 아래로" disabled={index === total - 1} onClick={() => onMoveTo(index + 1)}>
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onRemove}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <Input
-        value={draft.label}
-        placeholder="신청서에 보일 질문 문구"
-        onChange={(e) => onChange({ ...draft, label: e.target.value })}
-      />
-
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-[9rem] flex-1">
-          <Select
-            value={draft.type}
-            disabled={isDefault}
-            onValueChange={(type) => onChange({ ...draft, type: type as CitizenQuestionType })}
-          >
-            <SelectTrigger className="h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {citizenQuestionTypeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id={`required-${draft.id}`}
-            checked={draft.required}
-            onCheckedChange={(checked) => onChange({ ...draft, required: checked === true })}
-          />
-          <Label htmlFor={`required-${draft.id}`} className="cursor-pointer text-sm font-normal">
-            필수 입력
-          </Label>
-        </div>
-      </div>
-
-      {isDefault && (
-        <p className="text-xs text-muted-foreground">
-          이미 접수된 신청서와 연결된 항목이라 입력 방식은 바꿀 수 없습니다. 문구·순서·필수 여부는 바꿀 수 있습니다.
-        </p>
-      )}
-
-      {parent && (
-        <p className="text-xs text-muted-foreground">
-          &lsquo;{parent.label || '앞 질문'}&rsquo;에 &lsquo;
-          {draft.showWhen?.equals === 'yes' ? '예' : '아니오'}&rsquo;라고 답한 분에게만 보입니다.
-        </p>
-      )}
-
-      {isBeforeParent && (
-        <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
-          이 질문이 조건이 되는 &lsquo;{parent?.label || '앞 질문'}&rsquo;보다 앞에 있습니다.
-          답을 묻기 전에 먼저 나오게 되어 신청자가 헷갈릴 수 있으니 뒤로 옮겨주세요.
-        </p>
-      )}
-
-      {needsOptions && (
-        <div className="space-y-1">
-          <Label className="text-xs font-normal text-muted-foreground">선택지 (한 줄에 하나씩)</Label>
-          <Textarea
-            rows={4}
-            value={draft.optionsText}
-            placeholder={'9/29(화) 20:00-22:00\n10/6(화) 20:00-22:00'}
-            onChange={(e) => onChange({ ...draft, optionsText: e.target.value })}
-          />
-          <p className="text-xs text-muted-foreground">
-            선택지를 비워두면 이 질문은 신청서에 나오지 않습니다.
-          </p>
-        </div>
-      )}
-
-      <div className="space-y-1">
-        <Label className="text-xs font-normal text-muted-foreground">안내 문구 (선택)</Label>
-        <Textarea
-          rows={2}
-          value={draft.notice}
-          placeholder="입력칸 아래에 작게 붙는 설명입니다."
-          onChange={(e) => onChange({ ...draft, notice: e.target.value })}
-        />
-      </div>
-    </div>
-  )
-}
-
 /**
  * 신청서 질문을 담당자가 직접 만들고 고치는 영역.
  *
@@ -197,6 +34,15 @@ export function ProgramQuestionBuilder({
   drafts: QuestionDraft[]
   onChange: (drafts: QuestionDraft[]) => void
 }) {
+  /**
+   * 질문을 지울 때는 조건도 함께 정리한다.
+   * 조건으로 삼던 질문이 사라지면 꼬리 질문이 신청서에 영영 나오지 않기 때문이다.
+   * 순서·유형 변경은 담당자가 되돌릴 수 있어 지우지 않고 카드에 경고만 띄운다.
+   */
+  const removeAt = (index: number) => {
+    onChange(pruneShowWhen(drafts.filter((_, i) => i !== index)))
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
@@ -225,7 +71,7 @@ export function ProgramQuestionBuilder({
       ) : (
         <div className="space-y-3">
           {drafts.map((draft, index) => (
-            <QuestionCard
+            <ProgramQuestionCard
               key={draft.id}
               draft={draft}
               index={index}
@@ -233,7 +79,7 @@ export function ProgramQuestionBuilder({
               drafts={drafts}
               onChange={(next) => onChange(drafts.map((item, i) => (i === index ? next : item)))}
               onMoveTo={(target) => onChange(moveTo(drafts, index, target))}
-              onRemove={() => onChange(drafts.filter((_, i) => i !== index))}
+              onRemove={() => removeAt(index)}
             />
           ))}
         </div>
