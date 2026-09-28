@@ -59,3 +59,13 @@ export function toMiniUrl(url: string): string {
 export function toLargeUrl(url: string): string {
   return withTransform(url, { width: 2400 })
 }
+
+/**
+ * 잘라내지 않고 폭만 줄인다. 포스터·카드처럼 원본 비율이나 위치 보정(posterFocus)을
+ * 화면에서 그대로 살려야 하는 자리에 쓴다.
+ * 원본을 그대로 걸면 128px 카드에도 2MB짜리 PNG가 내려가 Cloudinary 대역폭을 크게 먹는다(09-28 실측).
+ * width는 그 자리에 보이는 가장 큰 폭의 두 배로 정한다.
+ */
+export function toFitUrl(url: string, width: number): string {
+  return withTransform(url, { width })
+}

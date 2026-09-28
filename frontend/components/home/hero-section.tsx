@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { ArrowRight, Calendar, MapPin, Sparkles, Users, Award, ExternalLink, Play, Ticket, Instagram, Facebook, Youtube, Globe, BookOpen, HeartHandshake } from 'lucide-react'
 import { UpcomingShowInfo } from '@/components/home/upcoming-show-info'
+import { toFitUrl } from '@/lib/cloudinary-url'
 import type { UpcomingShow } from '@/types/index'
 import { useSiteInfo } from '@/lib/site-info'
 import { citizenApplyHref, useCitizenApplicationOpen } from '@/lib/use-citizen-application-open'
@@ -428,7 +429,8 @@ export function HeroSection() {
               {selectedGroup.imageUrl ? (
                 <div className="w-full h-64 sm:h-80 lg:h-96 overflow-hidden rounded-t-lg relative">
                   <img 
-                    src={selectedGroup.imageUrl} 
+                    // 팝업 폭(max-w-2xl, 672px)의 두 배. Cloudinary가 아닌 주소는 그대로 쓴다
+                    src={toFitUrl(selectedGroup.imageUrl, 1400)}
                     alt={`${selectedGroup.name} 단체 사진`}
                     className="w-full h-full object-cover"
                   />
@@ -512,7 +514,8 @@ export function HeroSection() {
                         <div className="grid grid-cols-3 gap-2">
                           {selectedGroup.photos.map((url) => (
                             <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="aspect-square overflow-hidden rounded-lg bg-muted">
-                              <img src={url} alt={`${selectedGroup.name} 공연 준비 사진`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                              {/* 세 칸 격자라 작게 받고, 눌러서 여는 링크(href)는 원본 그대로 둔다 */}
+                              <img src={toFitUrl(url, 500)} alt={`${selectedGroup.name} 공연 준비 사진`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
                             </a>
                           ))}
                         </div>

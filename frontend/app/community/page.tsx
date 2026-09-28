@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { PageHeader } from '@/components/shared/page-header'
 import { ImagePlus, PenLine, Trash2 } from 'lucide-react'
+import { toFitUrl } from '@/lib/cloudinary-url'
 
 type Post = {
   _id: string
@@ -85,7 +86,8 @@ export default function CommunityPage() {
                       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {post.imageUrls.map((url) => (
                           <div key={url} className="relative aspect-video overflow-hidden rounded-md bg-muted">
-                            <img src={url} alt={post.title} className="h-full w-full object-cover" />
+                            {/* 2~3칸 격자의 작은 칸이라 원본 대신 줄인 사진을 받는다 */}
+                            <img src={toFitUrl(url, 800)} alt={post.title} className="h-full w-full object-cover" />
                           </div>
                         ))}
                       </div>

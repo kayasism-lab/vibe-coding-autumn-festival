@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, ExternalLink, Eye } from 'lucide-react'
 import { looksLikeHtml } from '@/lib/notice-board'
+import { toFitUrl } from '@/lib/cloudinary-url'
 
 type Notice = {
   _id: string
@@ -86,7 +87,8 @@ export default function NoticeDetailPage() {
                 <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {notice.imageUrls.map((url) => (
                     <div key={url} className="aspect-video overflow-hidden rounded-lg bg-muted">
-                      <img src={url} alt={notice.title} className="h-full w-full object-cover" />
+                      {/* 휴대폰에서는 한 칸이 화면 폭이라 1000px로 넉넉히 받는다 */}
+                      <img src={toFitUrl(url, 1000)} alt={notice.title} className="h-full w-full object-cover" />
                     </div>
                   ))}
                 </div>

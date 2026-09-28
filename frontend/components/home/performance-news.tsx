@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import { ProgramPeriod } from '@/components/shared/program-period'
 import { toObjectPosition, type ImageFocus } from '@/lib/image-focus'
+import { toFitUrl } from '@/lib/cloudinary-url'
 
 type Program = {
   _id: string
@@ -116,7 +117,8 @@ export function PerformanceNews() {
                     <div className={`relative h-32 overflow-hidden bg-gradient-to-br ${style.color}`}>
                       {cardImage.src ? (
                         <img
-                          src={cardImage.src}
+                          // 카드 폭(최대 약 400px)의 두 배. 원본 포스터(최대 2.3MB)를 모든 홈 방문자가 받던 것을 막는다
+                          src={toFitUrl(cardImage.src, 800)}
                           alt={program.title}
                           // 포스터를 쓸 때만 위치를 보정한다 (카드 전용 이미지는 이미 비율이 맞다)
                           style={{ objectPosition: cardImage.objectPosition }}

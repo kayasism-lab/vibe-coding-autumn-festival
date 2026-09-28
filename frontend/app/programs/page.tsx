@@ -10,6 +10,7 @@ import { PosterPlaceholder } from '@/components/shared/poster-placeholder'
 import { Badge } from '@/components/ui/badge'
 import { ArrowRight, Clock, Users } from 'lucide-react'
 import { programTypeConfig as typeConfig } from '@/lib/program-display'
+import { toFitUrl } from '@/lib/cloudinary-url'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import { ProgramPeriod } from '@/components/shared/program-period'
 import type { ProgramType } from '@/types/index'
@@ -114,7 +115,8 @@ function ProgramsPageContent() {
                     <div className="flex flex-col lg:flex-row">
                       <div className="relative h-48 flex-shrink-0 bg-muted lg:h-auto lg:w-64">
                         {program.posterUrl ? (
-                          <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-full w-full object-cover" />
+                          // 휴대폰에서는 칸이 화면 폭까지 넓어지므로 넉넉히 1000px로 받는다
+                          <img src={toFitUrl(program.posterUrl, 1000)} alt={`${program.title} 포스터`} className="h-full w-full object-cover" />
                         ) : (
                           <PosterPlaceholder />
                         )}

@@ -17,6 +17,7 @@ import {
   ticketButtonLabel,
 } from '@/lib/program-display'
 import { formatScheduleDate } from '@/lib/format-date'
+import { toFitUrl } from '@/lib/cloudinary-url'
 import { VenueMapButton, VenueAddressLink } from '@/components/shared/venue-map-button'
 import { ImageLightbox, LightboxViewer } from '@/components/shared/image-lightbox'
 import { ProgramPeriod } from '@/components/shared/program-period'
@@ -148,7 +149,8 @@ export default function ProgramDetailPage() {
                   >
                     {/* 틀을 3:4로 고정하면 가로로 긴 포스터가 잘려 세로로 보인다.
                         올린 그대로 나오도록 비율을 정하지 않고 이미지에 맡긴다 */}
-                    <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-auto w-full" />
+                    {/* 틀 폭(max-w-md, 448px)의 두 배로 줄여 받는다. 누르면 뜨는 확대 보기는 원본 그대로 */}
+                    <img src={toFitUrl(program.posterUrl, 1000)} alt={`${program.title} 포스터`} className="h-auto w-full" />
                   </button>
                 ) : (
                   <div
@@ -158,7 +160,7 @@ export default function ProgramDetailPage() {
                     }`}
                   >
                     {program.posterUrl ? (
-                      <img src={program.posterUrl} alt={`${program.title} 포스터`} className="h-auto w-full" />
+                      <img src={toFitUrl(program.posterUrl, 1000)} alt={`${program.title} 포스터`} className="h-auto w-full" />
                     ) : (
                       <PosterPlaceholder />
                     )}
