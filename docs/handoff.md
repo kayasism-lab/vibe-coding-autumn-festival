@@ -9,6 +9,12 @@
 > 막았다(`50311bb`, 2-23 (5)) — **사진을 새로 거는 화면에는 `toFitUrl`/`toThumbnailUrl`을 쓸 것.**
 > 계정 생성처럼 **운영 DB에 쓰는 일은 AI가 할 수 없으니 관리 화면 절차를 안내할 것.**
 >
+> **[09-28 저녁] 신청자 PDF는 스킬 `applicant-pdf`로 만든다** (`.claude/skills/applicant-pdf/SKILL.md`).
+> 운영 DB 읽기 → 한 사람당 한 쪽 PDF(나이 구간 섹션) → 잘림 검사까지 스크립트 3개로 끝난다.
+> 첫 결과물: 열린 단막극 심사중 31명(50세 미만 18 / 50대 10 / 60세 이상 3), 35쪽,
+> `db-backups/short_play-applicants/`(git 제외, 개인정보). **사용자가 PDF 변환을 자주 한다고 했다.**
+> 이를 위해 Python 3.12와 reportlab·pypdf·pdfplumber·pypdfium2를 설치했다.
+>
 > **00000. [09-28][중요·제약 해제] AI 세션 셸에서도 프론트 화면을 열어볼 수 있다.**
 > 09-22에 "프론트 서버를 띄울 수 없다"고 적었지만, **그건 `next dev`에만 해당한다.**
 > `npm run build` 뒤 `npx next start -p 3100 -H 127.0.0.1`은 **정상으로 뜬다**(실측).
