@@ -28,6 +28,11 @@ const kst = (d, withTime = true) => {
   const date = `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`
   return withTime ? `${date} ${p(t.getUTCHours())}:${p(t.getUTCMinutes())}` : date
 }
+// PDF는 심사용으로 돌려 보는 문서라 연락처를 싣지 않는다(09-28 사용자 요청).
+// 신청자가 답변·문의 글에 직접 적은 전화번호·이메일도 가린다. 연락처는 별도 md로만 만든다
+const PHONE_RE = /(\+?82[-\s.]?)?0\d{1,2}[-\s.)]?\d{3,4}[-\s.]?\d{4}/g
+const EMAIL_RE = /[\w.+-]+@[\w-]+(\.[\w-]+)+/g
+const hide = (s) => String(s ?? '').replace(EMAIL_RE, '[연락처 가림]').replace(PHONE_RE, '[연락처 가림]')
 const gender = (g) => (g === 'male' ? '남' : g === 'female' ? '여' : '-')
 const yesNo = (v) => (v === true ? '예' : v === false ? '아니오' : '-')
 
@@ -44,7 +49,21 @@ function buildSections(arg) {
   sections.push({ title: `${last}세 이상`, test: (a) => a.age >= last })
   return sections
 }
-const SECTIONS = buildSections(boundArg)
+// 직연협 회원극단 단원은 나이와 상관없이 별도 섹션으로 모은다(09-28 사용자 요청).
+// 질문 id는 작품마다 달라서 문구로 찾는다. 이 질문이 생기기 전 신청서는 답이 없어 나이 섹션으로 간다
+const findQuestion = (a, type, re) => (a.answeredQuestions || []).find((q) => q.type === type && re.test(q.label))
+function isMember(a) {
+  const q = findQuestion(a, 'yesno', /직연협|회원극단/)
+  return !!q && (a.answers?.[q.id] ?? a[q.id]) === true
+}
+function memberGroup(a) {
+  const q = findQuestion(a, 'select', /소속\s*극단/)
+  return q ? a.answers?.[q.id] ?? '' : ''
+}
+const SECTIONS = [
+  ...buildSections(boundArg).map((s) => ({ ...s, test: (a) => !isMember(a) && s.test(a) })),
+  { title: '직연협 회원극단 단원', member: true, test: isMember },
+]
 // 섹션 안에서는 신청 순서대로
 const sorted = [...apps].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
 const groups = SECTIONS.map((s) => ({ ...s, items: sorted.filter(s.test) }))
@@ -71,7 +90,7 @@ function renderQuestions(a) {
     html += '<table class="qa-short">' + short.map((q) => {
       const v = answerOf(a, q)
       const val = typeof v === 'boolean' ? yesNo(v) : (v ?? '')
-      return `<tr><th>${esc(q.label)}</th><td>${esc(val) || '<span class="muted">(응답 없음)</span>'}</td></tr>`
+      return `<tr><th>${esc(q.label)}</th><td>${esc(hide(val)) || '<span class="muted">(응답 없음)</span>'}</td></tr>`
     }).join('') + '</table>'
   }
   for (const q of rest) {
@@ -84,7 +103,7 @@ function renderQuestions(a) {
         '</ul></div>'
     } else {
       const text = Array.isArray(v) ? v.join(', ') : (v ?? '')
-      html += `<div class="block"><div class="q">${esc(q.label)}</div><div class="a">${esc(text).trim() || '<span class="muted">(응답 없음)</span>'}</div></div>`
+      html += `<div class="block"><div class="q">${esc(q.label)}</div><div class="a">${esc(hide(text)).trim() || '<span class="muted">(응답 없음)</span>'}</div></div>`
     }
   }
   return html
@@ -93,7 +112,7 @@ function renderQuestions(a) {
 function renderQna(a) {
   if (!a.qna?.length) return ''
   return '<div class="block"><div class="q">문의·답변 내역</div>' + a.qna.map((m) =>
-    `<div class="qna ${m.author}"><b>${m.author === 'admin' ? '담당자' : '신청자'}</b> <span class="muted">${kst(m.createdAt)}</span><div>${esc(m.message)}</div></div>`
+    `<div class="qna ${m.author}"><b>${m.author === 'admin' ? '담당자' : '신청자'}</b> <span class="muted">${kst(m.createdAt)}</span><div>${esc(hide(m.message))}</div></div>`
   ).join('') + '</div>'
 }
 
@@ -102,7 +121,6 @@ function applicantPage(g, { a, page }, idx) {
   <div class="topbar"><span>${esc(g.title)} · ${idx + 1} / ${g.items.length}</span><span>${programLabel} 시민 참여 신청 · ${esc(STATUS_LABEL[a.status] ?? a.status)}</span></div>
   <div class="who"><h2>${esc(a.name)}</h2><div class="meta">${a.age}세 · ${gender(a.gender)} · ${esc(a.residence)}</div></div>
   <table class="info">
-    <tr><th>연락처</th><td class="nw">${esc(a.phone)}</td><th>이메일</th><td>${esc(a.email)}</td></tr>
     <tr><th>신청일시</th><td class="nw">${kst(a.createdAt)}</td><th>거주지</th><td>${esc(a.residence)}</td></tr>
     <tr><th>개인정보 동의</th><td>${yesNo(a.privacyAgreed)}</td><th>대본 유출 금지 동의</th><td>${yesNo(a.scriptAgreed)}</td></tr>
   </table>
@@ -112,11 +130,12 @@ function applicantPage(g, { a, page }, idx) {
 }
 
 function sectionPage(g) {
+  // 직연협 섹션은 나이 대신 소속 극단이 중요해서 칸을 하나 더 둔다
   const rows = g.items.map(({ a, page }, i) =>
-    `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${a.age}</td><td>${gender(a.gender)}</td><td>${esc(a.residence)}</td><td>${kst(a.createdAt, false)}</td><td>${page}쪽</td></tr>`).join('')
+    `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${a.age}</td><td>${gender(a.gender)}</td>${g.member ? `<td>${esc(memberGroup(a))}</td>` : ''}<td>${esc(a.residence)}</td><td>${kst(a.createdAt, false)}</td><td>${page}쪽</td></tr>`).join('')
   return `<section class="page divider"><div class="fit">
-  <div class="sec-label">섹션</div><h1>${esc(g.title)}</h1><p class="count">${g.items.length}명</p>
-  ${g.items.length ? `<table class="list"><tr><th>#</th><th>이름</th><th>나이</th><th>성별</th><th>거주지</th><th>신청일</th><th>쪽</th></tr>${rows}</table>` : '<p class="muted">해당 신청자가 없습니다.</p>'}
+  <div class="sec-label">섹션</div><h1>${esc(g.title)}</h1><p class="count">${g.items.length}명${g.member ? ' · 나이와 상관없이 모음' : ''}</p>
+  ${g.items.length ? `<table class="list"><tr><th>#</th><th>이름</th><th>나이</th><th>성별</th>${g.member ? '<th>소속 극단</th>' : ''}<th>거주지</th><th>신청일</th><th>쪽</th></tr>${rows}</table>` : '<p class="muted">해당 신청자가 없습니다.</p>'}
   </div><div class="pno">${g.page} / ${totalPages}</div></section>`
 }
 
@@ -132,7 +151,10 @@ const cover = `<section class="page cover"><div class="fit">
     <li>기준: ${today} DB 조회</li>
     <li>대상: ${programLabel} 신청 중 <b>${statusLabel}</b> 상태</li>
     <li>나이는 신청서에 적은 만 나이 기준, 섹션 안에서는 신청 순서대로 정렬</li>
+    <li>'직연협 소속 회원극단 단원'에 <b>예</b>라고 답한 신청자는 나이와 상관없이 마지막 섹션에 모음
+      (이 질문이 추가되기 전에 접수된 신청서는 나이 섹션에 포함)</li>
     <li>신청자 한 명당 한 쪽. 내용이 긴 경우 글자 크기를 줄여 한 쪽에 맞춤</li>
+    <li>연락처·이메일은 싣지 않음. 답변 속에 적힌 연락처도 [연락처 가림]으로 표시</li>
   </ul>
   <p class="warn">개인정보가 포함된 문서입니다. 심사 용도로만 사용하고 외부로 공유하지 마세요.</p>
   </div><div class="pno">1 / ${totalPages}</div></section>`
@@ -209,3 +231,29 @@ try {
 }
 console.log('PDF 생성 →', pdfPath)
 console.log('총', totalPages, '쪽 /', groups.map((g) => `${g.title} ${g.items.length}명`).join(', '))
+
+// 연락처는 PDF에서 뺀 대신 담당자 혼자 보는 md로 따로 만든다. PDF와 같은 섹션·쪽 번호를 써서 서로 찾아보기 쉽게 한다
+const cell = (s) => String(s ?? '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim()
+const md = [
+  `# ${programLabel} ${statusLabel} 신청자 연락처 (${today})`,
+  '',
+  '> **개인용 문서입니다. 공유·전달하지 마세요.** 심사용 PDF에서 뺀 연락처만 모았습니다.',
+  `> 짝이 되는 PDF: \`${path.basename(pdfPath)}\` (쪽 번호가 같습니다)`,
+  '',
+  ...groups.flatMap((g) => [
+    `## ${g.title} (${g.items.length}명)`,
+    '',
+    g.items.length
+      ? [
+          `| # | 이름 | 나이 | ${g.member ? '소속 극단 | ' : ''}연락처 | 이메일 | PDF 쪽 |`,
+          `|---|---|---|${g.member ? '---|' : ''}---|---|---|`,
+          ...g.items.map(({ a, page }, i) =>
+            `| ${i + 1} | ${cell(a.name)} | ${a.age} | ${g.member ? cell(memberGroup(a)) + ' | ' : ''}${cell(a.phone)} | ${cell(a.email)} | ${page} |`),
+        ].join('\n')
+      : '해당 신청자가 없습니다.',
+    '',
+  ]),
+].join('\n')
+const mdPath = path.join(OUT, `${programLabel.replace(/\s/g, '')}_${statusLabel}_연락처_${today}.md`)
+fs.writeFileSync(mdPath, md)
+console.log('연락처 md 생성 →', mdPath)

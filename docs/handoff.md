@@ -11,7 +11,8 @@
 >
 > **[09-28 저녁] 신청자 PDF는 스킬 `applicant-pdf`로 만든다** (`.claude/skills/applicant-pdf/SKILL.md`).
 > 운영 DB 읽기 → 한 사람당 한 쪽 PDF(나이 구간 섹션) → 잘림 검사까지 스크립트 3개로 끝난다.
-> 첫 결과물: 열린 단막극 심사중 31명(50세 미만 18 / 50대 10 / 60세 이상 3), 35쪽,
+> 결과물: 열린 단막극 심사중 31명(50세 미만 12 / 50대 9 / 60세 이상 3 / 직연협 단원 7), 36쪽,
+> **PDF엔 연락처를 싣지 않고 개인용 연락처 md를 따로 만든다(사용자 요청).**
 > `db-backups/short_play-applicants/`(git 제외, 개인정보). **사용자가 PDF 변환을 자주 한다고 했다.**
 > 이를 위해 Python 3.12와 reportlab·pypdf·pdfplumber·pypdfium2를 설치했다.
 >

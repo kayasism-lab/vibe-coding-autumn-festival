@@ -18,7 +18,8 @@ print('총 쪽수', len(texts))
 bad, longest = [], (0, 0)
 for a in apps:
     # 전화번호는 칸이 좁으면 줄바꿈돼 못 찾을 수 있어 이름+나이로 쪽을 찾는다
-    pages = [i for i, t in enumerate(texts) if norm(a['name']) in t and f"{a['age']}세" in t and i > 0]
+    # 표지·섹션 명단 쪽은 빼고 신청자 쪽('신청일시' 칸이 있는 쪽)만 본다. 섹션 제목의 'NN세'와 겹치는 오탐 방지
+    pages = [i for i, t in enumerate(texts) if '신청일시' in t and norm(a['name']) in t and f"{a['age']}세" in t]
     pages = [i for i in pages if norm(a.get('email')) in texts[i]] or pages
     values = [v for v in (a.get('answers') or {}).values() if isinstance(v, str) and v.strip()]
     values += [m['message'] for m in a.get('qna') or []]
@@ -30,6 +31,14 @@ for a in apps:
         bad.append({'나이': a['age'], '찾은 쪽': [p + 1 for p in pages], '빠진 답변 수': len(missing)})
 
 print('잘림·중복 의심', bad if bad else '없음')
+
+# PDF에는 연락처를 싣지 않는다. 신청자 전화번호·이메일, 그리고 전화번호·이메일 모양의 글자가 남았는지 본다
+digits = lambda s: re.sub(r'\D', '', s or '')
+all_digits = [re.sub(r'\D', '', t) for t in texts]
+leaks = [i + 1 for a in apps for i, t in enumerate(texts)
+         if (len(digits(a['phone'])) >= 9 and digits(a['phone']) in all_digits[i]) or norm(a.get('email')) in t]
+patterns = [i + 1 for i, t in enumerate(texts) if re.search(r'01\d-?\d{3,4}-?\d{4}|[\w.+-]+@[\w-]+\.[\w.]+', t)]
+print('연락처 노출', sorted(set(leaks + patterns)) or '없음')
 doc = pdfium.PdfDocument(pdf_path)
 for i in sorted({0, 1, longest[1]}):
     doc[i].render(scale=1.3).to_pil().save(f'{img_dir}/page{i + 1}.png')

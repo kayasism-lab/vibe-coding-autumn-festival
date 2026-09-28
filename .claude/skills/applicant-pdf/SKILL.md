@@ -7,7 +7,8 @@ description: 시민참여 신청자(열린 단막극·열린 낭독극) 정보�
 
 2026-09-28에 처음 만든 방식이다. 결과물 예:
 `db-backups/short_play-applicants/열린단막극_심사중_신청자_<날짜>.pdf`
-(표지 → 섹션별 명단 → 신청자 한 명당 한 쪽)
+(표지 → 섹션별 명단 → 신청자 한 명당 한 쪽) + 개인용 연락처 md
+섹션: 나이 구간(기본 50세 미만 / 50~60세 미만 / 60세 이상) + 직연협 회원극단 단원
 
 ## 0. 먼저 사용자에게 확인할 것 (정해지지 않았을 때만)
 
@@ -35,6 +36,11 @@ node .claude/skills/applicant-pdf/scripts/read-applicants.cjs short_play pending
 node .claude/skills/applicant-pdf/scripts/make-report.cjs db-backups/short_play-applicants/pending-<날짜>.json 50,60
 ```
 - HTML을 만든 뒤 **Edge 헤드리스 인쇄**로 PDF를 만들고, 중간 HTML은 지운다
+- **PDF에는 연락처·이메일을 싣지 않는다**(09-28 사용자 요청). 답변·문의 글 속 전화번호·이메일도
+  `[연락처 가림]`으로 바꾼다. 연락처는 **같은 폴더의 `..._연락처_<날짜>.md`**(사용자 개인용)에만
+  섹션·PDF 쪽 번호와 함께 담긴다
+- **직연협 회원극단 단원**("직연협…회원극단" 예/아니오 질문에 `예`)은 나이와 상관없이 마지막
+  섹션에 모으고 소속 극단 칸을 보여준다. 질문은 id가 아니라 문구로 찾는다(작품마다 id가 다름)
 - 한 쪽을 넘는 신청자는 글자 크기를 0.25pt씩 줄여 한 쪽에 맞춘다(최소 6.5pt)
 - 질문은 신청서에 저장된 질문 스냅샷(`answeredQuestions`)을 그대로 따른다. 작품마다 질문이
   달라도 코드를 고칠 필요가 없다. 필수 일정 체크박스는 ☑/☐, 체크 안 한 일정은 빨간색
@@ -44,7 +50,7 @@ node .claude/skills/applicant-pdf/scripts/make-report.cjs db-backups/short_play-
 ```bash
 "$LOCALAPPDATA/Programs/Python/Python312/python.exe" .claude/skills/applicant-pdf/scripts/check.py <PDF> <JSON> <스크래치패드 폴더>
 ```
-- `잘림·중복 의심 없음`이 나와야 한다
+- `잘림·중복 의심 없음`과 `연락처 노출 없음`이 둘 다 나와야 한다
 - 저장된 이미지(1쪽, 2쪽, 가장 긴 신청자 쪽)를 **Read로 직접 열어 눈으로 확인**할 것.
   09-28에는 긴 주소 때문에 전화번호가 두 줄로 끊긴 것을 이 단계에서 잡았다(`.nw` 줄바꿈 금지로 해결)
 - 확인용 이미지는 스크래치패드에만 두고, 끝나면 지운다
