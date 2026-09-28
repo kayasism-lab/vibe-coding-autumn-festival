@@ -75,11 +75,8 @@ export default function AdminCitizenApplicationsPage() {
       .then((data) => {
         if (!data.success) return
         const role = data.data?.role
-        // 권한 배열은 백엔드가 기본 권한까지 합쳐 내려준 최종 값이라 그대로 믿고 쓴다
-        const permissions = (data.data?.permissions ?? []) as string[]
-        setCanDecide(
-          role === 'superadmin' || role === 'admin' || permissions.includes('citizen-applications')
-        )
+        // 승인·반려는 총괄 관리자 전용이다(09-28). 담당 계정은 권한이 있어도 열람·문의 답변까지만
+        setCanDecide(role === 'superadmin' || role === 'admin')
         const programType = data.data?.programType as string | undefined
         if (programType && pageHeadingByProgramType[programType]) {
           setHeading(pageHeadingByProgramType[programType])

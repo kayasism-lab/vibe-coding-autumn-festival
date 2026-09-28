@@ -399,11 +399,11 @@ citizenApplicationsRouter.post(
 )
 
 // 신청 승인/반려.
-// 총괄 관리자와, 그 공연 유형을 맡은 담당 계정(낭독극·단막극)이 할 수 있다.
-// 담당 계정이 자기 유형이 아닌 신청을 건드리는 것은 findManageableApplication이 막는다.
+// 총괄 관리자만 할 수 있다. 09-11(b7cf814)에 담당 계정에도 열었다가, 09-28 사용자 결정으로
+// 다시 총괄 관리자 전용으로 되돌렸다. 담당 계정은 열람과 문의 답변까지만 한다.
 citizenApplicationsRouter.put(
   '/:id/status',
-  requirePermission('citizen-applications'),
+  requireAdmin,
   asyncHandler(async (req, res) => {
     const { status, adminNote } = req.body
     if (!['pending', 'approved', 'rejected'].includes(status)) {
