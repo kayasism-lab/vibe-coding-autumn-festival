@@ -8,7 +8,8 @@ const JWT_SECRET = new TextEncoder().encode(env.jwtSecret)
 const JWT_REFRESH_SECRET = new TextEncoder().encode(env.jwtRefreshSecret)
 
 // group: 극단별 담당자 계정 - 본인 소속 극단 관련 리소스만 관리 가능
-export type UserRole = 'superadmin' | 'admin' | 'group' | 'normal'
+// rehearsal: 열린 단막극 연습일지 작성 계정 - 연습일지만 다룬다
+export type UserRole = 'superadmin' | 'admin' | 'group' | 'rehearsal' | 'normal'
 
 export interface AuthPayload extends JWTPayload {
   userId: string

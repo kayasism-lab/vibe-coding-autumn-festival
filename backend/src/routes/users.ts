@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
-import { TheaterGroup, User } from '../models/index.js'
+import mongoose from 'mongoose'
+import { RehearsalTeam, TheaterGroup, User } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireAdmin } from '../middleware/require-admin.js'
 import { normalizeGrantedPermissions } from '../lib/permissions.js'
@@ -9,7 +10,7 @@ import { canDeleteAccount, canEditAccount, isHigherRole } from '../lib/account-a
 import type { GroupAccountProgramType, UserRole } from '../types/index.js'
 
 export const usersRouter = Router()
-const roles = ['superadmin', 'admin', 'group', 'normal']
+const roles = ['superadmin', 'admin', 'group', 'rehearsal', 'normal']
 
 // 담당 극단 없이(협의회 직접 주관) 공연 유형만 담당하는 계정의 표시용 이름.
 // theaterGroupName 자리에 그대로 저장해, 화면에서 담당 극단과 같은 방식으로 보여준다.
@@ -31,12 +32,35 @@ function sanitize(user: Record<string, unknown>) {
 async function resolveGroupOwnerFields(
   role: string,
   theaterGroupId?: string,
-  programType?: string
+  programType?: string,
+  rehearsalTeamId?: string
 ) {
+  // 연습일지 작성 계정은 담당 팀 하나를 반드시 지정한다. 그 팀의 일지만 쓰고 고칠 수 있다
+  if (role === 'rehearsal') {
+    // 형식이 틀린 값으로 조회하면 DB 오류(500)가 나므로 먼저 거른다
+    const team = rehearsalTeamId && mongoose.isValidObjectId(rehearsalTeamId)
+      ? await RehearsalTeam.findById(rehearsalTeamId).select('name').lean<{ name: string } | null>()
+      : null
+    if (!team) {
+      return { ok: false as const, message: '연습일지 계정은 담당 팀을 선택해야 합니다.' }
+    }
+    return {
+      ok: true as const,
+      fields: {
+        theaterGroup: null,
+        programType: null,
+        permissions: [] as string[],
+        rehearsalTeam: rehearsalTeamId,
+        // 사용자 목록의 '소속' 칸에 어느 팀 계정인지 보이도록 채운다
+        theaterGroupName: `열린 단막극 · ${team.name}`,
+      },
+    }
+  }
+
   if (role !== 'group') {
     return {
       ok: true as const,
-      fields: { theaterGroup: null, programType: null, permissions: [] as string[] },
+      fields: { theaterGroup: null, programType: null, rehearsalTeam: null, permissions: [] as string[] },
     }
   }
 
@@ -48,7 +72,7 @@ async function resolveGroupOwnerFields(
 
     return {
       ok: true as const,
-      fields: { theaterGroup: theaterGroupId, theaterGroupName: group.name, programType: null },
+      fields: { theaterGroup: theaterGroupId, theaterGroupName: group.name, programType: null, rehearsalTeam: null },
     }
   }
 
@@ -58,6 +82,7 @@ async function resolveGroupOwnerFields(
       fields: {
         theaterGroup: null,
         programType,
+        rehearsalTeam: null,
         theaterGroupName: PROGRAM_TYPE_ACCOUNT_LABELS[programType],
       },
     }
@@ -80,8 +105,18 @@ usersRouter.get(
 usersRouter.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { name, email, phone, theaterGroupName, theaterGroup, programType, permissions, password, role } =
-      req.body
+    const {
+      name,
+      email,
+      phone,
+      theaterGroupName,
+      theaterGroup,
+      programType,
+      rehearsalTeam,
+      permissions,
+      password,
+      role,
+    } = req.body
     // email 필드는 실제로 로그인 아이디로만 쓰인다 (연락처는 선택 항목)
     if (!name || !email || !password) {
       fail(res, '이름, 아이디, 비밀번호를 입력해주세요.', 400)
@@ -111,7 +146,7 @@ usersRouter.post(
       return
     }
 
-    const resolved = await resolveGroupOwnerFields(role || 'normal', theaterGroup, programType)
+    const resolved = await resolveGroupOwnerFields(role || 'normal', theaterGroup, programType, rehearsalTeam)
     if (!resolved.ok) {
       fail(res, resolved.message, 400)
       return
@@ -208,7 +243,12 @@ usersRouter.put(
       }
     }
 
-    const resolved = await resolveGroupOwnerFields(req.body.role, req.body.theaterGroup, req.body.programType)
+    const resolved = await resolveGroupOwnerFields(
+      req.body.role,
+      req.body.theaterGroup,
+      req.body.programType,
+      req.body.rehearsalTeam
+    )
     if (!resolved.ok) {
       fail(res, resolved.message, 400)
       return

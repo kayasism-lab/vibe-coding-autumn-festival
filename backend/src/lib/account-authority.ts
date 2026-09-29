@@ -8,10 +8,12 @@
 import type { UserRole } from '../types/index.js'
 
 /** 숫자가 클수록 상위 권한 */
+// rehearsal(연습일지 작성 계정)은 연습일지만 다루므로 극단 담당자보다 아래에 둔다
 const ROLE_RANK: Record<UserRole, number> = {
-  superadmin: 3,
-  admin: 2,
-  group: 1,
+  superadmin: 4,
+  admin: 3,
+  group: 2,
+  rehearsal: 1,
   normal: 0,
 }
 

@@ -9,9 +9,11 @@ import type { UserRole } from '@/components/admin/user-form-dialog'
 
 /** 숫자가 클수록 상위 권한 */
 const ROLE_RANK: Record<UserRole, number> = {
-  superadmin: 3,
-  admin: 2,
-  group: 1,
+  superadmin: 4,
+  admin: 3,
+  group: 2,
+  // 연습일지 작성 계정은 연습일지만 다루므로 극단 담당자보다 아래에 둔다
+  rehearsal: 1,
   normal: 0,
 }
 

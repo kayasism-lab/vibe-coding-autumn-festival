@@ -24,7 +24,7 @@ import {
 } from '@/lib/admin-permissions'
 import { PROGRAM_TYPE_ACCOUNT_OPTIONS, type ProgramTypeAccount } from '@/lib/program-type-account'
 
-export type UserRole = 'superadmin' | 'admin' | 'group' | 'normal'
+export type UserRole = 'superadmin' | 'admin' | 'group' | 'rehearsal' | 'normal'
 
 export interface UserForm {
   name: string
@@ -34,6 +34,8 @@ export interface UserForm {
   // 담당 극단이 없는 계정(낭독극·단막극 담당자)만 값이 있다. theaterGroup과 동시에 값을 갖지 않는다
   programType: ProgramTypeAccount | ''
   permissions: GroupPermission[]
+  // 연습일지 작성 계정(role: 'rehearsal')만 값이 있다. 이 팀의 일지만 쓰고 고칠 수 있다
+  rehearsalTeam: string
   role: UserRole
   password: string
   /**
@@ -55,6 +57,8 @@ interface Props {
   form: UserForm
   setForm: (form: UserForm) => void
   theaterGroups: { _id: string; name: string }[]
+  // 연습일지 설정에서 만든 팀 목록 (연습일지 작성 계정의 담당 팀 선택용)
+  rehearsalTeams: { _id: string; name: string; title: string }[]
   errorMessage: string
   onSave: () => void
 }
@@ -66,6 +70,7 @@ export function UserFormDialog({
   form,
   setForm,
   theaterGroups,
+  rehearsalTeams,
   errorMessage,
   onSave,
 }: Props) {
@@ -130,10 +135,31 @@ export function UserFormDialog({
                 <SelectItem value="superadmin">슈퍼관리자</SelectItem>
                 <SelectItem value="admin">관리자</SelectItem>
                 <SelectItem value="group">극단 담당자</SelectItem>
+                <SelectItem value="rehearsal">연습일지 작성자 (열린 단막극 팀)</SelectItem>
                 <SelectItem value="normal">일반회원</SelectItem>
               </SelectContent>
             </Select>
           </Field>
+
+          {form.role === 'rehearsal' && (
+            <Field label="담당 팀" required>
+              <Select value={form.rehearsalTeam} onValueChange={(rehearsalTeam) => setForm({ ...form, rehearsalTeam })}>
+                <SelectTrigger><SelectValue placeholder="연습일지를 쓸 팀을 선택하세요" /></SelectTrigger>
+                <SelectContent>
+                  {rehearsalTeams.map((team) => (
+                    <SelectItem key={team._id} value={team._id}>
+                      {team.name} · {team.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {rehearsalTeams.length === 0
+                  ? '아직 만든 팀이 없습니다. 먼저 연습일지 설정에서 팀을 만들어주세요.'
+                  : '로그인하면 연습일지 메뉴만 보입니다. 모든 팀 일지를 볼 수 있고, 이 팀 일지만 쓰고 고칠 수 있습니다. (삭제 불가)'}
+              </p>
+            </Field>
+          )}
 
           {isGroupAccount && (
             <>

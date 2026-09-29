@@ -15,7 +15,7 @@ import {
   verifyRefreshToken,
 } from '../lib/auth.js'
 import { requireAuth } from '../middleware/require-admin.js'
-import { resolveGroupPermissions } from '../lib/permissions.js'
+import { REHEARSAL_ACCOUNT_PERMISSIONS, resolveGroupPermissions } from '../lib/permissions.js'
 import type { UserRole } from '../types/index.js'
 import { clearFailures, getBlockedMinutes, recordFailure } from '../lib/attempt-limiter.js'
 
@@ -30,6 +30,8 @@ function publicUser(user: {
   theaterGroup?: unknown
   programType?: string | null
   permissions?: string[]
+  rehearsalTeam?: unknown
+  mustChangePassword?: boolean
   role: string
 }) {
   return {
@@ -42,9 +44,27 @@ function publicUser(user: {
     // 담당 극단이 없는 계정(낭독극·단막극 담당자)만 값이 있다
     programType: user.theaterGroup ? null : user.programType ?? null,
     // 관리자 화면에서 메뉴를 그릴 때 쓰도록 최종 권한(기본+부여)을 계산해 내려준다
-    permissions: user.role === 'group' ? resolveGroupPermissions(user.permissions, !!user.theaterGroup) : [],
+    permissions: resolvePublicPermissions(user),
+    // 연습일지 작성 계정만 값이 있다. 일지 화면에서 이 팀을 미리 골라 둔다
+    rehearsalTeam: user.role === 'rehearsal' && user.rehearsalTeam ? String(user.rehearsalTeam) : null,
+    // true면 연습일지 화면이 이름·새 비밀번호 설정부터 띄운다
+    mustChangePassword: !!user.mustChangePassword,
     role: user.role,
   }
+}
+
+// 관리 화면 메뉴를 그릴 최종 권한. 관리자는 메뉴 전체를 보므로 빈 목록이다
+function resolvePublicPermissions(user: {
+  role: string
+  theaterGroup?: unknown
+  programType?: string | null
+  permissions?: string[]
+}) {
+  if (user.role === 'group') {
+    return resolveGroupPermissions(user.permissions, !!user.theaterGroup, user.programType)
+  }
+  if (user.role === 'rehearsal') return REHEARSAL_ACCOUNT_PERMISSIONS
+  return []
 }
 
 async function issueAuth(res: Parameters<typeof setAuthCookies>[0], user: {

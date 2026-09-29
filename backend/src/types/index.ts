@@ -174,7 +174,8 @@ export interface ISponsor extends Document {
 // group: 극단별 담당자 계정 - 본인 소속 극단(theaterGroupName과 일치하는 TheaterGroup/Program)만 관리 가능.
 // theaterGroup 대신 programType을 갖는 계정은 소유 극단이 없는(협의회 직접 주관) 열린 낭독극·
 // 열린 단막극처럼 특정 공연 유형의 작품만 관리한다 (theaterGroup·programType은 동시에 갖지 않음).
-export type UserRole = 'superadmin' | 'admin' | 'group' | 'normal'
+// rehearsal: 열린 단막극 연습일지 작성 계정 - 연습일지 메뉴만 보이고, 지정된 한 팀의 일지만 쓰고 고친다.
+export type UserRole = 'superadmin' | 'admin' | 'group' | 'rehearsal' | 'normal'
 export type GroupAccountProgramType = 'reading' | 'short_play'
 
 export interface IUser extends Document {
@@ -190,6 +191,10 @@ export interface IUser extends Document {
   programType?: GroupAccountProgramType
   // 관리자가 추가로 부여한 메뉴 권한 (기본 권한은 코드 상수로 관리하므로 저장하지 않음)
   permissions: string[]
+  // 연습일지 작성 계정(role: 'rehearsal')이 맡은 팀. 이 팀의 일지만 쓰고 고칠 수 있다
+  rehearsalTeam?: Types.ObjectId
+  // 처음 받은 비밀번호를 아직 안 바꿨는지 (연습일지 일괄 생성 계정)
+  mustChangePassword?: boolean
   password: string
   role: UserRole
   refreshToken?: string
@@ -425,4 +430,48 @@ export interface ScheduleDisplayData {
   venue: string
   seatStatus: SeatStatus
   ticketUrl?: string
+}
+
+// 열린 단막극 연습일지 - 팀 구성 (관리 화면 '연습일지 설정'에서 만든다)
+export interface IRehearsalTeam extends Document {
+  _id: Types.ObjectId
+  // 작품명
+  title: string
+  // 팀명 (일지 목록에서 팀을 고르는 기준)
+  name: string
+  director: string
+  // 조연출이 없는 팀도 있어 빈 문자열을 허용한다
+  assistantDirector: string
+  members: string[]
+  // 목록에서 보여줄 순서 (작을수록 위)
+  order: number
+  // 팀원 계정 번호 (1이면 jik_short_1001~). 계정을 일괄로 만들 때 정해진다
+  accountSeries?: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+// 열린 단막극 연습일지 한 건
+export interface IRehearsalLog extends Document {
+  _id: Types.ObjectId
+  team: Types.ObjectId
+  // 연습 날짜 'YYYY-MM-DD'. 시간대 때문에 날짜가 하루 밀리지 않도록 문자열로 둔다
+  date: string
+  // 'HH:mm'
+  startTime: string
+  endTime: string
+  // 작성 당시의 팀원 명단. 나중에 팀원이 바뀌어도 그날 출석부가 그대로 남는다
+  roster: string[]
+  // 출석한 사람 이름
+  attendees: string[]
+  topic: string
+  content: string
+  // 연출 코멘트. 단막극 관리자·총괄 관리자만 쓸 수 있다
+  directorComment: string
+  photos: string[]
+  // 표시용 작성자·마지막 수정자 이름
+  createdByName: string
+  updatedByName: string
+  createdAt: Date
+  updatedAt: Date
 }

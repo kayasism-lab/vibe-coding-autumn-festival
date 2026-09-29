@@ -31,7 +31,7 @@ export async function loadGroupContext(authUser: AuthPayload): Promise<GroupCont
     theaterGroupName: user.theaterGroupName ?? '',
     // theaterGroup이 있으면 그쪽이 우선이다 (둘 다 갖는 계정은 만들지 않지만, 방어적으로 처리)
     programType: user.theaterGroup ? null : user.programType ?? null,
-    permissions: resolveGroupPermissions(user.permissions, !!user.theaterGroup),
+    permissions: resolveGroupPermissions(user.permissions, !!user.theaterGroup, user.programType),
   }
 }
 

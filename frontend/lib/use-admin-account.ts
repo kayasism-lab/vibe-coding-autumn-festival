@@ -12,6 +12,8 @@ interface AdminAccount {
   // 담당 극단이 없는 계정(낭독극·단막극 담당자)만 값이 있다
   programType: ProgramTypeAccount | null
   permissions: GroupPermission[]
+  // 연습일지 작성 계정만 값이 있다 (이 팀의 일지만 쓰고 고칠 수 있다)
+  rehearsalTeam: string | null
 }
 
 /**
@@ -25,6 +27,7 @@ export function useAdminAccount() {
     theaterGroup: null,
     programType: null,
     permissions: [],
+    rehearsalTeam: null,
   })
 
   useEffect(() => {
@@ -40,6 +43,7 @@ export function useAdminAccount() {
           theaterGroup: data.data.theaterGroup ?? null,
           programType: data.data.programType ?? null,
           permissions: data.data.permissions ?? [],
+          rehearsalTeam: data.data.rehearsalTeam ?? null,
         })
       })
       .catch(() => {})

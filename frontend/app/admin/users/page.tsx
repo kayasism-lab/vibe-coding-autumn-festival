@@ -21,11 +21,13 @@ type User = {
   theaterGroup?: string | null
   programType?: 'reading' | 'short_play' | null
   permissions?: GroupPermission[]
+  rehearsalTeam?: string | null
   role: UserRole
   createdAt: string
 }
 
 type TheaterGroupOption = { _id: string; name: string }
+type RehearsalTeamOption = { _id: string; name: string; title: string }
 
 const emptyForm: UserForm = {
   name: '',
@@ -34,6 +36,7 @@ const emptyForm: UserForm = {
   theaterGroup: '',
   programType: '',
   permissions: [],
+  rehearsalTeam: '',
   role: 'normal',
   password: '',
   currentPassword: '',
@@ -43,6 +46,7 @@ const roleLabels: Record<UserRole, string> = {
   superadmin: '슈퍼관리자',
   admin: '관리자',
   group: '극단 담당자',
+  rehearsal: '연습일지 작성자',
   normal: '일반회원',
 }
 
@@ -60,6 +64,7 @@ export default function AdminUsersPage() {
   const actor = { id: me.id, role: me.role as UserRole }
   const [users, setUsers] = useState<User[]>([])
   const [theaterGroups, setTheaterGroups] = useState<TheaterGroupOption[]>([])
+  const [rehearsalTeams, setRehearsalTeams] = useState<RehearsalTeamOption[]>([])
   const [form, setForm] = useState<UserForm>(emptyForm)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -82,6 +87,16 @@ export default function AdminUsersPage() {
           setTheaterGroups(data.data.map((g: TheaterGroupOption) => ({ _id: g._id, name: g.name })))
         }
       })
+    fetch('/api/rehearsal-teams')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setRehearsalTeams(
+            data.data.map((t: RehearsalTeamOption) => ({ _id: t._id, name: t.name, title: t.title }))
+          )
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const openDialog = (user?: User) => {
@@ -98,6 +113,7 @@ export default function AdminUsersPage() {
             permissions: (user.permissions || []).filter((permission) =>
               GROUP_PERMISSION_META.some((meta) => meta.key === permission && meta.grantable)
             ),
+            rehearsalTeam: user.rehearsalTeam || '',
             role: user.role,
             password: '',
             currentPassword: '',
@@ -123,6 +139,11 @@ export default function AdminUsersPage() {
 
     if (form.role === 'group' && !form.theaterGroup && !form.programType) {
       setErrorMessage('극단 담당자 계정은 담당 극단이나 담당 공연 유형을 선택해야 합니다.')
+      return
+    }
+
+    if (form.role === 'rehearsal' && !form.rehearsalTeam) {
+      setErrorMessage('연습일지 작성자 계정은 담당 팀을 선택해야 합니다.')
       return
     }
 
@@ -199,7 +220,7 @@ export default function AdminUsersPage() {
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
-                        {user.role === 'group' ? (
+                        {user.role === 'group' || user.role === 'rehearsal' ? (
                           user.theaterGroupName
                         ) : (
                           <span className="text-muted-foreground">-</span>
@@ -207,7 +228,9 @@ export default function AdminUsersPage() {
                       </TableCell>
                       <TableCell><Badge>{roleLabels[user.role]}</Badge></TableCell>
                       <TableCell>
-                        {user.role !== 'group' ? (
+                        {user.role === 'rehearsal' ? (
+                          <span className="text-muted-foreground">연습일지만</span>
+                        ) : user.role !== 'group' ? (
                           <span className="text-muted-foreground">전체 권한</span>
                         ) : granted.length === 0 ? (
                           <span className="text-muted-foreground">기본 권한만</span>
@@ -256,6 +279,7 @@ export default function AdminUsersPage() {
         form={form}
         setForm={setForm}
         theaterGroups={theaterGroups}
+        rehearsalTeams={rehearsalTeams}
         errorMessage={errorMessage}
         onSave={handleSave}
       />

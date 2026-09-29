@@ -20,8 +20,11 @@ import {
   MapPin,
   ClipboardList,
   UserCog,
+  NotebookPen,
+  UsersRound,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { MyAccountButton } from '@/components/admin/rehearsal/my-account-dialog'
 import { GROUP_PERMISSION_META, resolveGroupHomeHref, type GroupPermission } from '@/lib/admin-permissions'
 
 const fullSidebarItems = [
@@ -32,6 +35,8 @@ const fullSidebarItems = [
   { href: '/admin/venues', icon: MapPin, label: '공연장 관리' },
   { href: '/admin/applications', icon: ClipboardList, label: '참가 신청 관리' },
   { href: '/admin/citizen-applications', icon: ClipboardList, label: '시민 참여 신청 관리' },
+  { href: '/admin/rehearsal-logs', icon: NotebookPen, label: '연습일지' },
+  { href: '/admin/rehearsal-teams', icon: UsersRound, label: '연습일지 설정' },
   { href: '/admin/notices', icon: FileText, label: '게시판 관리' },
   { href: '/admin/inquiries', icon: MessageSquare, label: '문의 관리' },
   { href: '/admin/gallery', icon: Images, label: '갤러리 관리' },
@@ -50,6 +55,8 @@ const groupMenuByPermission: Record<GroupPermission, { href: string; icon: typeo
   notices: { href: '/admin/notices', icon: FileText, label: '게시판 관리' },
   inquiries: { href: '/admin/inquiries', icon: MessageSquare, label: '문의 답변' },
   'citizen-applications': { href: '/admin/citizen-applications', icon: ClipboardList, label: '참여 신청자 관리' },
+  'rehearsal-logs': { href: '/admin/rehearsal-logs', icon: NotebookPen, label: '연습일지' },
+  'rehearsal-teams': { href: '/admin/rehearsal-teams', icon: UsersRound, label: '연습일지 설정' },
 }
 
 // 낭독극·단막극 담당 계정은 담당 유형에 맞는 메뉴 이름으로 보여준다
@@ -65,15 +72,21 @@ export function AdminSidebar() {
   const [isGroupRole, setIsGroupRole] = useState(false)
   const [permissions, setPermissions] = useState<GroupPermission[]>([])
   const [programType, setProgramType] = useState<string | null>(null)
+  // 연습일지 팀원 계정이면 '내 정보'(이름·비밀번호 고치기)를 보여준다
+  const [rehearsalAccount, setRehearsalAccount] = useState<{ loginId: string; name: string } | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.data?.role === 'group') {
+        // 연습일지 계정도 극단 계정처럼 권한 키로 메뉴를 그린다 (연습일지 하나만 보인다)
+        if (data.success && (data.data?.role === 'group' || data.data?.role === 'rehearsal')) {
           setIsGroupRole(true)
           setPermissions(data.data.permissions ?? [])
           setProgramType(data.data.programType ?? null)
+          if (data.data.role === 'rehearsal') {
+            setRehearsalAccount({ loginId: data.data.email ?? '', name: data.data.name ?? '' })
+          }
         }
       })
       .catch(() => {})
@@ -176,6 +189,7 @@ export function AdminSidebar() {
 
           {/* Footer */}
           <div className="p-4 border-t border-border space-y-2">
+            {rehearsalAccount && <MyAccountButton loginId={rehearsalAccount.loginId} name={rehearsalAccount.name} />}
             <Button
               asChild
               variant="ghost"

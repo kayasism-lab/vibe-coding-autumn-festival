@@ -188,6 +188,10 @@ export function Footer() {
               <Link href="/admin/login" className="hover:text-white/70">
                 관리자
               </Link>
+              {/* 열린 단막극 팀이 연습일지를 쓰러 들어오는 입구. 방문객 눈에 띄지 않게 관리자 링크와 같은 모양으로 둔다 */}
+              <Link href="/admin/login?for=rehearsal" className="hover:text-white/70">
+                연습일지
+              </Link>
             </div>
           </div>
         </div>

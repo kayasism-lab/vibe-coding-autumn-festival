@@ -14,17 +14,24 @@ import { resolveGroupHomeHref } from '@/lib/admin-permissions'
 // 아이디만 저장(비밀번호는 브라우저 자체 비밀번호 관리자에 위임)
 const SAVED_ID_KEY = 'admin_saved_id'
 
+// 푸터의 '연습일지' 링크(/admin/login?for=rehearsal)로 들어온 경우 로그인 뒤 곧장 보낼 곳
+const REHEARSAL_HOME = '/admin/rehearsal-logs'
+
 export default function AdminLoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [rememberId, setRememberId] = useState(false)
+  // 연습일지 입구로 들어왔는지. useSearchParams는 Suspense 경계가 필요해 주소를 직접 읽는다
+  const [isRehearsalEntry, setIsRehearsalEntry] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
 
   useEffect(() => {
+    setIsRehearsalEntry(new URLSearchParams(window.location.search).get('for') === 'rehearsal')
+
     const savedId = localStorage.getItem(SAVED_ID_KEY)
     if (savedId) {
       setFormData((prev) => ({ ...prev, email: savedId }))
@@ -48,7 +55,7 @@ export default function AdminLoginPage() {
 
       if (result.success) {
         const role = result.data.user.role
-        if (role !== 'superadmin' && role !== 'admin' && role !== 'group') {
+        if (role !== 'superadmin' && role !== 'admin' && role !== 'group' && role !== 'rehearsal') {
           await fetch('/api/auth/logout', { method: 'POST' })
           setError('관리자 권한이 있는 계정만 접근할 수 있습니다.')
           return
@@ -60,8 +67,20 @@ export default function AdminLoginPage() {
           localStorage.removeItem(SAVED_ID_KEY)
         }
 
-        // 극단 계정은 실제로 가진 권한 중 첫 메뉴로 보낸다 (my-group이 없는 계정도 있음)
-        router.push(role === 'group' ? resolveGroupHomeHref(result.data.user.permissions ?? []) : '/admin')
+        // 극단·연습일지 계정은 실제로 가진 권한 중 첫 메뉴로 보낸다 (my-group이 없는 계정도 있음).
+        // 연습일지 입구로 들어왔고 연습일지를 볼 수 있는 계정이면 연습일지로 바로 보낸다
+        const permissions: string[] = result.data.user.permissions ?? []
+        const canOpenRehearsal =
+          role === 'superadmin' || role === 'admin' || permissions.includes('rehearsal-logs')
+        if (isRehearsalEntry && canOpenRehearsal) {
+          router.push(REHEARSAL_HOME)
+        } else {
+          router.push(
+            role === 'group' || role === 'rehearsal'
+              ? resolveGroupHomeHref(result.data.user.permissions ?? [])
+              : '/admin'
+          )
+        }
         router.refresh()
       } else {
         setError(result.error || '로그인에 실패했습니다.')
@@ -86,12 +105,17 @@ export default function AdminLoginPage() {
 
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">관리자 로그인</CardTitle>
+            <CardTitle className="text-2xl">{isRehearsalEntry ? '연습일지 로그인' : '관리자 로그인'}</CardTitle>
             <CardDescription>
-              2026 가을연극축제 관리자 페이지입니다.
-              {/* 갑자기 로그아웃된 것으로 오해하지 않도록 미리 알려준다 */}
+              {isRehearsalEntry
+                ? '열린 단막극 팀 연습일지입니다. 팀 계정으로 로그인해주세요.'
+                : '2026 가을연극축제 관리자 페이지입니다.'}
+              {/* 갑자기 로그아웃된 것으로 오해하지 않도록 미리 알려준다.
+                  연습일지 팀 계정은 이 제한이 없어 연습일지 입구에서는 다른 안내를 보여준다 */}
               <span className="mt-1 block text-xs">
-                10분 이상 아무 작업이 없으면 자동으로 로그아웃됩니다.
+                {isRehearsalEntry
+                  ? '아래 "로그인 정보 저장"을 켜고 브라우저가 비밀번호 저장을 물으면 저장해두세요.'
+                  : '10분 이상 아무 작업이 없으면 자동으로 로그아웃됩니다.'}
               </span>
             </CardDescription>
           </CardHeader>

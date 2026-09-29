@@ -15,6 +15,9 @@ export type GroupPermission =
   | 'notices'
   | 'inquiries'
   | 'citizen-applications'
+  // 열린 단막극 연습일지. 단막극 담당 계정은 둘 다, 연습일지 작성 계정은 rehearsal-logs만 자동으로 갖는다
+  | 'rehearsal-logs'
+  | 'rehearsal-teams'
 
 interface PermissionMeta {
   key: GroupPermission
@@ -68,6 +71,18 @@ export const GROUP_PERMISSION_META: PermissionMeta[] = [
     description: '담당 공연 유형(낭독극·단막극)에 들어온 시민 참여 신청자를 확인하고 문의에 답변합니다. 승인·반려와 신청 내역 삭제는 총괄 관리자만 할 수 있습니다.',
     grantable: false,
   },
+  {
+    key: 'rehearsal-logs',
+    label: '연습일지',
+    description: '열린 단막극 팀의 연습일지를 쓰고 고칩니다. (삭제는 관리자만)',
+    grantable: false,
+  },
+  {
+    key: 'rehearsal-teams',
+    label: '연습일지 설정',
+    description: '연습일지에 쓸 팀(작품명·연출·팀원)을 만들고 고칩니다.',
+    grantable: false,
+  },
 ]
 
 export const GRANTABLE_PERMISSION_META = GROUP_PERMISSION_META.filter((meta) => meta.grantable)
@@ -86,9 +101,11 @@ const PATH_PERMISSIONS: { prefix: string; permission: GroupPermission }[] = [
   { prefix: '/admin/notices', permission: 'notices' },
   { prefix: '/admin/inquiries', permission: 'inquiries' },
   { prefix: '/admin/citizen-applications', permission: 'citizen-applications' },
+  { prefix: '/admin/rehearsal-logs', permission: 'rehearsal-logs' },
+  { prefix: '/admin/rehearsal-teams', permission: 'rehearsal-teams' },
 ]
 
-/** 극단 계정이 해당 경로에 들어갈 수 있는지 판단한다 (관리자는 항상 허용) */
+/** 극단 계정·연습일지 계정이 해당 경로에 들어갈 수 있는지 판단한다 (관리자는 항상 허용) */
 export function canGroupAccessPath(pathname: string, permissions: GroupPermission[]) {
   const matched = PATH_PERMISSIONS.find((entry) => pathname.startsWith(entry.prefix))
   if (!matched) return false
