@@ -36,9 +36,10 @@ export function AttendanceCheck({ roster, attendees, onChange }: Props) {
         <span className="text-muted-foreground">
           출석 <b className="text-foreground">{attendees.length}</b> / {roster.length}명
         </span>
+        {/* 글자는 작아도 누르는 칸은 넉넉하게 잡는다 */}
         <button
           type="button"
-          className="text-primary underline-offset-2 hover:underline"
+          className="-my-2 -mr-2 px-2 py-2 font-medium text-primary underline-offset-2 hover:underline"
           onClick={() => onChange(allChecked ? [] : [...roster])}
         >
           {allChecked ? '모두 해제' : '모두 출석'}
@@ -55,7 +56,8 @@ export function AttendanceCheck({ roster, attendees, onChange }: Props) {
               aria-checked={checked}
               onClick={() => toggle(name)}
               className={cn(
-                'flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors',
+                // 휴대폰에서는 칸을 48px로 키우고 글자도 한 단계 크게 한다
+                'flex min-h-12 items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-base transition-colors sm:min-h-0 sm:text-sm',
                 checked ? 'border-primary bg-primary/10 font-medium text-foreground' : 'bg-background text-muted-foreground'
               )}
             >

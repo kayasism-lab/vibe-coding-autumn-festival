@@ -13,7 +13,7 @@ export function RehearsalLogDocument({ log, team }: { log: RehearsalLog; team: R
   const labels = rehearsalLabels(team)
 
   return (
-    <article className="rehearsal-document rounded-xl border bg-card p-5 sm:p-8 print:rounded-none print:border-0 print:p-0">
+    <article className="rehearsal-document rounded-xl border bg-card p-4 sm:p-8 print:rounded-none print:border-0 print:p-0">
       {/* A4 한 장 기준 여백. 브라우저 인쇄 창에서 'PDF로 저장'을 고르면 이 크기로 나온다 */}
       <style>{`@media print { @page { size: A4; margin: 14mm 14mm 16mm; } }`}</style>
 
@@ -60,7 +60,8 @@ export function RehearsalLogDocument({ log, team }: { log: RehearsalLog; team: R
 
       <section className="mb-5">
         <h2 className="mb-1 text-sm font-bold text-muted-foreground">연습 내용</h2>
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">{log.content || '-'}</p>
+        {/* 휴대폰에서는 본문 글자를 한 단계 키워 읽기 편하게 한다 (인쇄는 원래 크기) */}
+        <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed sm:text-sm print:text-sm">{log.content || '-'}</p>
       </section>
 
       {log.photos.length > 0 && (
@@ -88,10 +89,11 @@ export function RehearsalLogDocument({ log, team }: { log: RehearsalLog; team: R
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <tr className="border-b">
-      <th className="w-28 whitespace-nowrap bg-muted/60 px-3 py-2 text-left align-top font-medium print:bg-transparent">
+      {/* 휴대폰에서는 머리칸을 좁혀 값 칸을 넓힌다. 인쇄(A4)에서는 원래 폭 그대로 */}
+      <th className="w-[4.75rem] whitespace-nowrap bg-muted/60 px-2 py-2 text-left align-top font-medium sm:w-28 sm:px-3 print:w-28 print:bg-transparent print:px-3">
         {label}
       </th>
-      <td className="px-3 py-2">{children}</td>
+      <td className="break-words px-2 py-2 sm:px-3 print:px-3">{children}</td>
     </tr>
   )
 }

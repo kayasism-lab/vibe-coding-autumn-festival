@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, MessageSquareQuote } from 'lucide-react'
+import { Check, Loader2, MessageSquareQuote } from 'lucide-react'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import {
   canWriteTeam,
@@ -44,6 +44,8 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
   const [restoredDraft, setRestoredDraft] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
+  // 작성 내용이 이 기기에 임시 저장됐는지. 휴대폰에서 전화가 오거나 화면이 꺼져도 안심하도록 알려준다
+  const [draftSaved, setDraftSaved] = useState(false)
   // 사용자가 무언가 바꾼 뒤에만 임시 저장한다 (열어보기만 해도 저장되면 불러오기 안내가 괜히 뜬다)
   const isDirty = useRef(false)
 
@@ -60,7 +62,10 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
 
   useEffect(() => {
     if (!isDirty.current) return
-    const timer = setTimeout(() => saveDraft(draftKey, form), 500)
+    const timer = setTimeout(() => {
+      saveDraft(draftKey, form)
+      setDraftSaved(true)
+    }, 500)
     return () => clearTimeout(timer)
   }, [form, draftKey])
 
@@ -92,6 +97,7 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
     isDirty.current = false
     setForm(initial)
     setRestoredDraft(false)
+    setDraftSaved(false)
   }
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -126,11 +132,12 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 pb-24">
+    // 아래 여백은 고정된 저장 띠(휴대폰에서는 두 줄까지 늘어난다)에 마지막 칸이 가리지 않게 넉넉히 둔다
+    <form onSubmit={handleSubmit} className="space-y-4 pb-36 sm:space-y-5 sm:pb-24">
       {restoredDraft && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <span>저장하지 않고 닫았던 작성 내용을 불러왔습니다.</span>
-          <button type="button" className="font-medium underline" onClick={discardDraft}>
+          <button type="button" className="-my-2 py-2 font-medium underline" onClick={discardDraft}>
             버리고 처음부터 쓰기
           </button>
         </div>
@@ -144,7 +151,7 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
             <Label htmlFor="team">팀</Label>
             <select
               id="team"
-              className="h-11 w-full rounded-md border bg-background px-3 text-base"
+              className="h-12 w-full rounded-md border bg-background px-3 text-base sm:h-11"
               value={form.team}
               // 팀을 바꾸면 출석 명단이 달라지므로 출석 체크를 비운다
               onChange={(e) => {
@@ -185,6 +192,7 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
           {ability.canComment ? (
             <Textarea
               rows={4}
+              className="text-base"
               placeholder={labels.commentHint}
               value={form.directorComment}
               onChange={(e) => update({ directorComment: e.target.value })}
@@ -196,12 +204,20 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
       )}
 
       <Section title="날짜 · 시간">
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-          <Input type="date" className="h-11 text-base" value={form.date} onChange={(e) => update({ date: e.target.value })} required />
-          <div className="flex items-center gap-2">
-            <Input type="time" className="h-11 text-base" aria-label="시작 시간" value={form.startTime} onChange={(e) => update({ startTime: e.target.value })} />
-            <span className="text-muted-foreground">~</span>
-            <Input type="time" className="h-11 text-base" aria-label="끝나는 시간" value={form.endTime} onChange={(e) => update({ endTime: e.target.value })} />
+        {/* 휴대폰: 날짜 한 줄, 그 아래 시작·끝 시간을 같은 폭으로 나란히.
+            칸마다 이름을 붙여 어느 쪽이 시작이고 끝인지 헷갈리지 않게 한다 */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_9rem_9rem]">
+          <div className="col-span-2 space-y-1.5 sm:col-span-1">
+            <Label htmlFor="log-date" className="text-xs font-normal text-muted-foreground">날짜</Label>
+            <Input id="log-date" type="date" className="h-12 text-base sm:h-11" value={form.date} onChange={(e) => update({ date: e.target.value })} required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="log-start" className="text-xs font-normal text-muted-foreground">시작</Label>
+            <Input id="log-start" type="time" className="h-12 text-base sm:h-11" value={form.startTime} onChange={(e) => update({ startTime: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="log-end" className="text-xs font-normal text-muted-foreground">끝</Label>
+            <Input id="log-end" type="time" className="h-12 text-base sm:h-11" value={form.endTime} onChange={(e) => update({ endTime: e.target.value })} />
           </div>
         </div>
       </Section>
@@ -218,7 +234,7 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="content">연습 내용</Label>
-            <Textarea id="content" rows={10} className="text-base" placeholder={team?.kind === 'reading' ? '오늘 연습 내용, 느낀 점, 기타 연습 관련 내용' : '오늘 연습 내용, 연출님의 지적사항, 느낀 점, 기타 연습 관련 내용'} value={form.content} onChange={(e) => update({ content: e.target.value })} />
+            <Textarea id="content" rows={10} className="min-h-40 text-base" placeholder={team?.kind === 'reading' ? '오늘 연습 내용, 느낀 점, 기타 연습 관련 내용' : '오늘 연습 내용, 연출님의 지적사항, 느낀 점, 기타 연습 관련 내용'} value={form.content} onChange={(e) => update({ content: e.target.value })} />
           </div>
         </div>
       </Section>
@@ -237,14 +253,27 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
       </Section>
 
       {/* 휴대폰에서 긴 글을 쓴 뒤 맨 위로 올라가지 않고 저장할 수 있게 아래에 붙여 둔다 */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 px-4 py-3 backdrop-blur lg:left-64">
-        <div className="mx-auto flex max-w-3xl items-center justify-end gap-2">
-          {error && <p className="mr-auto text-sm text-destructive">{error}</p>}
-          <Button type="button" variant="outline" onClick={() => router.back()}>취소</Button>
-          <Button type="submit" disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {editingLog ? '고친 내용 저장' : '연습일지 저장'}
-          </Button>
+      {/* 아이폰 홈 막대에 버튼이 가리지 않게 아래 여백을 더한다 */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 px-4 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:pt-3 lg:left-64">
+        {/* 휴대폰: 안내 문구를 윗줄로 올리고 버튼은 아랫줄에 크게 둔다(문구가 길어도 버튼이 찌그러지지 않게).
+            넓은 화면: 예전처럼 한 줄 */}
+        <div className="mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          {error ? (
+            <p role="alert" className="text-sm text-destructive sm:mr-auto">{error}</p>
+          ) : (
+            draftSaved && (
+              <p className="flex items-center gap-1 text-xs text-muted-foreground sm:mr-auto">
+                <Check className="h-3.5 w-3.5" />쓰던 내용은 이 기기에 임시 저장돼 있습니다
+              </p>
+            )
+          )}
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" className="h-12 flex-1 text-base sm:h-9 sm:flex-none sm:text-sm" onClick={() => router.back()}>취소</Button>
+            <Button type="submit" disabled={isSaving} className="h-12 flex-[2] text-base sm:h-9 sm:flex-none sm:text-sm">
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingLog ? '고친 내용 저장' : '연습일지 저장'}
+            </Button>
+          </div>
         </div>
       </div>
     </form>

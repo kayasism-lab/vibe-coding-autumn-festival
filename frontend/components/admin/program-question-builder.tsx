@@ -56,7 +56,7 @@ export function ProgramQuestionBuilder({
           type="button"
           variant="outline"
           size="sm"
-          className="shrink-0"
+          className="shrink-0 max-sm:h-10"
           onClick={() => onChange([...drafts, createQuestionDraft()])}
         >
           <Plus className="mr-1 h-4 w-4" />

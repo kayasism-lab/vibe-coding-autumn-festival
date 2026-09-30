@@ -47,17 +47,25 @@ const fullSidebarItems = [
 
 // 극단 담당자(group) 계정의 메뉴는 권한 키에 따라 결정된다.
 // 기본 권한(내 극단·작품)은 항상 표시되고, 나머지는 관리자가 부여한 경우에만 나타난다.
-const groupMenuByPermission: Record<GroupPermission, { href: string; icon: typeof Users; label: string }> = {
-  'my-group': { href: '/admin/my-group', icon: Users, label: '내 극단 관리' },
-  programs: { href: '/admin/programs', icon: Film, label: '작품 관리' },
-  schedules: { href: '/admin/schedules', icon: Calendar, label: '공연 일정 관리' },
-  gallery: { href: '/admin/gallery', icon: Images, label: '갤러리 관리' },
-  notices: { href: '/admin/notices', icon: FileText, label: '게시판 관리' },
-  inquiries: { href: '/admin/inquiries', icon: MessageSquare, label: '문의 답변' },
-  'citizen-applications': { href: '/admin/citizen-applications', icon: ClipboardList, label: '참여 신청자 관리' },
-  'rehearsal-logs': { href: '/admin/rehearsal-logs', icon: NotebookPen, label: '연습일지' },
-  'rehearsal-teams': { href: '/admin/rehearsal-teams', icon: UsersRound, label: '연습일지 설정' },
+// short는 휴대폰 아래 탭 막대에 쓰는 짧은 이름이다 (칸이 좁아 긴 이름은 두 줄로 접힌다)
+const groupMenuByPermission: Record<GroupPermission, { href: string; icon: typeof Users; label: string; short: string }> = {
+  'my-group': { href: '/admin/my-group', icon: Users, label: '내 극단 관리', short: '내 극단' },
+  programs: { href: '/admin/programs', icon: Film, label: '작품 관리', short: '작품' },
+  schedules: { href: '/admin/schedules', icon: Calendar, label: '공연 일정 관리', short: '일정' },
+  gallery: { href: '/admin/gallery', icon: Images, label: '갤러리 관리', short: '갤러리' },
+  notices: { href: '/admin/notices', icon: FileText, label: '게시판 관리', short: '게시판' },
+  inquiries: { href: '/admin/inquiries', icon: MessageSquare, label: '문의 답변', short: '문의' },
+  'citizen-applications': { href: '/admin/citizen-applications', icon: ClipboardList, label: '참여 신청자 관리', short: '신청자' },
+  'rehearsal-logs': { href: '/admin/rehearsal-logs', icon: NotebookPen, label: '연습일지', short: '연습일지' },
+  'rehearsal-teams': { href: '/admin/rehearsal-teams', icon: UsersRound, label: '연습일지 설정', short: '일지 설정' },
 }
+
+// 아래 탭 막대를 그리지 않는 화면: 쓰기·고치기(아래에 저장 띠가 붙는다)와 묶음 인쇄
+const TAB_BAR_HIDDEN_PATH = /^\/admin\/rehearsal-logs\/(new|print|[^/]+\/edit)\/?$/
+// 탭 칸이 너무 좁아지지 않는 최대 개수. 이보다 메뉴가 많은 계정은 ☰ 메뉴만 쓴다
+const TAB_BAR_MAX_ITEMS = 5
+// 탭 막대가 떠 있는 동안 body에 다는 표시 (본문 아래 여백은 globals.css가 준다)
+const TAB_BAR_BODY_CLASS = 'has-admin-tabbar'
 
 // 낭독극·단막극 담당 계정은 담당 유형에 맞는 메뉴 이름으로 보여준다
 const citizenApplicationsLabelByProgramType: Record<string, string> = {
@@ -106,6 +114,37 @@ export function AdminSidebar() {
   // 첫 메뉴로 보낸다
   const homeHref = isGroupRole ? resolveGroupHomeHref(permissions) : '/admin'
 
+  const isActiveItem = (href: string) =>
+    pathname === href || (href !== '/admin' && pathname.startsWith(href))
+  // 휴대폰 상단 띠에 지금 화면 이름을 보여준다 (메뉴를 열지 않아도 어디인지 알 수 있게)
+  const currentLabel = sidebarItems.find((item) => isActiveItem(item.href))?.label ?? '관리자'
+
+  // 담당·연습일지 계정은 메뉴가 몇 개뿐이라, 휴대폰에서는 아래 탭으로 바로 오가게 한다.
+  // 메뉴가 하나뿐인 계정(팀원·수강생)은 오갈 곳이 없어 그리지 않는다
+  const showTabBar =
+    isGroupRole &&
+    groupSidebarItems.length >= 2 &&
+    groupSidebarItems.length <= TAB_BAR_MAX_ITEMS &&
+    !TAB_BAR_HIDDEN_PATH.test(pathname)
+
+  // 탭 막대에 본문 끝이 가리지 않도록 body에 표시를 달아 아래 여백을 확보한다.
+  // 사이드바가 화면마다 따로 그려지는 구조라, 화면별로 여백을 넣지 않고 여기서 한 번에 처리한다
+  useEffect(() => {
+    if (!showTabBar) return
+    document.body.classList.add(TAB_BAR_BODY_CLASS)
+    return () => document.body.classList.remove(TAB_BAR_BODY_CLASS)
+  }, [showTabBar])
+
+  // 휴대폰에서 메뉴가 열려 있는 동안 뒤 화면이 같이 스크롤되지 않게 잠근다
+  useEffect(() => {
+    if (!isOpen) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [isOpen])
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
@@ -119,18 +158,47 @@ export function AdminSidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
-        <Link href={homeHref} className="font-bold text-foreground">
-          관리자
+      {/* 높이 h-14는 각 화면 본문의 pt-14와 맞물려 있다 */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border bg-card pl-4 pr-1.5 print:hidden">
+        <Link href={homeHref} className="min-w-0 truncate font-bold text-foreground">
+          {currentLabel}
         </Link>
+        {/* 손가락으로 누르기 쉽게 44px 칸을 준다 */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 text-foreground"
-          aria-label="메뉴"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-foreground"
+          aria-label={isOpen ? '메뉴 닫기' : '메뉴 열기'}
         >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
+
+      {/* 휴대폰 아래 탭 막대 (담당·연습일지 계정) */}
+      {showTabBar && (
+        <nav
+          aria-label="빠른 메뉴"
+          className="lg:hidden fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur print:hidden"
+        >
+          {groupSidebarItems.map((item) => {
+            const Icon = item.icon
+            const isActive = isActiveItem(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={cn(
+                  'flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="max-w-full truncate px-1">{item.short}</span>
+              </Link>
+            )
+          })}
+        </nav>
+      )}
 
       {/* Mobile Overlay */}
       {isOpen && (
@@ -165,8 +233,7 @@ export function AdminSidebar() {
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {sidebarItems.map((item) => {
               const Icon = item.icon
-              const isActive = pathname === item.href || 
-                (item.href !== '/admin' && pathname.startsWith(item.href))
+              const isActive = isActiveItem(item.href)
 
               return (
                 <Link
@@ -174,7 +241,8 @@ export function AdminSidebar() {
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    // 휴대폰에서는 줄 간격을 넓혀 옆 메뉴를 잘못 누르지 않게 한다
+                    'flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium transition-colors',
                     isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'

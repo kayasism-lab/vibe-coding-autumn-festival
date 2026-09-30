@@ -1,6 +1,7 @@
 'use client'
 
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -66,8 +67,46 @@ export function ProgramQuestionCard({
     ? drafts.find((item) => item.id === draft.showWhen?.questionId)
     : undefined
 
+  // 질문이 여럿이면 카드가 전부 펼쳐져 있을 때 스크롤이 너무 길다(특히 휴대폰).
+  // 그래서 요약 한 줄로 접어 두고 누르면 펼친다. 방금 추가해 문구가 빈 질문과
+  // 조건이 깨진 질문은 바로 손봐야 하므로 처음부터 펼쳐 둔다.
+  // 카드는 질문 id를 key로 쓰므로 순서를 바꿔도 펼침 상태가 따라간다
+  const [isOpen, setIsOpen] = useState(() => !draft.label.trim() || isBrokenCondition)
+  const typeLabel = citizenQuestionTypeOptions.find((option) => option.value === draft.type)?.label
+
+  const handleRemove = () => {
+    // 휴대폰에서 잘못 눌러 지우는 일을 막는다. 아직 아무것도 안 쓴 질문은 묻지 않고 지운다
+    if (draft.label.trim() && !confirm(`'${draft.label.trim()}' 질문을 지울까요?`)) return
+    onRemove()
+  }
+
   return (
-    <div className="space-y-3 rounded-md border bg-background p-3">
+    <div className="rounded-md border bg-background">
+      {/* 요약 줄: 번호 · 질문 문구 · 입력 방식. 누르면 아래 편집 칸이 열리고 닫힌다 */}
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex min-h-12 w-full items-center gap-2.5 px-3 py-2 text-left"
+      >
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+          {index + 1}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium">{draft.label.trim() || '새 질문'}</span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {[typeLabel, draft.required ? '필수' : '', draft.showWhen ? '조건부' : ''].filter(Boolean).join(' · ')}
+          </span>
+        </span>
+        {/* 접혀 있어도 조건이 깨진 질문은 눈에 띄어야 한다 (이대로 저장하면 신청서에 안 나온다) */}
+        {isBrokenCondition && (
+          <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">조건 확인</span>
+        )}
+        <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-180')} />
+      </button>
+
+      {isOpen && (
+      <div className="space-y-3 border-t p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           {/* 번호를 직접 골라 그 자리로 보낸다. 질문이 많을 때 화살표만으로는 여러 번 눌러야 한다 */}
@@ -76,7 +115,7 @@ export function ProgramQuestionCard({
             disabled={total < 2}
             onValueChange={(value) => onMoveTo(Number(value) - 1)}
           >
-            <SelectTrigger className="h-7 w-[5.25rem] text-xs" aria-label="질문 순서">
+            <SelectTrigger className="h-7 w-[5.25rem] text-xs max-sm:h-10!" aria-label="질문 순서">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -91,14 +130,15 @@ export function ProgramQuestionCard({
             <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">기본 항목</span>
           )}
         </div>
+        {/* 휴대폰에서는 버튼을 40px로 키우고, 삭제는 순서 화살표와 조금 떨어뜨린다 */}
         <div className="flex gap-1">
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="한 칸 위로" disabled={index === 0} onClick={() => onMoveTo(index - 1)}>
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 max-sm:h-10 max-sm:w-10" title="한 칸 위로" aria-label="한 칸 위로" disabled={index === 0} onClick={() => onMoveTo(index - 1)}>
             <ChevronUp className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="한 칸 아래로" disabled={index === total - 1} onClick={() => onMoveTo(index + 1)}>
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 max-sm:h-10 max-sm:w-10" title="한 칸 아래로" aria-label="한 칸 아래로" disabled={index === total - 1} onClick={() => onMoveTo(index + 1)}>
             <ChevronDown className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onRemove}>
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive max-sm:ml-2 max-sm:h-10 max-sm:w-10" title="질문 삭제" aria-label="질문 삭제" onClick={handleRemove}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -120,7 +160,7 @@ export function ProgramQuestionCard({
             disabled={isDefault}
             onValueChange={(type) => onChange({ ...draft, type: type as CitizenQuestionType })}
           >
-            <SelectTrigger className="h-9">
+            <SelectTrigger className="h-9 max-sm:h-11! max-sm:w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -171,7 +211,7 @@ export function ProgramQuestionCard({
               onChange(showWhen ? { ...rest, showWhen } : rest)
             }}
           >
-            <SelectTrigger className="h-9">
+            <SelectTrigger className="h-9 max-sm:h-11! max-sm:w-full">
               {/* 조건이 깨진 질문은 고를 수 있는 항목에 지금 값이 없어 빈칸으로 보인다.
                   무엇을 해야 하는지 대신 알려준다 */}
               <SelectValue placeholder="조건을 다시 골라주세요" />
@@ -230,6 +270,8 @@ export function ProgramQuestionCard({
           onChange={(e) => onChange({ ...draft, notice: e.target.value })}
         />
       </div>
+      </div>
+      )}
     </div>
   )
 }

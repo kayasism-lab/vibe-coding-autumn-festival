@@ -1,11 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Camera, MessageSquareQuote, Plus, Printer, Users } from 'lucide-react'
+import { Camera, ChevronRight, MessageSquareQuote, Plus, Printer, Users } from 'lucide-react'
 import { adminFetch } from '@/lib/admin-fetch'
 import { useAdminAccount } from '@/lib/use-admin-account'
 import {
@@ -71,20 +71,29 @@ export default function AdminRehearsalLogsPage() {
   // 최신 연습이 위로 오게 뒤집는다 (서버는 번호를 매기려고 오래된 순으로 준다)
   const newestFirst = useMemo(() => [...logs].reverse(), [logs])
   const totalMinutes = useMemo(() => logs.reduce((sum, log) => sum + durationMinutes(log), 0), [logs])
+  const canWriteSelected = !!selectedTeam && canWriteTeam(ability, selectedTeam._id)
+  const writeHref = `/admin/rehearsal-logs/new?team=${selectedTeam?._id ?? ''}`
+
+  // 휴대폰에서는 팀 버튼이 가로로 밀리는 한 줄이라, 고른 팀이 화면 밖에 있으면 보이는 곳으로 끌어온다
+  const selectedChipRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    selectedChipRef.current?.scrollIntoView({ block: 'nearest', inline: 'center' })
+  }, [selectedTeamId])
 
   return (
     <div className="flex min-h-screen bg-muted">
       <AdminSidebar />
-      <main className="flex-1 pt-14 lg:pt-0">
+      <main className="min-w-0 flex-1 pt-14 lg:pt-0">
         <div className="mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">연습일지</h1>
               <p className="text-sm text-muted-foreground">{subtitle}</p>
             </div>
-            {selectedTeam && canWriteTeam(ability, selectedTeam._id) && (
-              <Button asChild>
-                <Link href={`/admin/rehearsal-logs/new?team=${selectedTeam._id}`}>
+            {/* 넓은 화면에서는 머리글 옆, 휴대폰에서는 아래에 떠 있는 버튼으로 둔다 */}
+            {canWriteSelected && (
+              <Button asChild className="hidden sm:inline-flex">
+                <Link href={writeHref}>
                   <Plus className="mr-2 h-4 w-4" />연습일지 쓰기
                 </Link>
               </Button>
@@ -102,15 +111,18 @@ export default function AdminRehearsalLogsPage() {
             </div>
           ) : (
             <>
-              {/* 팀 고르기. 글자가 큰 버튼으로 둬 휴대폰에서도 누르기 쉽게 한다 */}
-              <div className="mb-4 flex flex-wrap gap-2">
+              {/* 팀 고르기. 글자가 큰 버튼으로 둬 휴대폰에서도 누르기 쉽게 한다.
+                  휴대폰에서는 여러 줄로 접히면 목록이 아래로 밀리므로 한 줄로 두고 옆으로 민다
+                  (-mx-4 px-4: 화면 끝까지 밀리도록 바깥 여백을 상쇄) */}
+              <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
                 {teams.map((team) => (
                   <button
                     key={team._id}
+                    ref={team._id === selectedTeamId ? selectedChipRef : undefined}
                     type="button"
                     onClick={() => setSelectedTeamId(team._id)}
                     className={cn(
-                      'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
+                      'shrink-0 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-medium transition-colors sm:py-2',
                       team._id === selectedTeamId
                         ? 'border-primary bg-primary text-primary-foreground'
                         : 'bg-card text-muted-foreground hover:text-foreground'
@@ -147,14 +159,20 @@ export default function AdminRehearsalLogsPage() {
                     <li key={log._id}>
                       <Link
                         href={`/admin/rehearsal-logs/${log._id}`}
-                        className="block rounded-xl border bg-card p-4 transition-colors hover:border-primary/50"
+                        className="relative block rounded-xl border bg-card p-4 pr-9 transition-colors hover:border-primary/50 active:bg-muted/60"
                       >
+                        {/* 누르면 열린다는 표시 */}
+                        <ChevronRight className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
                         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                           <span className="text-lg font-bold text-primary">#{log.sessionNo}번째 연습</span>
                           <span className="text-sm font-medium">{formatLogDate(log.date)}</span>
                           <span className="text-sm text-muted-foreground">{formatLogTime(log.startTime, log.endTime)}</span>
                         </div>
                         {log.topic && <p className="mt-1.5 font-medium">{log.topic}</p>}
+                        {/* 열어보지 않아도 어떤 연습이었는지 알 수 있게 내용 앞부분을 두 줄만 보여준다 */}
+                        {log.content && (
+                          <p className="mt-1 line-clamp-2 whitespace-pre-line text-sm text-muted-foreground">{log.content}</p>
+                        )}
                         <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
                           <Badge variant="outline" className="font-normal">
                             <Users className="mr-1 h-3 w-3" />출석 {log.attendees.length}/{log.roster.length}
@@ -177,13 +195,14 @@ export default function AdminRehearsalLogsPage() {
               )}
 
               {selectedTeam && logs.length > 0 && (
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Printer className="h-3.5 w-3.5" />
+                // 휴대폰에서는 아래 떠 있는 '쓰기' 버튼에 가리지 않게 여백을 더 둔다
+                <div className={cn('mt-6 flex flex-wrap items-center justify-between gap-3', canWriteSelected && 'pb-16 sm:pb-0')}>
+                  <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <Printer className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     일지를 열고 &lsquo;인쇄 · PDF 저장&rsquo;을 누르면 A4 한 장으로 뽑을 수 있습니다.
                   </p>
                   {/* 팀 일지 전체를 댓글까지 한 번에 PDF로 뽑는 화면 */}
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm" className="h-10 w-full sm:h-8 sm:w-auto">
                     <Link href={`/admin/rehearsal-logs/print?team=${selectedTeam._id}`}>
                       <Printer className="mr-2 h-4 w-4" />이 팀 일지 전체 PDF
                     </Link>
@@ -193,6 +212,20 @@ export default function AdminRehearsalLogsPage() {
             </>
           )}
         </div>
+
+        {/* 휴대폰용 떠 있는 '쓰기' 버튼. 목록을 아무리 내려도 바로 쓸 수 있다.
+            아래 탭 막대가 있으면 그 위에 오도록 막대 높이(globals.css의 변수)만큼 올린다 */}
+        {canWriteSelected && (
+          <Button
+            asChild
+            size="lg"
+            className="fixed right-4 bottom-[calc(var(--admin-tabbar-height,env(safe-area-inset-bottom))+1rem)] z-30 h-12 rounded-full px-5 text-base shadow-lg sm:hidden"
+          >
+            <Link href={writeHref}>
+              <Plus className="mr-1 h-5 w-5" />연습일지 쓰기
+            </Link>
+          </Button>
+        )}
       </main>
     </div>
   )

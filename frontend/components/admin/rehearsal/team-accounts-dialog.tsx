@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { MOBILE_SHEET, SheetBody, SheetHeader } from '@/components/admin/mobile-sheet'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, RotateCcw, UserPlus } from 'lucide-react'
@@ -98,21 +100,24 @@ export function TeamAccountsDialog({ team, usedSeries, onOpenChange, onChanged }
 
   return (
     <Dialog open={!!team} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
+      {/* 휴대폰에서는 전체 화면으로 연다 (mobile-sheet.tsx). 저장 버튼이 없는 창이라 아래 버튼 줄은 두지 않는다 */}
+      <DialogContent className={cn(MOBILE_SHEET, 'sm:max-h-[90dvh] sm:max-w-lg')}>
+        <SheetHeader>
           <DialogTitle>{labels.member} 계정 · {team?.name}</DialogTitle>
           <DialogDescription>
             처음 비밀번호는 아이디와 같고, 첫 로그인 때 이름과 새 비밀번호를 정하게 됩니다.
             {isReading && ' 수강생 계정은 일지를 보고 댓글만 답니다. 강사 계정은 사용자 관리에서 따로 만듭니다.'}
           </DialogDescription>
-        </DialogHeader>
+        </SheetHeader>
 
+        <SheetBody className="space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>팀 번호</Label>
               <Input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={9}
                 value={series}
@@ -123,13 +128,13 @@ export function TeamAccountsDialog({ team, usedSeries, onOpenChange, onChanged }
             </div>
             <div className="space-y-1.5">
               <Label>계정 수</Label>
-              <Input type="number" min={1} max={99} value={count} onChange={(e) => setCount(Number(e.target.value) || 1)} />
+              <Input type="number" inputMode="numeric" min={1} max={99} value={count} onChange={(e) => setCount(Number(e.target.value) || 1)} />
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
             {firstId} ~ {lastId}. 이미 있는 아이디는 건너뛰니, 모자라면 계정 수를 늘려 다시 누르면 됩니다.
           </p>
-          <Button onClick={handleCreate} disabled={isWorking} className="w-full">
+          <Button onClick={handleCreate} disabled={isWorking} className="h-11 w-full sm:h-9">
             {isWorking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
             계정 만들기
           </Button>
@@ -142,22 +147,34 @@ export function TeamAccountsDialog({ team, usedSeries, onOpenChange, onChanged }
           ) : (
             accounts.map((account) => (
               <li key={account._id} className="flex items-center gap-2 px-3 py-2 text-sm">
-                <span className="w-44 shrink-0 font-mono text-xs">{account.email}</span>
-                <span className="flex-1 truncate">
-                  {account.rehearsalInstructor && <Badge className="mr-1.5 font-normal">강사</Badge>}
-                  {account.mustChangePassword ? (
-                    <Badge variant="outline" className="font-normal text-muted-foreground">첫 로그인 전</Badge>
-                  ) : (
-                    account.name
-                  )}
-                </span>
-                <Button variant="ghost" size="icon" title="비밀번호 초기화" onClick={() => handleReset(account)}>
+                {/* 휴대폰: 아이디와 이름을 위아래 두 줄로 쌓는다(아이디 칸을 고정 폭으로 두면 이름이 잘린다).
+                    넓은 화면: 예전처럼 한 줄 */}
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+                  <span className="break-all font-mono text-xs sm:w-44 sm:shrink-0">{account.email}</span>
+                  <span className="truncate sm:flex-1">
+                    {account.rehearsalInstructor && <Badge className="mr-1.5 font-normal">강사</Badge>}
+                    {account.mustChangePassword ? (
+                      <Badge variant="outline" className="font-normal text-muted-foreground">첫 로그인 전</Badge>
+                    ) : (
+                      account.name
+                    )}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 shrink-0 sm:h-9 sm:w-9"
+                  title="비밀번호 초기화"
+                  aria-label={`${account.email} 비밀번호 초기화`}
+                  onClick={() => handleReset(account)}
+                >
                   <RotateCcw className="h-4 w-4" />
                 </Button>
               </li>
             ))
           )}
         </ul>
+        </SheetBody>
       </DialogContent>
     </Dialog>
   )

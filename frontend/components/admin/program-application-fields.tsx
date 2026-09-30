@@ -49,7 +49,7 @@ export function ProgramApplicationFields({
 }) {
   return (
     <div className="space-y-3 rounded-md border p-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <Label>시민 참여 신청 받기</Label>
           <p className="text-xs text-muted-foreground">
@@ -72,7 +72,8 @@ export function ProgramApplicationFields({
                 onChange({ ...value, applicationStatus: applicationStatus as CitizenApplicationStatus })
               }
             >
-              <SelectTrigger>
+              {/* 담당자가 가장 자주 바꾸는 값이라 휴대폰에서는 칸을 크게 둔다 */}
+              <SelectTrigger className="max-sm:h-11! max-sm:w-full max-sm:text-base">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -120,7 +121,8 @@ export function ProgramApplicationFields({
           </div>
 
           {/* 신청서 질문은 해마다 바뀌는데 코드에 두면 담당자가 손댈 수 없어 여기서 만들게 한다 */}
-          <div className="border-t pt-3">
+          {/* id는 작품 수정 창 위쪽의 '신청서 질문' 바로가기가 찾아오는 자리다 */}
+          <div id="program-section-questions" className="scroll-mt-4 border-t pt-3">
             <ProgramQuestionBuilder
               drafts={value.questionDrafts}
               onChange={(questionDrafts) => onChange({ ...value, questionDrafts })}

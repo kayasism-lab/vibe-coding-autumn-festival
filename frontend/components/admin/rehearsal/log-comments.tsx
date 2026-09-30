@@ -115,7 +115,8 @@ export function RehearsalLogComments({ logId, myId, canDeleteAny }: Props) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-muted-foreground hover:text-destructive print:hidden"
+                    // 휴대폰에서는 누르는 칸을 40px로 키운다 (-my-1.5: 줄 높이는 그대로 두려고)
+                    className="-my-1.5 h-10 w-10 shrink-0 px-0 text-muted-foreground hover:text-destructive sm:my-0 sm:h-7 sm:w-auto sm:px-2 print:hidden"
                     onClick={() => handleDelete(comment)}
                     aria-label="댓글 지우기"
                   >
@@ -140,7 +141,7 @@ export function RehearsalLogComments({ logId, myId, canDeleteAny }: Props) {
         />
         {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex justify-end">
-          <Button type="submit" disabled={isSaving}>
+          <Button type="submit" disabled={isSaving} className="h-11 w-full sm:h-9 sm:w-auto">
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             댓글 남기기
           </Button>

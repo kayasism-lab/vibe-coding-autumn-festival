@@ -4,14 +4,9 @@ import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { ImageFocusPicker } from '@/components/admin/image-focus-picker'
 import { CENTER_FOCUS, HOME_CARD_RATIO, type ImageFocus } from '@/lib/image-focus'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { MOBILE_SHEET, SheetBody, SheetFooter, SheetHeader } from '@/components/admin/mobile-sheet'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -66,6 +61,15 @@ export interface ProgramForm {
 // Select는 빈 문자열을 값으로 쓸 수 없어 별도 토큰을 둔다.
 const NO_GROUP = '__none__'
 
+// 폼 위쪽 구역 바로가기. id는 아래 폼의 각 구역 첫머리에 붙어 있다
+const FORM_SECTIONS = [
+  { id: 'program-section-basic', label: '기본 정보' },
+  { id: 'program-section-intro', label: '소개글' },
+  { id: 'program-section-images', label: '이미지' },
+  { id: 'program-section-application', label: '공개 · 신청 접수' },
+  { id: 'program-section-questions', label: '신청서 질문' },
+]
+
 const typeLabels: Record<ProgramFormType, string> = {
   play: '연극',
   short_play: '단막극',
@@ -112,13 +116,30 @@ export function ProgramFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
-        <DialogHeader>
+      {/* 휴대폰에서는 전체 화면으로 열고 저장 버튼을 아래에 붙여 둔다 (mobile-sheet.tsx).
+          sm:max-w-2xl: 공용 Dialog의 sm:max-w-lg(512px)에 갇히지 않게 넓은 화면 폭을 함께 준다 */}
+      <DialogContent className={cn(MOBILE_SHEET, 'sm:max-h-[90dvh] sm:max-w-2xl')}>
+        <SheetHeader>
           <DialogTitle>{isEditing ? '프로그램 수정' : '프로그램 추가'}</DialogTitle>
           <DialogDescription>프로그램 정보를 입력하세요.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
+        </SheetHeader>
+        {/* 구역 바로가기. 폼이 길어 접수 상태·신청서 질문까지 내려가기 멀다.
+            누르면 그 구역으로 옮겨 주기만 한다 (지금 위치를 따라 표시하지는 않는다) */}
+        <div className="flex shrink-0 gap-2 overflow-x-auto border-b bg-muted/40 px-4 py-2 [scrollbar-width:none] sm:px-6">
+          {/* 신청서 질문 구역은 '시민 참여 신청 받기'를 켠 작품에만 있다 */}
+          {FORM_SECTIONS.filter((section) => section.id !== 'program-section-questions' || form.openForApplication).map((section) => (
+            <button
+              key={section.id}
+              type="button"
+              className="shrink-0 whitespace-nowrap rounded-full border bg-background px-3.5 py-2 text-sm font-medium text-muted-foreground active:bg-muted sm:py-1.5"
+              onClick={() => document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              {section.label}
+            </button>
+          ))}
+        </div>
+        <SheetBody className="space-y-4">
+          <div id="program-section-basic" className="grid sm:grid-cols-2 gap-4 scroll-mt-4">
             <Field label="제목"><Input value={form.title} onChange={(e) => onFormChange({ ...form, title: e.target.value })} /></Field>
             <Field label="유형">
               {canChangeType ? (
@@ -181,7 +202,7 @@ export function ProgramFormDialog({
             <Field label="정가"><Input type="number" value={form.regularPrice} onChange={(e) => onFormChange({ ...form, regularPrice: Number(e.target.value) })} /></Field>
             <Field label="할인가"><Input type="number" value={form.discountPrice} onChange={(e) => onFormChange({ ...form, discountPrice: Number(e.target.value) })} /></Field>
           </div>
-          <Field label="작품 소개"><Textarea rows={4} value={form.synopsis} onChange={(e) => onFormChange({ ...form, synopsis: e.target.value })} /></Field>
+          <Field id="program-section-intro" label="작품 소개"><Textarea rows={4} value={form.synopsis} onChange={(e) => onFormChange({ ...form, synopsis: e.target.value })} /></Field>
           <Field label="상세 안내글 (연출의도·관전포인트 등, 선택)">
             <Textarea
               rows={4}
@@ -191,7 +212,7 @@ export function ProgramFormDialog({
             />
           </Field>
           <Field label="출연진"><Textarea rows={3} value={form.castText} onChange={(e) => onFormChange({ ...form, castText: e.target.value })} placeholder="줄바꿈으로 구분" /></Field>
-          <Field label="포스터 이미지">
+          <Field id="program-section-images" label="포스터 이미지">
             <CloudinaryUpload
               value={form.posterUrl}
               onChange={(posterUrl) =>
@@ -271,7 +292,7 @@ export function ProgramFormDialog({
               placeholder="축제 팜플렛(리플렛) 스캔 이미지 업로드"
             />
           </Field>
-          <div className="flex items-center justify-between rounded-md border p-3">
+          <div id="program-section-application" className="flex scroll-mt-4 items-center justify-between rounded-md border p-3">
             <Label>공개 상태</Label>
             <Switch checked={form.isActive} onCheckedChange={(isActive) => onFormChange({ ...form, isActive })} />
           </div>
@@ -293,24 +314,21 @@ export function ProgramFormDialog({
               })
             }
           />
-        </div>
-        {saveError && (
-          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {saveError}
-          </p>
-        )}
-        <DialogFooter>
+        </SheetBody>
+        {/* 저장 실패 사유는 버튼 바로 위에 보여준다 */}
+        <SheetFooter error={saveError}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
           <Button onClick={onSave} disabled={isSaving}>{isEditing ? '수정' : '추가'}</Button>
-        </DialogFooter>
+        </SheetFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/** id는 구역 바로가기가 찾아갈 자리에만 붙인다 */
+function Field({ label, id, children }: { label: string; id?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
+    <div id={id} className="scroll-mt-4 space-y-2">
       <Label>{label}</Label>
       {children}
     </div>

@@ -20,6 +20,7 @@ import { CENTER_FOCUS } from '@/lib/image-focus'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import { programTypeAccountLabel } from '@/lib/program-type-account'
 import {
+  citizenApplicationStatusLabels,
   resolveCitizenApplicationStatus,
   type CitizenApplicationStatus,
 } from '@/lib/citizen-application-status'
@@ -306,31 +307,71 @@ export default function AdminProgramsPage() {
   return (
     <div className="flex min-h-screen bg-muted">
       <AdminSidebar />
-      <main className="flex-1 pt-14 lg:pt-0">
-        <div className="p-6 lg:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <main className="min-w-0 flex-1 pt-14 lg:pt-0">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:gap-4 sm:mb-6">
             <div>
               <h1 className="text-2xl font-bold text-foreground">
                 {isGroupAccount ? '작품 관리' : '프로그램 관리'}
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground sm:text-base">
                 {isGroupAccount
                   ? '우리 극단의 작품 정보를 등록하고 수정합니다.'
                   : '공연 프로그램을 관리합니다.'}
               </p>
             </div>
-            <Button onClick={() => openDialog()}>
+            <Button onClick={() => openDialog()} className="h-11 sm:h-9">
               <Plus className="mr-2 h-4 w-4" />
               프로그램 추가
             </Button>
           </div>
 
-          <div className="relative max-w-sm mb-6">
+          <div className="relative mb-4 sm:mb-6 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="프로그램 검색..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+            <Input placeholder="프로그램 검색..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-11 pl-9 sm:h-9" />
           </div>
 
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          {/* 휴대폰용 카드 목록. 6칸 표는 좁은 화면에서 옆으로 넘쳐 수정 버튼이 화면 밖으로 밀린다 */}
+          <div className="space-y-3 md:hidden">
+            {isLoading ? (
+              <p className="py-8 text-center text-muted-foreground">불러오는 중...</p>
+            ) : filteredPrograms.length === 0 ? (
+              <p className="rounded-xl border bg-card py-8 text-center text-muted-foreground">등록된 프로그램이 없습니다.</p>
+            ) : filteredPrograms.map((program) => (
+              <div key={program._id} className="rounded-xl border border-border bg-card p-4">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="outline">{typeLabels[program.type]}</Badge>
+                  <Badge variant={program.isActive ? 'default' : 'secondary'}>{program.isActive ? '공개' : '비공개'}</Badge>
+                  {/* 시민참여 대상 작품이면 지금 접수 상태를 목록에서 바로 볼 수 있게 한다 */}
+                  {(program.applicationStatus || program.openForApplication) && (
+                    <Badge variant="secondary">{citizenApplicationStatusLabels[resolveCitizenApplicationStatus(program)]}</Badge>
+                  )}
+                </div>
+                <p className="mt-2 text-base font-bold break-words">{program.title}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground break-words">
+                  {[program.company, program.venue].filter(Boolean).join(' · ')}
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <Button variant="outline" className="h-11 flex-1" onClick={() => openDialog(program)}>
+                    <Pencil className="mr-2 h-4 w-4" />수정
+                  </Button>
+                  {/* 작품 삭제는 관리자만 가능 (백엔드도 동일하게 제한) */}
+                  {!isGroupAccount && (
+                    <Button
+                      variant="outline"
+                      className="h-11 w-11 shrink-0 px-0 text-destructive hover:text-destructive"
+                      aria-label={`${program.title} 삭제`}
+                      onClick={() => handleDelete(program._id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden bg-card border border-border rounded-xl overflow-hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>

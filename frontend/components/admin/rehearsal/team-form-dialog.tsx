@@ -1,11 +1,13 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { MOBILE_SHEET, SheetBody, SheetFooter, SheetHeader } from '@/components/admin/mobile-sheet'
 import { REHEARSAL_LABELS, type RehearsalKind } from '@/lib/rehearsal'
+import { cn } from '@/lib/utils'
 
 export interface TeamForm {
   /** 단막극 팀인지 낭독극 팀인지. 만든 뒤에는 바꾸지 않는다 */
@@ -72,12 +74,13 @@ export function TeamFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
+      {/* 휴대폰에서는 전체 화면으로 열고 저장 버튼을 아래에 붙여 둔다 (mobile-sheet.tsx) */}
+      <DialogContent className={cn(MOBILE_SHEET, 'sm:max-h-[90dvh] sm:max-w-lg')}>
+        <SheetHeader>
           <DialogTitle>{isEditing ? '팀 정보 수정' : '팀 추가'} · {labels.program}</DialogTitle>
-        </DialogHeader>
+        </SheetHeader>
 
-        <div className="space-y-4">
+        <SheetBody className="space-y-4">
           {canChooseKind && (
             <Field label="종류" required>
               <div className="grid grid-cols-2 gap-2">
@@ -85,6 +88,7 @@ export function TeamFormDialog({
                   <Button
                     key={kind}
                     type="button"
+                    className="h-11 sm:h-9"
                     variant={form.kind === kind ? 'default' : 'outline'}
                     onClick={() => setForm({ ...form, kind })}
                   >
@@ -147,19 +151,19 @@ export function TeamFormDialog({
           <Field label="표시 순서">
             <Input
               type="number"
+              inputMode="numeric"
               value={form.order}
               onChange={(e) => setForm({ ...form, order: Number(e.target.value) || 0 })}
             />
             <p className="text-xs text-muted-foreground">작은 숫자가 위에 나옵니다.</p>
           </Field>
+        </SheetBody>
 
-          {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
-        </div>
-
-        <DialogFooter>
+        {/* 오류 문구는 저장 버튼 바로 위에 보여준다 (폼을 끝까지 내리지 않아도 보이게) */}
+        <SheetFooter error={errorMessage}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
           <Button onClick={onSave} disabled={isSaving}>{isSaving ? '저장 중...' : '저장'}</Button>
-        </DialogFooter>
+        </SheetFooter>
       </DialogContent>
     </Dialog>
   )
