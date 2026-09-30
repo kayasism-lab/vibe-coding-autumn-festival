@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { AttendanceCheck } from '@/components/admin/rehearsal/attendance-check'
+import { LogFilesUpload } from '@/components/admin/rehearsal/log-files'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +14,7 @@ import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import {
   canWriteTeam,
   clearDraft,
+  defaultLogTimes,
   loadDraft,
   previewSessionNo,
   rehearsalLabels,
@@ -146,7 +148,14 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
               className="h-11 w-full rounded-md border bg-background px-3 text-base"
               value={form.team}
               // 팀을 바꾸면 출석 명단이 달라지므로 출석 체크를 비운다
-              onChange={(e) => update({ team: e.target.value, attendees: [] })}
+              onChange={(e) => {
+                const nextTeam = teams.find((item) => item._id === e.target.value)
+                const before = defaultLogTimes(team)
+                // 시간을 손대지 않았으면(이전 팀의 기본값 그대로면) 새 팀 종류의 기본 시간으로 바꾼다.
+                // 관리자가 단막극 팀과 낭독극 팀 사이를 오갈 때만 해당한다
+                const untouched = form.startTime === before.startTime && form.endTime === before.endTime
+                update({ team: e.target.value, attendees: [], ...(untouched ? defaultLogTimes(nextTeam) : {}) })
+              }}
               disabled={writableTeams.length <= 1}
             >
               <option value="">팀을 선택하세요</option>
@@ -226,6 +235,10 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
           aspectRatios={[]}
           placeholder="연습 사진 올리기"
         />
+      </Section>
+
+      <Section title="첨부 파일">
+        <LogFilesUpload value={form.files ?? []} onChange={(files) => update({ files })} />
       </Section>
 
       {/* 휴대폰에서 긴 글을 쓴 뒤 맨 위로 올라가지 않고 저장할 수 있게 아래에 붙여 둔다 */}

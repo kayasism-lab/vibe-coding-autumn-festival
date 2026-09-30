@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { RehearsalLogForm } from '@/components/admin/rehearsal/log-form'
 import { RehearsalShell, useRehearsalContext } from '@/components/admin/rehearsal/rehearsal-shell'
-import { canWriteTeam, todayString, type RehearsalLogDraft } from '@/lib/rehearsal'
+import { canWriteTeam, defaultLogTimes, todayString, type RehearsalLogDraft } from '@/lib/rehearsal'
 
 // 연습일지 새로 쓰기
 export default function NewRehearsalLogPage() {
@@ -18,14 +18,14 @@ export default function NewRehearsalLogPage() {
     return {
       team: team?._id ?? '',
       date: todayString(),
-      // 연습은 대개 저녁 8시~10시 반이라 기본값으로 채워 둔다. 다른 시간이면 고쳐 쓰면 된다
-      startTime: '20:00',
-      endTime: '22:30',
+      // 평소 연습 시간을 기본값으로 채워 둔다(단막극 8시~10시 반, 낭독극 8시~10시). 다른 시간이면 고쳐 쓰면 된다
+      ...defaultLogTimes(team),
       attendees: [],
       topic: '',
       content: '',
       directorComment: '',
       photos: [],
+      files: [],
     }
     // ability는 그릴 때마다 새로 만들어지는 객체라, 실제로 바뀌는 값(쓸 수 있는 팀)만 본다
     // eslint-disable-next-line react-hooks/exhaustive-deps

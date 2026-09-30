@@ -1,5 +1,6 @@
 import { formatLogDate, formatLogTime, rehearsalLabels, type RehearsalLog, type RehearsalTeam } from '@/lib/rehearsal'
 import { toFitUrl } from '@/lib/cloudinary-url'
+import { LogFileList } from '@/components/admin/rehearsal/log-files'
 
 /**
  * 연습일지 한 건을 문서 모양으로 보여준다.
@@ -74,6 +75,13 @@ export function RehearsalLogDocument({ log, team }: { log: RehearsalLog; team: R
               </a>
             ))}
           </div>
+        </section>
+      )}
+
+      {!!log.files?.length && (
+        <section className="mb-5 break-inside-avoid">
+          <h2 className="mb-2 text-sm font-bold text-muted-foreground">첨부 파일</h2>
+          <LogFileList files={log.files} />
         </section>
       )}
 

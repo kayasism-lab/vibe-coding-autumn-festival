@@ -9,6 +9,7 @@ import { noticesRouter } from './notices.js'
 import { programsRouter } from './programs.js'
 import { rehearsalAccountsRouter } from './rehearsal-accounts.js'
 import { rehearsalCommentsRouter } from './rehearsal-comments.js'
+import { rehearsalFilesRouter } from './rehearsal-files.js'
 import { rehearsalLogsRouter } from './rehearsal-logs.js'
 import { rehearsalTeamsRouter } from './rehearsal-teams.js'
 import { schedulesRouter } from './schedules.js'
@@ -34,6 +35,8 @@ apiRouter.use('/rehearsal-teams', rehearsalTeamsRouter)
 apiRouter.use('/rehearsal-logs/:logId/comments', rehearsalCommentsRouter)
 apiRouter.use('/rehearsal-logs', rehearsalLogsRouter)
 apiRouter.use('/rehearsal-accounts', rehearsalAccountsRouter)
+// 연습일지 첨부 파일 (이 서버 디스크에 보관)
+apiRouter.use('/rehearsal-files', rehearsalFilesRouter)
 apiRouter.use('/schedules', schedulesRouter)
 apiRouter.use('/site-config', siteConfigRouter)
 apiRouter.use('/sponsors', sponsorsRouter)

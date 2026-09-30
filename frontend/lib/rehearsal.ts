@@ -53,6 +53,14 @@ export function rehearsalLabels(team?: { kind?: RehearsalKind } | null) {
   return REHEARSAL_LABELS[team?.kind === 'reading' ? 'reading' : 'short_play']
 }
 
+/**
+ * 새 일지에 미리 채워 두는 연습 시간. 단막극은 저녁 8시~10시 반, 낭독극은 저녁 8시~10시다.
+ * 기본값일 뿐이라 쓰는 사람이 고칠 수 있다
+ */
+export function defaultLogTimes(team?: { kind?: RehearsalKind } | null) {
+  return team?.kind === 'reading' ? { startTime: '20:00', endTime: '22:00' } : { startTime: '20:00', endTime: '22:30' }
+}
+
 /** '연출 홍길동 · 조연출 김철수' 또는 '메인강사 홍길동 · 강사 김철수, 이영희' */
 export function formatTeamLeaders(team: RehearsalTeam) {
   const parts = [`${rehearsalLabels(team).leader} ${team.director}`]
@@ -62,6 +70,14 @@ export function formatTeamLeaders(team: RehearsalTeam) {
     parts.push(`조연출 ${team.assistantDirector}`)
   }
   return parts.join(' · ')
+}
+
+/** 연습일지 첨부 파일. 파일은 백엔드 서버 디스크에 있고 일지에는 주소·이름·크기만 남긴다 */
+export interface RehearsalFile {
+  url: string
+  name: string
+  /** 바이트 단위 */
+  size: number
 }
 
 export interface RehearsalLog {
@@ -76,6 +92,8 @@ export interface RehearsalLog {
   content: string
   directorComment: string
   photos: string[]
+  /** 첨부 파일. 이 기능을 넣기 전에 쓴 일지에는 값이 없을 수 있다 */
+  files?: RehearsalFile[]
   createdByName: string
   updatedByName: string
   createdAt: string
@@ -105,6 +123,8 @@ export interface RehearsalLogDraft {
   content: string
   directorComment: string
   photos: string[]
+  /** 예전에 임시 저장된 작성 내용에는 없을 수 있어 선택 값으로 둔다 */
+  files?: RehearsalFile[]
 }
 
 /** 로그인 계정이 연습일지에서 할 수 있는 일 */

@@ -5,6 +5,7 @@ import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireRehearsalAccess } from '../middleware/require-rehearsal.js'
 import { canWriteTeam, findVisibleTeam, teamKind, visibleTeamIds, type RehearsalAccess } from '../lib/rehearsal-access.js'
 import { cleanDate, cleanNames, cleanPhotoUrls, cleanText, cleanTime } from '../lib/rehearsal-input.js'
+import { removeFilesByUrl, resolveFiles } from '../lib/rehearsal-files.js'
 
 // 연습일지 (열린 단막극·열린 낭독극). 계정은 자기 종류의 일지만 본다
 export const rehearsalLogsRouter = Router()
@@ -125,6 +126,8 @@ rehearsalLogsRouter.post(
     const roster = team.members ?? []
     const log = await RehearsalLog.create({
       ...fields,
+      // 첨부 파일은 디스크에 실제로 다 올라온 것만 붙인다
+      files: await resolveFiles(req.body.files),
       team: teamId,
       roster,
       attendees: pickAttendees(roster, fields.attendees as string[]),
@@ -143,8 +146,8 @@ rehearsalLogsRouter.put(
       return
     }
     const existing = await RehearsalLog.findById(req.params.id)
-      .select('team roster')
-      .lean<{ team: mongoose.Types.ObjectId; roster: string[] } | null>()
+      .select('team roster files')
+      .lean<{ team: mongoose.Types.ObjectId; roster: string[]; files?: { url: string }[] } | null>()
     const team = existing ? await findVisibleTeam(access, String(existing.team)) : null
     if (!existing || !team) {
       fail(res, '연습일지를 찾을 수 없습니다.', 404)
@@ -169,7 +172,13 @@ rehearsalLogsRouter.put(
     }
     fields.attendees = pickAttendees(roster, fields.attendees as string[])
 
+    const files = await resolveFiles(req.body?.files)
+    fields.files = files
+
     const log = await RehearsalLog.findByIdAndUpdate(req.params.id, fields, { new: true }).lean()
+    // 고치면서 뺀 파일은 디스크에서도 지운다 (남겨 두면 아무도 못 찾는 파일이 디스크만 차지한다)
+    const kept = new Set(files.map((file) => file.url))
+    await removeFilesByUrl((existing.files ?? []).map((file) => file.url).filter((url) => !kept.has(url)))
     ok(res, log, '연습일지를 고쳤습니다.')
   })
 )
@@ -192,8 +201,9 @@ rehearsalLogsRouter.delete(
       fail(res, '연습일지를 찾을 수 없습니다.', 404)
       return
     }
-    // 일지가 없어지면 달린 댓글도 볼 곳이 없으므로 함께 지운다
+    // 일지가 없어지면 달린 댓글과 첨부 파일도 볼 곳이 없으므로 함께 지운다
     await RehearsalComment.deleteMany({ log: log._id })
+    await removeFilesByUrl(((log.files ?? []) as { url: string }[]).map((file) => file.url))
     ok(res, null, '연습일지를 지웠습니다.')
   })
 )

@@ -53,6 +53,7 @@ export default function EditRehearsalLogPage() {
             content: log.content,
             directorComment: log.directorComment,
             photos: log.photos,
+            files: log.files ?? [],
           }}
         />
       )}

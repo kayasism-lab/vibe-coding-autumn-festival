@@ -461,6 +461,15 @@ export interface IRehearsalTeam extends Document {
   updatedAt: Date
 }
 
+// 연습일지에 붙인 파일 한 개. 파일 자체는 이 서버 디스크에 있고(lib/rehearsal-files.ts) 여기에는 주소와 표시용 정보만 둔다
+export interface RehearsalFile {
+  url: string
+  // 올릴 때의 원래 파일 이름 (화면 표시·내려받을 때 이름)
+  name: string
+  // 바이트 단위 크기
+  size: number
+}
+
 // 연습일지 한 건 (단막극·낭독극 공통)
 export interface IRehearsalLog extends Document {
   _id: Types.ObjectId
@@ -479,6 +488,8 @@ export interface IRehearsalLog extends Document {
   // 연출 코멘트(낭독극은 강사 코멘트). 담당 계정·관리자와 낭독극 강사 계정만 쓸 수 있다
   directorComment: string
   photos: string[]
+  // 첨부 파일 (대본·악보·녹음 등, 한 개 10MB 이하)
+  files: RehearsalFile[]
   // 표시용 작성자·마지막 수정자 이름
   createdByName: string
   updatedByName: string
