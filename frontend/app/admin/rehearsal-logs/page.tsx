@@ -12,13 +12,15 @@ import {
   canWriteTeam,
   formatLogDate,
   formatLogTime,
+  formatTeamLeaders,
+  rehearsalLabels,
   resolveRehearsalAbility,
   type RehearsalLog,
   type RehearsalTeam,
 } from '@/lib/rehearsal'
 import { cn } from '@/lib/utils'
 
-// 열린 단막극 연습일지 목록. 팀을 고르면 그 팀 일지를 최신순으로 보여준다
+// 연습일지 목록(열린 단막극·열린 낭독극). 팀을 고르면 그 팀 일지를 최신순으로 보여준다
 export default function AdminRehearsalLogsPage() {
   const me = useAdminAccount()
   const ability = resolveRehearsalAbility(me)
@@ -61,6 +63,11 @@ export default function AdminRehearsalLogsPage() {
   }, [selectedTeamId, fetchLogs])
 
   const selectedTeam = teams.find((team) => team._id === selectedTeamId)
+  const labels = rehearsalLabels(selectedTeam)
+  // 관리자는 단막극·낭독극 팀을 함께 본다. 그때만 팀 버튼에 종류를 붙여 구분한다
+  const hasBothKinds = new Set(teams.map((team) => team.kind)).size > 1
+  // 머리글 설명: 고른 팀의 종류를 따르고, 아직 팀이 없으면 두 종류를 아우르는 문구를 쓴다
+  const subtitle = !selectedTeam ? '팀별 연습 기록' : selectedTeam.kind === 'reading' ? '열린 낭독극 연습 기록' : `${labels.program} 팀별 연습 기록`
   // 최신 연습이 위로 오게 뒤집는다 (서버는 번호를 매기려고 오래된 순으로 준다)
   const newestFirst = useMemo(() => [...logs].reverse(), [logs])
   const totalMinutes = useMemo(() => logs.reduce((sum, log) => sum + durationMinutes(log), 0), [logs])
@@ -73,7 +80,7 @@ export default function AdminRehearsalLogsPage() {
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">연습일지</h1>
-              <p className="text-sm text-muted-foreground">열린 단막극 팀별 연습 기록</p>
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
             </div>
             {selectedTeam && canWriteTeam(ability, selectedTeam._id) && (
               <Button asChild>
@@ -109,6 +116,7 @@ export default function AdminRehearsalLogsPage() {
                         : 'bg-card text-muted-foreground hover:text-foreground'
                     )}
                   >
+                    {hasBothKinds && team.kind !== 'reading' && <span className="mr-1 text-xs opacity-80">[{rehearsalLabels(team).program.replace('열린 ', '')}]</span>}
                     {team.name}
                     {team._id === me.rehearsalTeam && <span className="ml-1 text-xs opacity-80">(내 팀)</span>}
                   </button>
@@ -119,9 +127,8 @@ export default function AdminRehearsalLogsPage() {
                 <div className="mb-5 rounded-xl border bg-card p-4 text-sm">
                   <p className="text-base font-bold">{selectedTeam.title}</p>
                   <p className="mt-1 text-muted-foreground">
-                    연출 {selectedTeam.director}
-                    {selectedTeam.assistantDirector && ` · 조연출 ${selectedTeam.assistantDirector}`}
-                    {` · 팀원 ${selectedTeam.members.length}명`}
+                    {formatTeamLeaders(selectedTeam)}
+                    {` · ${labels.member} ${selectedTeam.members.length}명`}
                   </p>
                   <p className="mt-2 font-medium">
                     지금까지 {logs.length}번 연습
@@ -159,7 +166,7 @@ export default function AdminRehearsalLogsPage() {
                           )}
                           {log.directorComment && (
                             <Badge variant="secondary" className="font-normal">
-                              <MessageSquareQuote className="mr-1 h-3 w-3" />연출 코멘트
+                              <MessageSquareQuote className="mr-1 h-3 w-3" />{labels.comment}
                             </Badge>
                           )}
                         </div>

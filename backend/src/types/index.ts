@@ -174,7 +174,7 @@ export interface ISponsor extends Document {
 // group: 극단별 담당자 계정 - 본인 소속 극단(theaterGroupName과 일치하는 TheaterGroup/Program)만 관리 가능.
 // theaterGroup 대신 programType을 갖는 계정은 소유 극단이 없는(협의회 직접 주관) 열린 낭독극·
 // 열린 단막극처럼 특정 공연 유형의 작품만 관리한다 (theaterGroup·programType은 동시에 갖지 않음).
-// rehearsal: 열린 단막극 연습일지 작성 계정 - 연습일지 메뉴만 보이고, 지정된 한 팀의 일지만 쓰고 고친다.
+// rehearsal: 연습일지 계정(단막극 팀원, 낭독극 강사·수강생) - 연습일지 메뉴만 보이고, 지정된 한 팀에 묶인다.
 export type UserRole = 'superadmin' | 'admin' | 'group' | 'rehearsal' | 'normal'
 export type GroupAccountProgramType = 'reading' | 'short_play'
 
@@ -193,6 +193,8 @@ export interface IUser extends Document {
   permissions: string[]
   // 연습일지 작성 계정(role: 'rehearsal')이 맡은 팀. 이 팀의 일지만 쓰고 고칠 수 있다
   rehearsalTeam?: Types.ObjectId
+  // 낭독극 팀의 강사 계정인지. 낭독극은 강사만 일지를 쓰고, 나머지(수강생)는 보고 댓글만 단다
+  rehearsalInstructor?: boolean
   // 처음 받은 비밀번호를 아직 안 바꿨는지 (연습일지 일괄 생성 계정)
   mustChangePassword?: boolean
   password: string
@@ -432,26 +434,34 @@ export interface ScheduleDisplayData {
   ticketUrl?: string
 }
 
-// 열린 단막극 연습일지 - 팀 구성 (관리 화면 '연습일지 설정'에서 만든다)
+// 연습일지 종류. 단막극과 낭독극은 서로의 팀·일지를 보지 못한다
+export type RehearsalKind = 'short_play' | 'reading'
+
+// 연습일지 - 팀 구성 (관리 화면 '연습일지 설정'에서 만든다)
 export interface IRehearsalTeam extends Document {
   _id: Types.ObjectId
+  // 열린 단막극 팀인지 열린 낭독극 팀인지. 이 값이 없는 예전 팀은 단막극으로 본다
+  kind: RehearsalKind
   // 작품명
   title: string
   // 팀명 (일지 목록에서 팀을 고르는 기준)
   name: string
+  // 단막극은 연출, 낭독극은 메인강사 이름
   director: string
-  // 조연출이 없는 팀도 있어 빈 문자열을 허용한다
+  // 조연출이 없는 팀도 있어 빈 문자열을 허용한다 (낭독극은 쓰지 않는다)
   assistantDirector: string
+  // 낭독극에서 메인강사와 함께하는 강사 이름 (단막극은 쓰지 않는다)
+  instructors: string[]
   members: string[]
   // 목록에서 보여줄 순서 (작을수록 위)
   order: number
-  // 팀원 계정 번호 (1이면 jik_short_1001~). 계정을 일괄로 만들 때 정해진다
+  // 팀원 계정 번호 (1이면 jik_short_1001~, 낭독극은 jik_reading_1001~). 계정을 일괄로 만들 때 정해진다
   accountSeries?: number
   createdAt: Date
   updatedAt: Date
 }
 
-// 열린 단막극 연습일지 한 건
+// 연습일지 한 건 (단막극·낭독극 공통)
 export interface IRehearsalLog extends Document {
   _id: Types.ObjectId
   team: Types.ObjectId
@@ -466,7 +476,7 @@ export interface IRehearsalLog extends Document {
   attendees: string[]
   topic: string
   content: string
-  // 연출 코멘트. 단막극 관리자·총괄 관리자만 쓸 수 있다
+  // 연출 코멘트(낭독극은 강사 코멘트). 담당 계정·관리자와 낭독극 강사 계정만 쓸 수 있다
   directorComment: string
   photos: string[]
   // 표시용 작성자·마지막 수정자 이름

@@ -17,6 +17,8 @@ const UserSchema = new Schema<IUser>(
     permissions: { type: [String], default: [] },
     // 연습일지 작성 계정(role: 'rehearsal')이 맡은 팀. 이 팀의 일지만 쓰고 고칠 수 있다
     rehearsalTeam: { type: Schema.Types.ObjectId, ref: 'RehearsalTeam' },
+    // 낭독극 팀의 강사 계정인지. 낭독극은 강사만 일지를 쓰고 강사 코멘트를 남긴다
+    rehearsalInstructor: { type: Boolean, default: false },
     // 처음 받은 비밀번호(아이디와 같은 값)를 아직 안 바꿨는지. true면 이름·비밀번호를 정하기 전까지
     // 연습일지를 쓸 수 없다 (아이디 규칙만 알면 누구나 로그인할 수 있기 때문)
     mustChangePassword: { type: Boolean, default: false },

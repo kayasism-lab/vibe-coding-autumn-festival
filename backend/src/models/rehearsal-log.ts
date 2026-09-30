@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose'
 import type { IRehearsalLog } from '../types/index.js'
 
-// 열린 단막극 연습일지 한 건.
+// 연습일지 한 건 (단막극·낭독극 공통. 어느 쪽인지는 팀의 kind로 정해진다).
 // '#N번째 연습'은 저장하지 않고 조회할 때 날짜순으로 센다. 날짜를 고치거나
 // 중간 일지를 지워도 번호가 저절로 맞춰진다
 const RehearsalLogSchema = new Schema<IRehearsalLog>(

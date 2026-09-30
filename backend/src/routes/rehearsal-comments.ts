@@ -3,12 +3,13 @@ import mongoose from 'mongoose'
 import { RehearsalComment, RehearsalLog, User } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireRehearsalAccess } from '../middleware/require-rehearsal.js'
-import type { RehearsalAccess } from '../lib/rehearsal-access.js'
+import { findVisibleTeam, type RehearsalAccess } from '../lib/rehearsal-access.js'
 import { cleanText } from '../lib/rehearsal-input.js'
 
 /**
  * 연습일지 댓글 (/rehearsal-logs/:logId/comments).
  * 연습일지를 볼 수 있는 계정이면 다른 팀 일지에도 댓글을 달 수 있다.
+ * 다만 단막극과 낭독극은 서로의 일지를 보지 못하므로 댓글도 자기 종류 안에서만 단다.
  * 지우기는 쓴 본인과 관리자(canDelete)만 한다
  */
 export const rehearsalCommentsRouter = Router({ mergeParams: true })
@@ -23,17 +24,18 @@ type LeanComment = {
   createdAt: Date
 }
 
-/** 주소의 일지 id가 올바르고 실제로 있는지 확인한다 */
-async function findLogId(logId: string | undefined) {
+/** 주소의 일지 id가 올바르고, 이 계정이 볼 수 있는 일지인지 확인한다 */
+async function findLogId(access: RehearsalAccess, logId: string | undefined) {
   if (!logId || !mongoose.isValidObjectId(logId)) return null
-  const log = await RehearsalLog.findById(logId).select('_id').lean()
-  return log ? logId : null
+  const log = await RehearsalLog.findById(logId).select('team').lean<{ team: mongoose.Types.ObjectId } | null>()
+  if (!log || !(await findVisibleTeam(access, String(log.team)))) return null
+  return logId
 }
 
 rehearsalCommentsRouter.get(
   '/',
   asyncHandler(async (req, res) => {
-    const logId = await findLogId(req.params.logId)
+    const logId = await findLogId(res.locals.rehearsal, req.params.logId)
     if (!logId) {
       fail(res, '연습일지를 찾을 수 없습니다.', 404)
       return
@@ -66,7 +68,7 @@ rehearsalCommentsRouter.post(
   '/',
   asyncHandler(async (req, res) => {
     const access: RehearsalAccess = res.locals.rehearsal
-    const logId = await findLogId(req.params.logId)
+    const logId = await findLogId(access, req.params.logId)
     if (!logId) {
       fail(res, '연습일지를 찾을 수 없습니다.', 404)
       return
@@ -102,7 +104,8 @@ rehearsalCommentsRouter.delete(
   '/:commentId',
   asyncHandler(async (req, res) => {
     const access: RehearsalAccess = res.locals.rehearsal
-    if (!mongoose.isValidObjectId(req.params.commentId)) {
+    // 볼 수 없는 일지의 댓글은 본인 것이라도 이 주소로 건드리지 못한다
+    if (!mongoose.isValidObjectId(req.params.commentId) || !(await findLogId(access, req.params.logId))) {
       fail(res, '댓글을 찾을 수 없습니다.', 404)
       return
     }

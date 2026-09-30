@@ -108,7 +108,7 @@ export default function AdminLoginPage() {
             <CardTitle className="text-2xl">{isRehearsalEntry ? '연습일지 로그인' : '관리자 로그인'}</CardTitle>
             <CardDescription>
               {isRehearsalEntry
-                ? '열린 단막극 팀 연습일지입니다. 팀 계정으로 로그인해주세요.'
+                ? '열린 단막극·열린 낭독극 연습일지입니다. 받은 계정으로 로그인해주세요.'
                 : '2026 가을연극축제 관리자 페이지입니다.'}
               {/* 갑자기 로그아웃된 것으로 오해하지 않도록 미리 알려준다.
                   연습일지 팀 계정은 이 제한이 없어 연습일지 입구에서는 다른 안내를 보여준다 */}

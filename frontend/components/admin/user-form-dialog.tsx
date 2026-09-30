@@ -36,6 +36,8 @@ export interface UserForm {
   permissions: GroupPermission[]
   // 연습일지 작성 계정(role: 'rehearsal')만 값이 있다. 이 팀의 일지만 쓰고 고칠 수 있다
   rehearsalTeam: string
+  // 낭독극 팀의 강사 계정인지. 낭독극은 강사만 일지를 쓰고 강사 코멘트를 남긴다
+  rehearsalInstructor: boolean
   role: UserRole
   password: string
   /**
@@ -58,7 +60,7 @@ interface Props {
   setForm: (form: UserForm) => void
   theaterGroups: { _id: string; name: string }[]
   // 연습일지 설정에서 만든 팀 목록 (연습일지 작성 계정의 담당 팀 선택용)
-  rehearsalTeams: { _id: string; name: string; title: string }[]
+  rehearsalTeams: { _id: string; name: string; title: string; kind: 'short_play' | 'reading' }[]
   errorMessage: string
   onSave: () => void
 }
@@ -77,6 +79,8 @@ export function UserFormDialog({
   const isGroupAccount = form.role === 'group'
   // 담당 극단 없이 공연 유형만 담당하는 계정(낭독극·단막극 담당자)인지
   const isProgramTypeAccount = isGroupAccount && !!form.programType
+  // 고른 담당 팀이 낭독극 팀이면 강사 여부를 묻는다
+  const isReadingTeam = rehearsalTeams.find((team) => team._id === form.rehearsalTeam)?.kind === 'reading'
 
   const togglePermission = (key: GroupPermission) => {
     const next = form.permissions.includes(key)
@@ -135,7 +139,7 @@ export function UserFormDialog({
                 <SelectItem value="superadmin">슈퍼관리자</SelectItem>
                 <SelectItem value="admin">관리자</SelectItem>
                 <SelectItem value="group">극단 담당자</SelectItem>
-                <SelectItem value="rehearsal">연습일지 작성자 (열린 단막극 팀)</SelectItem>
+                <SelectItem value="rehearsal">연습일지 계정 (단막극 팀원 · 낭독극 강사·수강생)</SelectItem>
                 <SelectItem value="normal">일반회원</SelectItem>
               </SelectContent>
             </Select>
@@ -143,20 +147,42 @@ export function UserFormDialog({
 
           {form.role === 'rehearsal' && (
             <Field label="담당 팀" required>
-              <Select value={form.rehearsalTeam} onValueChange={(rehearsalTeam) => setForm({ ...form, rehearsalTeam })}>
-                <SelectTrigger><SelectValue placeholder="연습일지를 쓸 팀을 선택하세요" /></SelectTrigger>
+              <Select
+                value={form.rehearsalTeam}
+                // 팀을 바꾸면 강사 표시를 푼다 (단막극 팀에는 강사 구분이 없다)
+                onValueChange={(rehearsalTeam) => setForm({ ...form, rehearsalTeam, rehearsalInstructor: false })}
+              >
+                <SelectTrigger><SelectValue placeholder="연습일지 팀을 선택하세요" /></SelectTrigger>
                 <SelectContent>
                   {rehearsalTeams.map((team) => (
                     <SelectItem key={team._id} value={team._id}>
-                      {team.name} · {team.title}
+                      {team.kind === 'reading' ? team.name : `[단막극] ${team.name} · ${team.title}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {isReadingTeam && (
+                <label className="flex cursor-pointer items-start gap-2 rounded-md border p-2.5 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4"
+                    checked={form.rehearsalInstructor}
+                    onChange={(e) => setForm({ ...form, rehearsalInstructor: e.target.checked })}
+                  />
+                  <span>
+                    <span className="font-medium">강사</span>
+                    <span className="block text-xs text-muted-foreground">
+                      표시하면 이 팀 일지를 쓰고 고치며 강사 코멘트를 남깁니다. 표시하지 않으면 수강생 계정으로, 일지를 보고 댓글만 답니다.
+                    </span>
+                  </span>
+                </label>
+              )}
               <p className="text-xs text-muted-foreground">
                 {rehearsalTeams.length === 0
                   ? '아직 만든 팀이 없습니다. 먼저 연습일지 설정에서 팀을 만들어주세요.'
-                  : '로그인하면 연습일지 메뉴만 보입니다. 모든 팀 일지를 볼 수 있고, 이 팀 일지만 쓰고 고칠 수 있습니다. (삭제 불가)'}
+                  : isReadingTeam
+                    ? '로그인하면 연습일지 메뉴만 보이고, 낭독극 일지만 볼 수 있습니다. (삭제 불가)'
+                    : '로그인하면 연습일지 메뉴만 보입니다. 단막극 모든 팀 일지를 볼 수 있고, 이 팀 일지만 쓰고 고칠 수 있습니다. (삭제 불가)'}
               </p>
             </Field>
           )}

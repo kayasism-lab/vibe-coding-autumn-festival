@@ -1,18 +1,67 @@
 /**
- * 열린 단막극 연습일지 화면에서 함께 쓰는 타입과 도구.
+ * 연습일지(열린 단막극·열린 낭독극) 화면에서 함께 쓰는 타입과 도구.
  * 서버 규칙은 backend/src/lib/rehearsal-access.ts에 있고, 화면은 같은 규칙으로 버튼만 감춘다.
  */
 
+/** 연습일지 종류. 단막극과 낭독극은 서로의 팀·일지를 보지 못한다 (관리자만 둘 다 본다) */
+export type RehearsalKind = 'short_play' | 'reading'
+
 export interface RehearsalTeam {
   _id: string
+  kind: RehearsalKind
   title: string
   name: string
+  /** 단막극은 연출, 낭독극은 메인강사 */
   director: string
   assistantDirector: string
+  /** 낭독극에서 메인강사와 함께하는 강사 (단막극은 빈 목록) */
+  instructors?: string[]
   members: string[]
   order: number
-  /** 팀원 계정 번호 (1이면 jik_short_1001~) */
+  /** 팀원 계정 번호 (1이면 jik_short_1001~, 낭독극은 jik_reading_1001~) */
   accountSeries?: number
+}
+
+/**
+ * 종류에 따라 달라지는 화면 문구. 일지 모양은 같고 부르는 이름만 다르다.
+ * idPrefix는 백엔드 routes/rehearsal-accounts.ts의 ID_PREFIX와 같은 값이어야 한다
+ */
+export const REHEARSAL_LABELS: Record<
+  RehearsalKind,
+  { program: string; leader: string; comment: string; commentHint: string; member: string; idPrefix: string }
+> = {
+  short_play: {
+    program: '열린 단막극',
+    leader: '연출',
+    comment: '연출 코멘트',
+    commentHint: '연출이 팀에게 남기는 말',
+    member: '팀원',
+    idPrefix: 'jik_short_',
+  },
+  reading: {
+    program: '열린 낭독극',
+    leader: '메인강사',
+    comment: '강사 코멘트',
+    commentHint: '강사가 수강생에게 남기는 말',
+    member: '수강생',
+    idPrefix: 'jik_reading_',
+  },
+}
+
+/** 팀의 문구 묶음. 팀 정보를 아직 못 읽었으면 단막극 문구를 쓴다 */
+export function rehearsalLabels(team?: { kind?: RehearsalKind } | null) {
+  return REHEARSAL_LABELS[team?.kind === 'reading' ? 'reading' : 'short_play']
+}
+
+/** '연출 홍길동 · 조연출 김철수' 또는 '메인강사 홍길동 · 강사 김철수, 이영희' */
+export function formatTeamLeaders(team: RehearsalTeam) {
+  const parts = [`${rehearsalLabels(team).leader} ${team.director}`]
+  if (team.kind === 'reading') {
+    if (team.instructors?.length) parts.push(`강사 ${team.instructors.join(', ')}`)
+  } else if (team.assistantDirector) {
+    parts.push(`조연출 ${team.assistantDirector}`)
+  }
+  return parts.join(' · ')
 }
 
 export interface RehearsalLog {
@@ -72,22 +121,24 @@ export function resolveRehearsalAbility(account: {
   role: string
   permissions: string[]
   rehearsalTeam: string | null
+  rehearsalKind?: RehearsalKind | null
+  rehearsalInstructor?: boolean
 }): RehearsalAbility {
   const isAdmin = account.role === 'superadmin' || account.role === 'admin'
-  // 팀 설정 권한은 단막극 담당 계정만 자동으로 갖는다. 연출 코멘트도 같은 계정이 쓴다
-  const isShortPlayManager = account.role === 'group' && account.permissions.includes('rehearsal-teams')
+  // 팀 설정 권한은 단막극·낭독극 담당 계정만 자동으로 갖는다. 연출(강사) 코멘트도 같은 계정이 쓴다.
+  // 담당 계정에는 서버가 자기 종류의 팀만 내려주므로 여기서 종류를 다시 가를 필요는 없다
+  const isManager = account.role === 'group' && account.permissions.includes('rehearsal-teams')
+  // 낭독극 팀 계정은 강사만 쓰고 강사 코멘트를 남긴다. 수강생은 보고 댓글만 단다
+  const isReadingAccount = account.role === 'rehearsal' && account.rehearsalKind === 'reading'
+  const isInstructor = isReadingAccount && !!account.rehearsalInstructor
+  const canWriteOwnTeam = account.role === 'rehearsal' && (!isReadingAccount || isInstructor)
   return {
-    canComment: isAdmin || isShortPlayManager,
+    canComment: isAdmin || isManager || isInstructor,
     canDelete: isAdmin,
-    canManageTeams: isAdmin || isShortPlayManager,
+    canManageTeams: isAdmin || isManager,
     // 계정 정보를 아직 못 읽었거나(role이 빈 값) 권한이 없으면 빈 문자열로 둬 어떤 팀에도 못 쓰게 한다.
     // null(모든 팀)로 두면 불러오는 잠깐 사이 '쓰기' 버튼이 모두에게 보인다
-    writableTeamId:
-      account.role === 'rehearsal'
-        ? account.rehearsalTeam ?? ''
-        : isAdmin || isShortPlayManager
-          ? null
-          : '',
+    writableTeamId: canWriteOwnTeam ? account.rehearsalTeam ?? '' : isAdmin || isManager ? null : '',
   }
 }
 

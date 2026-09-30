@@ -15,7 +15,7 @@ export type GroupPermission =
   | 'notices'
   | 'inquiries'
   | 'citizen-applications'
-  // 열린 단막극 연습일지. 단막극 담당 계정은 둘 다, 연습일지 작성 계정은 rehearsal-logs만 자동으로 갖는다
+  // 연습일지(열린 단막극·열린 낭독극). 단막극·낭독극 담당 계정은 둘 다, 연습일지 계정은 rehearsal-logs만 자동으로 갖는다
   | 'rehearsal-logs'
   | 'rehearsal-teams'
 
@@ -74,13 +74,13 @@ export const GROUP_PERMISSION_META: PermissionMeta[] = [
   {
     key: 'rehearsal-logs',
     label: '연습일지',
-    description: '열린 단막극 팀의 연습일지를 쓰고 고칩니다. (삭제는 관리자만)',
+    description: '담당 유형(열린 단막극·열린 낭독극) 팀의 연습일지를 쓰고 고칩니다. (삭제는 관리자만)',
     grantable: false,
   },
   {
     key: 'rehearsal-teams',
     label: '연습일지 설정',
-    description: '연습일지에 쓸 팀(작품명·연출·팀원)을 만들고 고칩니다.',
+    description: '연습일지에 쓸 팀(작품명·연출 또는 강사·팀원)을 만들고 고칩니다.',
     grantable: false,
   },
 ]

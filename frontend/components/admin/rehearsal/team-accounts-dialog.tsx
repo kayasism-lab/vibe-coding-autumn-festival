@@ -8,10 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, RotateCcw, UserPlus } from 'lucide-react'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
-import type { RehearsalTeam } from '@/lib/rehearsal'
-
-// 백엔드 routes/rehearsal-accounts.ts의 REHEARSAL_ID_PREFIX와 같은 값
-const ID_PREFIX = 'jik_short_'
+import { rehearsalLabels, type RehearsalTeam } from '@/lib/rehearsal'
 
 interface Account {
   _id: string
@@ -19,18 +16,20 @@ interface Account {
   name: string
   mustChangePassword?: boolean
   lastLoginAt?: string
+  /** 낭독극 팀의 강사 계정 (사용자 관리에서 따로 만든다) */
+  rehearsalInstructor?: boolean
 }
 
 interface Props {
   team: RehearsalTeam | null
-  /** 다른 팀이 이미 쓰는 번호. 새 번호를 제안할 때 피한다 */
+  /** 같은 종류의 다른 팀이 이미 쓰는 번호. 새 번호를 제안할 때 피한다 */
   usedSeries: number[]
   onOpenChange: (open: boolean) => void
   /** 팀 번호가 정해지면 팀 목록을 다시 읽도록 알린다 */
   onChanged: () => void
 }
 
-/** 팀원 계정 일괄 만들기·목록·비밀번호 초기화 (관리자 전용) */
+/** 팀원(낭독극은 수강생) 계정 일괄 만들기·목록·비밀번호 초기화 (관리자 전용) */
 export function TeamAccountsDialog({ team, usedSeries, onOpenChange, onChanged }: Props) {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [series, setSeries] = useState(1)
@@ -91,15 +90,21 @@ export function TeamAccountsDialog({ team, usedSeries, onOpenChange, onChanged }
     if (team) await fetchAccounts(team._id)
   }
 
-  const firstId = `${ID_PREFIX}${series * 1000 + 1}`
-  const lastId = `${ID_PREFIX}${series * 1000 + count}`
+  const labels = rehearsalLabels(team)
+  const isReading = team?.kind === 'reading'
+  // 아이디 앞머리는 종류마다 다르다 (단막극 jik_short_, 낭독극 jik_reading_)
+  const firstId = `${labels.idPrefix}${series * 1000 + 1}`
+  const lastId = `${labels.idPrefix}${series * 1000 + count}`
 
   return (
     <Dialog open={!!team} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>팀원 계정 · {team?.name}</DialogTitle>
-          <DialogDescription>처음 비밀번호는 아이디와 같고, 첫 로그인 때 이름과 새 비밀번호를 정하게 됩니다.</DialogDescription>
+          <DialogTitle>{labels.member} 계정 · {team?.name}</DialogTitle>
+          <DialogDescription>
+            처음 비밀번호는 아이디와 같고, 첫 로그인 때 이름과 새 비밀번호를 정하게 됩니다.
+            {isReading && ' 수강생 계정은 일지를 보고 댓글만 답니다. 강사 계정은 사용자 관리에서 따로 만듭니다.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
@@ -139,6 +144,7 @@ export function TeamAccountsDialog({ team, usedSeries, onOpenChange, onChanged }
               <li key={account._id} className="flex items-center gap-2 px-3 py-2 text-sm">
                 <span className="w-44 shrink-0 font-mono text-xs">{account.email}</span>
                 <span className="flex-1 truncate">
+                  {account.rehearsalInstructor && <Badge className="mr-1.5 font-normal">강사</Badge>}
                   {account.mustChangePassword ? (
                     <Badge variant="outline" className="font-normal text-muted-foreground">첫 로그인 전</Badge>
                   ) : (

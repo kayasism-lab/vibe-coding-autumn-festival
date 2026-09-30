@@ -25,9 +25,10 @@ export const GROUP_DEFAULT_PERMISSIONS: GroupPermission[] = ['my-group', 'progra
 // 신청자 관리)는 극단 계정에는 애초에 해당 데이터가 없어 이쪽에만 기본으로 둔다.
 export const PROGRAM_TYPE_DEFAULT_PERMISSIONS: GroupPermission[] = ['programs', 'citizen-applications']
 
-// 열린 단막극 담당 계정이 자동으로 갖는 연습일지 권한(일지 보기·쓰기, 팀 구성 설정).
-// 담당 유형으로만 정해지는 권한이라 관리자가 다른 계정에 켜 줄 수 없다
-export const SHORT_PLAY_PERMISSIONS: GroupPermission[] = ['rehearsal-logs', 'rehearsal-teams']
+// 열린 단막극·열린 낭독극 담당 계정이 자동으로 갖는 연습일지 권한(일지 보기·쓰기, 팀 구성 설정).
+// 담당 유형으로만 정해지는 권한이라 관리자가 다른 계정에 켜 줄 수 없다.
+// 어느 종류의 일지를 다루는지는 lib/rehearsal-access.ts가 담당 유형으로 가른다
+export const REHEARSAL_MANAGER_PERMISSIONS: GroupPermission[] = ['rehearsal-logs', 'rehearsal-teams']
 
 // 연습일지 작성 계정(role: 'rehearsal')의 권한. 연습일지 메뉴 하나뿐이다
 export const REHEARSAL_ACCOUNT_PERMISSIONS: GroupPermission[] = ['rehearsal-logs']
@@ -38,7 +39,7 @@ export const GRANTABLE_PERMISSIONS: GroupPermission[] = GROUP_PERMISSIONS.filter
   (permission) =>
     !GROUP_DEFAULT_PERMISSIONS.includes(permission) &&
     !PROGRAM_TYPE_DEFAULT_PERMISSIONS.includes(permission) &&
-    !SHORT_PLAY_PERMISSIONS.includes(permission)
+    !REHEARSAL_MANAGER_PERMISSIONS.includes(permission)
 )
 
 export function isGroupPermission(value: unknown): value is GroupPermission {
@@ -55,7 +56,7 @@ export function normalizeGrantedPermissions(value: unknown): GroupPermission[] {
       .filter(isGroupPermission)
       .filter(
         (permission) =>
-          !GROUP_DEFAULT_PERMISSIONS.includes(permission) && !SHORT_PLAY_PERMISSIONS.includes(permission)
+          !GROUP_DEFAULT_PERMISSIONS.includes(permission) && !REHEARSAL_MANAGER_PERMISSIONS.includes(permission)
       )
   )
   return [...unique]
@@ -63,13 +64,14 @@ export function normalizeGrantedPermissions(value: unknown): GroupPermission[] {
 
 // 실제로 계정이 가진 전체 권한 = 기본 권한 + 관리자가 부여한 권한.
 // hasTheaterGroup이 false면(담당 극단 없이 담당 공연 유형만 있는 계정) my-group을 기본에서 뺀다.
-// 열린 단막극 담당 계정에는 연습일지 권한을 덧붙인다.
+// 열린 단막극·열린 낭독극 담당 계정에는 연습일지 권한을 덧붙인다.
 export function resolveGroupPermissions(
   granted?: string[] | null,
   hasTheaterGroup = true,
   programType?: string | null
 ): GroupPermission[] {
   const defaults = hasTheaterGroup ? GROUP_DEFAULT_PERMISSIONS : PROGRAM_TYPE_DEFAULT_PERMISSIONS
-  const shortPlay = !hasTheaterGroup && programType === 'short_play' ? SHORT_PLAY_PERMISSIONS : []
-  return [...defaults, ...normalizeGrantedPermissions(granted), ...shortPlay]
+  const isRehearsalManager = !hasTheaterGroup && (programType === 'short_play' || programType === 'reading')
+  const rehearsal = isRehearsalManager ? REHEARSAL_MANAGER_PERMISSIONS : []
+  return [...defaults, ...normalizeGrantedPermissions(granted), ...rehearsal]
 }

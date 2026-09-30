@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
-import { User } from '../models/index.js'
+import { RehearsalTeam, User } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { isSessionIdleExpired } from '../lib/session-policy.js'
 import { validatePassword } from '../lib/password-policy.js'
@@ -16,7 +16,8 @@ import {
 } from '../lib/auth.js'
 import { requireAuth } from '../middleware/require-admin.js'
 import { REHEARSAL_ACCOUNT_PERMISSIONS, resolveGroupPermissions } from '../lib/permissions.js'
-import type { UserRole } from '../types/index.js'
+import { teamKind } from '../lib/rehearsal-access.js'
+import type { RehearsalKind, UserRole } from '../types/index.js'
 import { clearFailures, getBlockedMinutes, recordFailure } from '../lib/attempt-limiter.js'
 
 export const authRouter = Router()
@@ -31,6 +32,7 @@ function publicUser(user: {
   programType?: string | null
   permissions?: string[]
   rehearsalTeam?: unknown
+  rehearsalInstructor?: boolean
   mustChangePassword?: boolean
   role: string
 }) {
@@ -47,6 +49,8 @@ function publicUser(user: {
     permissions: resolvePublicPermissions(user),
     // 연습일지 작성 계정만 값이 있다. 일지 화면에서 이 팀을 미리 골라 둔다
     rehearsalTeam: user.role === 'rehearsal' && user.rehearsalTeam ? String(user.rehearsalTeam) : null,
+    // 낭독극 팀의 강사 계정인지. 화면이 쓰기 버튼·강사 코멘트 칸을 보여줄지 정할 때 쓴다
+    rehearsalInstructor: user.role === 'rehearsal' && !!user.rehearsalInstructor,
     // true면 연습일지 화면이 이름·새 비밀번호 설정부터 띄운다
     mustChangePassword: !!user.mustChangePassword,
     role: user.role,
@@ -255,6 +259,14 @@ authRouter.get(
       return
     }
 
-    ok(res, publicUser(user))
+    // 연습일지 계정은 자기 팀이 단막극인지 낭독극인지에 따라 화면이 달라진다
+    // (낭독극 수강생은 쓰기 버튼이 없다). 관리 화면이 계정 정보를 읽는 이 응답에만 실어 보낸다
+    let rehearsalKind: RehearsalKind | null = null
+    if (user.role === 'rehearsal' && user.rehearsalTeam) {
+      const team = await RehearsalTeam.findById(user.rehearsalTeam).select('kind').lean<{ kind?: string } | null>()
+      if (team) rehearsalKind = teamKind(team)
+    }
+
+    ok(res, { ...publicUser(user), rehearsalKind })
   })
 )

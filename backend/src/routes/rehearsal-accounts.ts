@@ -7,23 +7,29 @@ import { requireAdmin, requireAuth } from '../middleware/require-admin.js'
 import { validatePassword } from '../lib/password-policy.js'
 import { generateAccessToken, generateRefreshToken, setAuthCookies } from '../lib/auth.js'
 import { cleanText } from '../lib/rehearsal-input.js'
+import { teamKind } from '../lib/rehearsal-access.js'
+import type { RehearsalKind } from '../types/index.js'
 
 /**
- * 열린 단막극 연습일지 팀원 계정.
+ * 연습일지 팀원 계정 (열린 단막극 팀원, 열린 낭독극 수강생).
  *
  * 팀원이 많아 계정을 하나씩 만들기 번거로워, 팀마다 번호를 정해 한 번에 만든다.
- *   1번 팀 → jik_short_1001 ~ 1010, 2번 팀 → jik_short_2001 ~ ...
+ *   단막극 1번 팀 → jik_short_1001 ~ 1010, 2번 팀 → jik_short_2001 ~ ...
+ *   낭독극 1번 팀 → jik_reading_1001 ~ (수강생용. 보고 댓글만 단다)
+ * 낭독극 강사 계정은 여기서 만들지 않고 사용자 관리에서 '강사'로 표시해 하나씩 만든다.
  * 처음 비밀번호는 아이디와 같다. 아이디 규칙만 알면 누구나 들어올 수 있으므로
  * 첫 로그인 때 이름과 새 비밀번호를 정하기 전까지는 연습일지를 막는다(mustChangePassword).
  */
 export const rehearsalAccountsRouter = Router()
 
-export const REHEARSAL_ID_PREFIX = 'jik_short_'
+// 종류별 아이디 앞머리. 프론트 lib/rehearsal.ts의 REHEARSAL_LABELS.idPrefix와 같은 값이어야 한다
+const ID_PREFIX: Record<RehearsalKind, string> = { short_play: 'jik_short_', reading: 'jik_reading_' }
+const KIND_LABEL: Record<RehearsalKind, string> = { short_play: '열린 단막극', reading: '열린 낭독극' }
 const MAX_SERIES = 9
 const MAX_COUNT = 99
 
-function accountId(series: number, seq: number) {
-  return `${REHEARSAL_ID_PREFIX}${series * 1000 + seq}`
+function accountId(kind: RehearsalKind, series: number, seq: number) {
+  return `${ID_PREFIX[kind]}${series * 1000 + seq}`
 }
 
 // 팀의 계정 목록 (관리자 전용)
@@ -37,7 +43,7 @@ rehearsalAccountsRouter.get(
       return
     }
     const users = await User.find({ role: 'rehearsal', rehearsalTeam: team })
-      .select('email name mustChangePassword lastLoginAt')
+      .select('email name mustChangePassword lastLoginAt rehearsalInstructor')
       .sort({ email: 1 })
       .lean()
     ok(res, users)
@@ -66,16 +72,19 @@ rehearsalAccountsRouter.post(
       return
     }
 
-    const team = await RehearsalTeam.findById(teamId).lean<{ _id: unknown; name: string } | null>()
+    const team = await RehearsalTeam.findById(teamId).lean<{ _id: unknown; name: string; kind?: string } | null>()
     if (!team) {
       fail(res, '팀을 찾을 수 없습니다.', 404)
       return
     }
-    // 한 번호를 두 팀이 나눠 쓰면 어느 팀 계정인지 헷갈리므로 막는다
+    const kind = teamKind(team)
+    // 한 번호를 두 팀이 나눠 쓰면 어느 팀 계정인지 헷갈리므로 막는다.
+    // 아이디 앞머리가 종류마다 달라, 단막극 1번과 낭독극 1번은 함께 쓸 수 있다
     // teamId는 위에서 ObjectId 형식을 확인했다. 전역 sanitizeFilter 때문에 $ne는 trusted로 감싼다
-    const sameSeries = await RehearsalTeam.findOne({ accountSeries: series, _id: mongoose.trusted({ $ne: teamId }) })
-      .select('name')
-      .lean<{ name: string } | null>()
+    const seriesTeams = await RehearsalTeam.find({ accountSeries: series, _id: mongoose.trusted({ $ne: teamId }) })
+      .select('name kind')
+      .lean<{ name: string; kind?: string }[]>()
+    const sameSeries = seriesTeams.find((item) => teamKind(item) === kind)
     if (sameSeries) {
       fail(res, `${series}번은 이미 '${sameSeries.name}' 팀이 쓰고 있습니다.`, 409)
       return
@@ -85,7 +94,7 @@ rehearsalAccountsRouter.post(
     const created: string[] = []
     const skipped: string[] = []
     for (let seq = 1; seq <= count; seq++) {
-      const email = accountId(series, seq)
+      const email = accountId(kind, series, seq)
       if (await User.exists({ email })) {
         skipped.push(email)
         continue
@@ -97,7 +106,8 @@ rehearsalAccountsRouter.post(
         password: await bcrypt.hash(email, 12),
         role: 'rehearsal',
         rehearsalTeam: teamId,
-        theaterGroupName: `열린 단막극 · ${team.name}`,
+        // 낭독극은 팀명이 곧 '열린 낭독극'이라 되풀이하지 않는다
+        theaterGroupName: kind === 'reading' ? KIND_LABEL[kind] : `${KIND_LABEL[kind]} · ${team.name}`,
         mustChangePassword: true,
       })
       created.push(email)

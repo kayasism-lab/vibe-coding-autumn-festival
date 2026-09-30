@@ -22,12 +22,13 @@ type User = {
   programType?: 'reading' | 'short_play' | null
   permissions?: GroupPermission[]
   rehearsalTeam?: string | null
+  rehearsalInstructor?: boolean
   role: UserRole
   createdAt: string
 }
 
 type TheaterGroupOption = { _id: string; name: string }
-type RehearsalTeamOption = { _id: string; name: string; title: string }
+type RehearsalTeamOption = { _id: string; name: string; title: string; kind: 'short_play' | 'reading' }
 
 const emptyForm: UserForm = {
   name: '',
@@ -37,6 +38,7 @@ const emptyForm: UserForm = {
   programType: '',
   permissions: [],
   rehearsalTeam: '',
+  rehearsalInstructor: false,
   role: 'normal',
   password: '',
   currentPassword: '',
@@ -46,7 +48,7 @@ const roleLabels: Record<UserRole, string> = {
   superadmin: '슈퍼관리자',
   admin: '관리자',
   group: '극단 담당자',
-  rehearsal: '연습일지 작성자',
+  rehearsal: '연습일지 계정',
   normal: '일반회원',
 }
 
@@ -92,7 +94,7 @@ export default function AdminUsersPage() {
       .then((data) => {
         if (data.success) {
           setRehearsalTeams(
-            data.data.map((t: RehearsalTeamOption) => ({ _id: t._id, name: t.name, title: t.title }))
+            data.data.map((t: RehearsalTeamOption) => ({ _id: t._id, name: t.name, title: t.title, kind: t.kind }))
           )
         }
       })
@@ -114,6 +116,7 @@ export default function AdminUsersPage() {
               GROUP_PERMISSION_META.some((meta) => meta.key === permission && meta.grantable)
             ),
             rehearsalTeam: user.rehearsalTeam || '',
+            rehearsalInstructor: !!user.rehearsalInstructor,
             role: user.role,
             password: '',
             currentPassword: '',
@@ -143,7 +146,7 @@ export default function AdminUsersPage() {
     }
 
     if (form.role === 'rehearsal' && !form.rehearsalTeam) {
-      setErrorMessage('연습일지 작성자 계정은 담당 팀을 선택해야 합니다.')
+      setErrorMessage('연습일지 계정은 담당 팀을 선택해야 합니다.')
       return
     }
 
@@ -229,7 +232,9 @@ export default function AdminUsersPage() {
                       <TableCell><Badge>{roleLabels[user.role]}</Badge></TableCell>
                       <TableCell>
                         {user.role === 'rehearsal' ? (
-                          <span className="text-muted-foreground">연습일지만</span>
+                          <span className="text-muted-foreground">
+                            {user.rehearsalInstructor ? '연습일지 (낭독극 강사)' : '연습일지만'}
+                          </span>
                         ) : user.role !== 'group' ? (
                           <span className="text-muted-foreground">전체 권한</span>
                         ) : granted.length === 0 ? (

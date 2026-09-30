@@ -14,6 +14,10 @@ interface AdminAccount {
   permissions: GroupPermission[]
   // 연습일지 작성 계정만 값이 있다 (이 팀의 일지만 쓰고 고칠 수 있다)
   rehearsalTeam: string | null
+  // 연습일지 계정의 팀이 단막극인지 낭독극인지 (다른 계정은 null)
+  rehearsalKind: 'short_play' | 'reading' | null
+  // 낭독극 팀의 강사 계정인지. 낭독극은 강사만 일지를 쓴다
+  rehearsalInstructor: boolean
 }
 
 /**
@@ -28,6 +32,8 @@ export function useAdminAccount() {
     programType: null,
     permissions: [],
     rehearsalTeam: null,
+    rehearsalKind: null,
+    rehearsalInstructor: false,
   })
 
   useEffect(() => {
@@ -44,6 +50,8 @@ export function useAdminAccount() {
           programType: data.data.programType ?? null,
           permissions: data.data.permissions ?? [],
           rehearsalTeam: data.data.rehearsalTeam ?? null,
+          rehearsalKind: data.data.rehearsalKind ?? null,
+          rehearsalInstructor: !!data.data.rehearsalInstructor,
         })
       })
       .catch(() => {})

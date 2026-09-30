@@ -406,7 +406,7 @@ export function HeroSection() {
                   <Sparkles className="h-4 w-4 text-white/70 mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
                   <span className="text-xs sm:text-sm font-medium text-white/80">공지사항</span>
                 </Link>
-                {/* 열린 단막극 팀의 연습일지 입구. 축제 홍보용 주황과 구분되게 녹색으로 둔다 */}
+                {/* 열린 단막극·열린 낭독극 연습일지 입구. 축제 홍보용 주황과 구분되게 녹색으로 둔다 */}
                 <Link 
                   href={rehearsalHref} 
                   className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 backdrop-blur-md rounded-xl px-2 py-3 text-center border border-emerald-400/40 transition-all group"

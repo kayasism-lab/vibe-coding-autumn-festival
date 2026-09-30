@@ -5,22 +5,30 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { REHEARSAL_LABELS, type RehearsalKind } from '@/lib/rehearsal'
 
 export interface TeamForm {
+  /** 단막극 팀인지 낭독극 팀인지. 만든 뒤에는 바꾸지 않는다 */
+  kind: RehearsalKind
   title: string
   name: string
+  /** 단막극은 연출, 낭독극은 메인강사 */
   director: string
   assistantDirector: string
+  /** 낭독극에서 메인강사와 함께하는 강사 이름을 쉼표나 줄바꿈으로 적은 글 */
+  instructorsText: string
   /** 팀원 이름을 한 줄에 한 명씩 적은 글. 저장할 때 목록으로 나눈다 */
   membersText: string
   order: number
 }
 
 export const emptyTeamForm: TeamForm = {
+  kind: 'short_play',
   title: '',
   name: '',
   director: '',
   assistantDirector: '',
+  instructorsText: '',
   membersText: '',
   order: 0,
 }
@@ -38,6 +46,8 @@ interface Props {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   isEditing: boolean
+  /** 종류(단막극·낭독극)를 고를 수 있는지. 관리자가 새 팀을 만들 때만 true다 */
+  canChooseKind: boolean
   form: TeamForm
   setForm: (form: TeamForm) => void
   errorMessage: string
@@ -45,40 +55,85 @@ interface Props {
   onSave: () => void
 }
 
-export function TeamFormDialog({ isOpen, onOpenChange, isEditing, form, setForm, errorMessage, isSaving, onSave }: Props) {
+export function TeamFormDialog({
+  isOpen,
+  onOpenChange,
+  isEditing,
+  canChooseKind,
+  form,
+  setForm,
+  errorMessage,
+  isSaving,
+  onSave,
+}: Props) {
   const memberCount = parseMembers(form.membersText).length
+  const isReading = form.kind === 'reading'
+  const labels = REHEARSAL_LABELS[form.kind]
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? '팀 정보 수정' : '팀 추가'}</DialogTitle>
+          <DialogTitle>{isEditing ? '팀 정보 수정' : '팀 추가'} · {labels.program}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <Field label="작품명" required>
-            <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          </Field>
-          <Field label="팀명" required>
-            <Input
-              placeholder="연습일지에서 팀을 고를 때 보이는 이름"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </Field>
+          {canChooseKind && (
+            <Field label="종류" required>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(REHEARSAL_LABELS) as RehearsalKind[]).map((kind) => (
+                  <Button
+                    key={kind}
+                    type="button"
+                    variant={form.kind === kind ? 'default' : 'outline'}
+                    onClick={() => setForm({ ...form, kind })}
+                  >
+                    {REHEARSAL_LABELS[kind].program}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">만든 뒤에는 종류를 바꿀 수 없습니다.</p>
+            </Field>
+          )}
+          {/* 낭독극은 작품명·팀명이 따로 없어 묻지 않는다. 서버가 '열린 낭독극'으로 채운다 */}
+          {!isReading && (
+            <>
+              <Field label="작품명" required>
+                <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              </Field>
+              <Field label="팀명" required>
+                <Input
+                  placeholder="연습일지에서 팀을 고를 때 보이는 이름"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </Field>
+            </>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="연출" required>
+            <Field label={labels.leader} required>
               <Input value={form.director} onChange={(e) => setForm({ ...form, director: e.target.value })} />
             </Field>
-            <Field label="조연출">
-              <Input
-                placeholder="없으면 비워두세요"
-                value={form.assistantDirector}
-                onChange={(e) => setForm({ ...form, assistantDirector: e.target.value })}
-              />
-            </Field>
+            {/* 낭독극은 조연출이 없고, 메인강사와 함께하는 강사를 적는다 */}
+            {isReading ? (
+              <Field label="함께하는 강사">
+                <Input
+                  placeholder="쉼표로 나눠 적어주세요 (예: 김철수, 이영희)"
+                  value={form.instructorsText}
+                  onChange={(e) => setForm({ ...form, instructorsText: e.target.value })}
+                />
+              </Field>
+            ) : (
+              <Field label="조연출">
+                <Input
+                  placeholder="없으면 비워두세요"
+                  value={form.assistantDirector}
+                  onChange={(e) => setForm({ ...form, assistantDirector: e.target.value })}
+                />
+              </Field>
+            )}
           </div>
-          <Field label={`팀원 (${memberCount}명)`}>
+          <Field label={`${labels.member} (${memberCount}명)`}>
             <Textarea
               rows={6}
               placeholder={'한 줄에 한 명씩 적어주세요\n홍길동\n김철수'}
@@ -86,7 +141,7 @@ export function TeamFormDialog({ isOpen, onOpenChange, isEditing, form, setForm,
               onChange={(e) => setForm({ ...form, membersText: e.target.value })}
             />
             <p className="text-xs text-muted-foreground">
-              연습일지의 출석 체크 명단이 됩니다. 팀원을 바꿔도 이미 쓴 일지의 출석 기록은 그대로 남습니다.
+              연습일지의 출석 체크 명단이 됩니다. 명단을 바꿔도 이미 쓴 일지의 출석 기록은 그대로 남습니다.
             </p>
           </Field>
           <Field label="표시 순서">

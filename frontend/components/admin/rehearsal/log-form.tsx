@@ -15,6 +15,7 @@ import {
   clearDraft,
   loadDraft,
   previewSessionNo,
+  rehearsalLabels,
   saveDraft,
   type RehearsalAbility,
   type RehearsalLog,
@@ -79,6 +80,7 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
   }
 
   const team = teams.find((item) => item._id === form.team)
+  const labels = rehearsalLabels(team)
   // 고칠 때는 그 일지를 쓸 때의 명단을 쓴다 (비어 있으면 지금 팀원 명단)
   const roster = editingLog?.roster.length ? editingLog.roster : team?.members ?? []
   const sessionNo = form.date ? previewSessionNo(teamLogs, form.date, form.startTime, editingLog?._id) : null
@@ -156,9 +158,11 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
         )}
         {team && (
           <dl className="mt-3 grid grid-cols-[4.5rem_1fr] gap-y-1 text-sm">
-            <dt className="text-muted-foreground">작품명</dt><dd className="font-medium">{team.title}</dd>
-            <dt className="text-muted-foreground">연출</dt><dd>{team.director}</dd>
-            {team.assistantDirector && (<><dt className="text-muted-foreground">조연출</dt><dd>{team.assistantDirector}</dd></>)}
+            {team.kind !== 'reading' && (<><dt className="text-muted-foreground">작품명</dt><dd className="font-medium">{team.title}</dd></>)}
+            <dt className="text-muted-foreground">{labels.leader}</dt><dd>{team.director}</dd>
+            {team.kind === 'reading'
+              ? !!team.instructors?.length && (<><dt className="text-muted-foreground">강사</dt><dd>{team.instructors.join(', ')}</dd></>)
+              : team.assistantDirector && (<><dt className="text-muted-foreground">조연출</dt><dd>{team.assistantDirector}</dd></>)}
           </dl>
         )}
         {sessionNo !== null && team && (
@@ -166,13 +170,14 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
         )}
       </Section>
 
-      {/* 연출 코멘트는 위쪽에 둔다. 연출(단막극 담당 계정)만 쓰고, 팀 계정에는 읽기로만 보인다 */}
+      {/* 연출 코멘트(낭독극은 강사 코멘트)는 위쪽에 둔다. 단막극은 담당 계정만, 낭독극은 강사 계정도 쓴다.
+          쓸 수 없는 계정에는 읽기로만 보인다 */}
       {(ability.canComment || form.directorComment) && (
-        <Section title="연출 코멘트" icon={<MessageSquareQuote className="h-4 w-4" />}>
+        <Section title={labels.comment} icon={<MessageSquareQuote className="h-4 w-4" />}>
           {ability.canComment ? (
             <Textarea
               rows={4}
-              placeholder="연출이 팀에게 남기는 말"
+              placeholder={labels.commentHint}
               value={form.directorComment}
               onChange={(e) => update({ directorComment: e.target.value })}
             />
@@ -205,7 +210,7 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="content">연습 내용</Label>
-            <Textarea id="content" rows={10} className="text-base" placeholder="오늘 연습 내용, 연출님의 지적사항, 느낀 점, 기타 연습 관련 내용" value={form.content} onChange={(e) => update({ content: e.target.value })} />
+            <Textarea id="content" rows={10} className="text-base" placeholder={team?.kind === 'reading' ? '오늘 연습 내용, 느낀 점, 기타 연습 관련 내용' : '오늘 연습 내용, 연출님의 지적사항, 느낀 점, 기타 연습 관련 내용'} value={form.content} onChange={(e) => update({ content: e.target.value })} />
           </div>
         </div>
       </Section>

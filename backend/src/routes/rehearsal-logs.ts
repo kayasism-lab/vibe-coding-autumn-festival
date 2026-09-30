@@ -3,10 +3,10 @@ import mongoose from 'mongoose'
 import { RehearsalComment, RehearsalLog, RehearsalTeam } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireRehearsalAccess } from '../middleware/require-rehearsal.js'
-import { canWriteTeam, type RehearsalAccess } from '../lib/rehearsal-access.js'
+import { canWriteTeam, findVisibleTeam, teamKind, visibleTeamIds, type RehearsalAccess } from '../lib/rehearsal-access.js'
 import { cleanDate, cleanNames, cleanPhotoUrls, cleanText, cleanTime } from '../lib/rehearsal-input.js'
 
-// 열린 단막극 연습일지
+// 연습일지 (열린 단막극·열린 낭독극). 계정은 자기 종류의 일지만 본다
 export const rehearsalLogsRouter = Router()
 
 rehearsalLogsRouter.use(requireRehearsalAccess)
@@ -52,9 +52,19 @@ function readLogBody(body: Record<string, unknown>, access: RehearsalAccess) {
 rehearsalLogsRouter.get(
   '/',
   asyncHandler(async (req, res) => {
+    const access: RehearsalAccess = res.locals.rehearsal
     const filter: Record<string, unknown> = {}
+    // 볼 수 있는 팀으로 범위를 좁힌다 (단막극 계정에 낭독극 일지가 섞이지 않게). null이면 전부 볼 수 있다
+    const allowedIds = await visibleTeamIds(access)
     if (typeof req.query.team === 'string' && mongoose.isValidObjectId(req.query.team)) {
+      if (allowedIds && !allowedIds.includes(req.query.team)) {
+        ok(res, [])
+        return
+      }
       filter.team = req.query.team
+    } else if (allowedIds) {
+      // 연산자 조건은 trusted로 감싸야 sanitizeFilter에 막히지 않는다 (값은 DB에서 읽은 id라 안전)
+      filter.team = mongoose.trusted({ $in: allowedIds })
     }
 
     // 번호를 매기려면 팀의 일지 전체가 필요하다. 한 팀이 수십 건 수준이라 전부 읽어도 가볍다
@@ -71,15 +81,17 @@ rehearsalLogsRouter.get(
       return
     }
     const log = await RehearsalLog.findById(req.params.id).lean<LeanLog | null>()
-    if (!log) {
+    // 다른 종류(단막극↔낭독극)의 일지는 없는 일지처럼 다룬다
+    if (!log || !(await findVisibleTeam(res.locals.rehearsal, String(log.team)))) {
       fail(res, '연습일지를 찾을 수 없습니다.', 404)
       return
     }
 
     const teamLogs = await RehearsalLog.find({ team: log.team }).select('_id').sort(SESSION_ORDER).lean<LeanLog[]>()
     const sessionNo = teamLogs.findIndex((item) => String(item._id) === String(log._id)) + 1
-    const team = await RehearsalTeam.findById(log.team).lean()
-    ok(res, { ...log, sessionNo, teamInfo: team })
+    const team = await RehearsalTeam.findById(log.team).lean<{ kind?: string } | null>()
+    // kind가 없는 예전 팀도 화면이 단막극으로 알아보게 값을 채워 보낸다
+    ok(res, { ...log, sessionNo, teamInfo: team ? { ...team, kind: teamKind(team) } : null })
   })
 )
 
@@ -92,14 +104,14 @@ rehearsalLogsRouter.post(
       fail(res, '팀을 선택해주세요.', 400)
       return
     }
-    if (!canWriteTeam(access, teamId)) {
-      fail(res, '자기 팀의 연습일지만 쓸 수 있습니다.', 403)
-      return
-    }
-
-    const team = await RehearsalTeam.findById(teamId).select('members').lean<{ members: string[] } | null>()
+    // 볼 수 없는 종류의 팀은 없는 팀처럼 다룬다 (모든 팀에 쓸 수 있는 담당 계정도 자기 종류 안에서만)
+    const team = await findVisibleTeam(access, teamId)
     if (!team) {
       fail(res, '팀을 찾을 수 없습니다.', 404)
+      return
+    }
+    if (!canWriteTeam(access, teamId)) {
+      fail(res, '이 팀의 연습일지를 쓸 권한이 없습니다.', 403)
       return
     }
 
@@ -133,12 +145,13 @@ rehearsalLogsRouter.put(
     const existing = await RehearsalLog.findById(req.params.id)
       .select('team roster')
       .lean<{ team: mongoose.Types.ObjectId; roster: string[] } | null>()
-    if (!existing) {
+    const team = existing ? await findVisibleTeam(access, String(existing.team)) : null
+    if (!existing || !team) {
       fail(res, '연습일지를 찾을 수 없습니다.', 404)
       return
     }
     if (!canWriteTeam(access, String(existing.team))) {
-      fail(res, '자기 팀의 연습일지만 고칠 수 있습니다.', 403)
+      fail(res, '이 팀의 연습일지를 고칠 권한이 없습니다.', 403)
       return
     }
 
@@ -151,8 +164,7 @@ rehearsalLogsRouter.put(
     // 팀원을 등록하기 전에 쓴 일지는 출석부가 비어 있으므로, 이때만 지금 팀원 명단으로 채운다
     let roster = existing.roster ?? []
     if (roster.length === 0) {
-      const team = await RehearsalTeam.findById(existing.team).select('members').lean<{ members: string[] } | null>()
-      roster = team?.members ?? []
+      roster = team.members ?? []
       fields.roster = roster
     }
     fields.attendees = pickAttendees(roster, fields.attendees as string[])

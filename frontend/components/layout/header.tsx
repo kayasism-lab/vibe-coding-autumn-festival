@@ -367,7 +367,7 @@ export function Header() {
             <Button asChild className="mt-3 w-full bg-emerald-600 text-white hover:bg-emerald-500" size="lg">
               <Link href={rehearsalHref} onClick={() => setIsMenuOpen(false)}>
                 <NotebookPen className="mr-2 h-4 w-4" />
-                단막극 연습일지
+                연습일지
               </Link>
             </Button>
           </div>

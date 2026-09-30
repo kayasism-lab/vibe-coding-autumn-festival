@@ -10,13 +10,15 @@ import { Button } from '@/components/ui/button'
 import { KeyRound, NotebookPen, Pencil, Plus, Trash2 } from 'lucide-react'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import { useAdminAccount } from '@/lib/use-admin-account'
-import type { RehearsalTeam } from '@/lib/rehearsal'
+import { rehearsalLabels, type RehearsalTeam } from '@/lib/rehearsal'
 
-// 열린 단막극 연습일지 설정 - 팀(작품명·팀명·연출·조연출·팀원) 만들기
+// 연습일지 설정 - 팀(작품명·팀명·연출·조연출·팀원) 만들기. 낭독극 팀은 연출 대신 강사, 팀원 대신 수강생을 적는다
 export default function AdminRehearsalTeamsPage() {
   const me = useAdminAccount()
   // 팀 삭제는 총괄 관리자·관리자만 된다 (서버도 같은 규칙으로 막는다)
   const canDelete = me.role === 'superadmin' || me.role === 'admin'
+  // 담당 계정은 자기 종류의 팀만 만든다(서버도 같은 규칙). 관리자는 새 팀을 만들 때 종류를 고른다
+  const myKind = me.programType === 'reading' ? 'reading' : 'short_play'
   const [teams, setTeams] = useState<RehearsalTeam[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [editingTeam, setEditingTeam] = useState<RehearsalTeam | null>(null)
@@ -47,32 +49,40 @@ export default function AdminRehearsalTeamsPage() {
     setForm(
       team
         ? {
+            kind: team.kind,
             title: team.title,
             name: team.name,
             director: team.director,
             assistantDirector: team.assistantDirector,
+            instructorsText: (team.instructors ?? []).join(', '),
             membersText: team.members.join('\n'),
             order: team.order,
           }
-        : { ...emptyTeamForm, order: teams.length + 1 }
+        : { ...emptyTeamForm, kind: myKind, order: teams.length + 1 }
     )
     setIsDialogOpen(true)
   }
 
   const handleSave = async () => {
-    if (!form.title.trim() || !form.name.trim() || !form.director.trim()) {
-      setErrorMessage('작품명, 팀명, 연출을 입력해주세요.')
+    // 낭독극은 작품명·팀명이 없어 메인강사만 확인한다
+    const isReading = form.kind === 'reading'
+    if (!form.director.trim() || (!isReading && (!form.title.trim() || !form.name.trim()))) {
+      setErrorMessage(isReading ? '메인강사를 입력해주세요.' : '작품명, 팀명, 연출을 입력해주세요.')
       return
     }
 
     setIsSaving(true)
     setErrorMessage('')
     try {
-      const { membersText, ...rest } = form
+      const { membersText, instructorsText, ...rest } = form
       const res = await adminFetch(editingTeam ? `/api/rehearsal-teams/${editingTeam._id}` : '/api/rehearsal-teams', {
         method: editingTeam ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...rest, members: parseMembers(membersText) }),
+        body: JSON.stringify({
+          ...rest,
+          members: parseMembers(membersText),
+          instructors: parseMembers(instructorsText),
+        }),
       })
       if (!res.ok) {
         setErrorMessage(await getErrorMessage(res))
@@ -105,7 +115,13 @@ export default function AdminRehearsalTeamsPage() {
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">연습일지 설정</h1>
-              <p className="text-muted-foreground">열린 단막극 팀별로 작품명·연출·팀원을 등록합니다.</p>
+              <p className="text-muted-foreground">
+                {canDelete
+                  ? '열린 단막극·열린 낭독극 팀별로 작품명·연출(강사)·팀원을 등록합니다.'
+                  : myKind === 'reading'
+                    ? '열린 낭독극의 강사와 수강생을 등록합니다.'
+                    : '열린 단막극 팀별로 작품명·연출·팀원을 등록합니다.'}
+              </p>
             </div>
             <Button onClick={() => openDialog()}><Plus className="mr-2 h-4 w-4" />팀 추가</Button>
           </div>
@@ -118,12 +134,17 @@ export default function AdminRehearsalTeamsPage() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {teams.map((team) => (
+              {teams.map((team) => {
+                const labels = rehearsalLabels(team)
+                return (
                 <div key={team._id} className="flex flex-col rounded-xl border bg-card p-5">
                   <div className="mb-3 flex items-start justify-between gap-2">
                     <div>
+                      {/* 관리자는 두 종류를 함께 보므로 카드마다 종류를 적어 둔다 */}
+                      {/* 낭독극은 팀명이 곧 '열린 낭독극'이라 종류와 작품명을 되풀이하지 않는다 */}
+                      {canDelete && team.kind !== 'reading' && <p className="text-xs font-medium text-primary">{labels.program}</p>}
                       <p className="text-lg font-bold">{team.name}</p>
-                      <p className="text-sm text-muted-foreground">{team.title}</p>
+                      {team.kind !== 'reading' && <p className="text-sm text-muted-foreground">{team.title}</p>}
                     </div>
                     <div className="flex">
                       <Button variant="ghost" size="icon" onClick={() => openDialog(team)} title="수정">
@@ -143,14 +164,18 @@ export default function AdminRehearsalTeamsPage() {
                     </div>
                   </div>
                   <dl className="space-y-1 text-sm">
-                    <div className="flex gap-2"><dt className="w-14 text-muted-foreground">연출</dt><dd>{team.director}</dd></div>
-                    {team.assistantDirector && (
-                      <div className="flex gap-2"><dt className="w-14 text-muted-foreground">조연출</dt><dd>{team.assistantDirector}</dd></div>
-                    )}
+                    <div className="flex gap-2"><dt className="w-16 text-muted-foreground">{labels.leader}</dt><dd>{team.director}</dd></div>
+                    {team.kind === 'reading'
+                      ? !!team.instructors?.length && (
+                          <div className="flex gap-2"><dt className="w-16 text-muted-foreground">강사</dt><dd>{team.instructors.join(', ')}</dd></div>
+                        )
+                      : team.assistantDirector && (
+                          <div className="flex gap-2"><dt className="w-16 text-muted-foreground">조연출</dt><dd>{team.assistantDirector}</dd></div>
+                        )}
                   </dl>
                   <div className="mt-3 flex flex-wrap gap-1">
                     {team.members.length === 0 ? (
-                      <span className="text-xs text-muted-foreground">등록된 팀원이 없습니다</span>
+                      <span className="text-xs text-muted-foreground">등록된 {labels.member}이 없습니다</span>
                     ) : (
                       team.members.map((member) => (
                         <Badge key={member} variant="outline" className="font-normal">{member}</Badge>
@@ -159,7 +184,7 @@ export default function AdminRehearsalTeamsPage() {
                   </div>
                   {team.accountSeries !== undefined && (
                     <p className="mt-3 text-xs text-muted-foreground">
-                      팀원 계정 jik_short_{team.accountSeries * 1000 + 1}~
+                      {labels.member} 계정 {labels.idPrefix}{team.accountSeries * 1000 + 1}~
                     </p>
                   )}
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -171,17 +196,19 @@ export default function AdminRehearsalTeamsPage() {
                     {/* 계정 만들기는 사용자 관리와 같이 관리자 전용이다 */}
                     {canDelete && (
                       <Button variant="outline" size="sm" onClick={() => setAccountsTeam(team)}>
-                        <KeyRound className="mr-2 h-4 w-4" />팀원 계정
+                        <KeyRound className="mr-2 h-4 w-4" />{labels.member} 계정
                       </Button>
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
 
           <p className="mt-6 text-xs text-muted-foreground">
-            팀원 계정은 팀 카드의 <b>팀원 계정</b>에서 한 번에 만듭니다(관리자). 한 명씩 만들려면 사용자 관리에서 계정 유형을 &lsquo;연습일지 작성자&rsquo;로 고르면 됩니다.
+            팀원(수강생) 계정은 팀 카드의 <b>계정</b> 버튼에서 한 번에 만듭니다(관리자). 한 명씩 만들려면 사용자 관리에서 계정 유형을 &lsquo;연습일지 계정&rsquo;으로 고르면 됩니다.
+            낭독극 강사 계정은 사용자 관리에서 담당 팀을 낭독극 팀으로 고르고 <b>강사</b>에 표시해 만듭니다.
           </p>
         </div>
       </main>
@@ -189,8 +216,9 @@ export default function AdminRehearsalTeamsPage() {
       <TeamAccountsDialog
         // 계정을 만든 뒤 팀 목록을 다시 읽으면 팀 번호가 붙은 새 객체로 바꿔 끼운다 (번호 칸 잠금 반영)
         team={teams.find((team) => team._id === accountsTeam?._id) ?? null}
+        // 아이디 앞머리가 종류마다 달라 번호는 같은 종류 안에서만 겹치지 않으면 된다
         usedSeries={teams
-          .filter((team) => team._id !== accountsTeam?._id && team.accountSeries !== undefined)
+          .filter((team) => team._id !== accountsTeam?._id && team.kind === accountsTeam?.kind && team.accountSeries !== undefined)
           .map((team) => team.accountSeries as number)}
         onOpenChange={(open) => !open && setAccountsTeam(null)}
         onChanged={fetchTeams}
@@ -200,6 +228,7 @@ export default function AdminRehearsalTeamsPage() {
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         isEditing={!!editingTeam}
+        canChooseKind={canDelete && !editingTeam}
         form={form}
         setForm={setForm}
         errorMessage={errorMessage}
