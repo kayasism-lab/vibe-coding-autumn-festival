@@ -18,8 +18,9 @@ export default function NewRehearsalLogPage() {
     return {
       team: team?._id ?? '',
       date: todayString(),
-      startTime: '',
-      endTime: '',
+      // 연습은 대개 저녁 8시~10시 반이라 기본값으로 채워 둔다. 다른 시간이면 고쳐 쓰면 된다
+      startTime: '20:00',
+      endTime: '22:30',
       attendees: [],
       topic: '',
       content: '',
