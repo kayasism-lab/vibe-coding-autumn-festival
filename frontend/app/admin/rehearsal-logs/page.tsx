@@ -170,10 +170,18 @@ export default function AdminRehearsalLogsPage() {
               )}
 
               {selectedTeam && logs.length > 0 && (
-                <p className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Printer className="h-3.5 w-3.5" />
-                  일지를 열고 &lsquo;인쇄 · PDF 저장&rsquo;을 누르면 A4 한 장으로 뽑을 수 있습니다.
-                </p>
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Printer className="h-3.5 w-3.5" />
+                    일지를 열고 &lsquo;인쇄 · PDF 저장&rsquo;을 누르면 A4 한 장으로 뽑을 수 있습니다.
+                  </p>
+                  {/* 팀 일지 전체를 댓글까지 한 번에 PDF로 뽑는 화면 */}
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/admin/rehearsal-logs/print?team=${selectedTeam._id}`}>
+                      <Printer className="mr-2 h-4 w-4" />이 팀 일지 전체 PDF
+                    </Link>
+                  </Button>
+                </div>
               )}
             </>
           )}

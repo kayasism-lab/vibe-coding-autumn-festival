@@ -16,7 +16,7 @@ interface Props {
 }
 
 /** '2026. 10. 3. 21:40' 형태로 짧게 보여준다 */
-function formatCommentTime(value: string) {
+export function formatCommentTime(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
   const pad = (n: number) => String(n).padStart(2, '0')
