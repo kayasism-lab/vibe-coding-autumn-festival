@@ -22,11 +22,18 @@ export interface CitizenApplicationOpenState {
   shortPlay: boolean
   /** 열린 낭독극 접수가 열려 있는지 */
   reading: boolean
+  /**
+   * 둘 다 접수를 받지 않고, 그중 하나라도 '신청마감' 상태인지.
+   * 히어로 버튼에 '신청마감' 배지를 붙일 때 쓴다.
+   * 준비중·행사종료만 있을 때는 마감이 아니므로 false다
+   */
+  closed: boolean
   /** 조회가 끝났는지. 확인 전에는 띠·배지를 그리지 않아 화면이 깜빡이지 않는다 */
   isLoaded: boolean
 }
 
-const CLOSED_STATE: CitizenApplicationOpenState = { shortPlay: false, reading: false, isLoaded: true }
+// 조회 실패 때 쓰는 값. 실제 상태를 모르므로 '신청마감' 배지도 띄우지 않는다
+const CLOSED_STATE: CitizenApplicationOpenState = { shortPlay: false, reading: false, closed: false, isLoaded: true }
 
 /**
  * 한 화면에서 모집 띠와 히어로 버튼이 함께 이 훅을 쓰므로 조회 결과를 나눠 쓴다.
@@ -44,13 +51,18 @@ function fetchOpenState(): Promise<CitizenApplicationOpenState> {
 
       // 서버가 신청을 붙이는 기준(같은 유형 중 첫 번째 공개 작품)과 맞춘다.
       // 목록은 노출 순서대로 오므로 유형별 첫 작품이 신청을 받는 작품이다
-      const isOpen = (type: CitizenProgramType) => {
+      const statusOf = (type: CitizenProgramType) => {
         const program = programs.find((item) => item.type === type)
         // 작품이 아직 없으면 resolveCitizenApplicationStatus가 '준비 중'으로 본다
-        return program ? resolveCitizenApplicationStatus(program) === 'open' : false
+        return program ? resolveCitizenApplicationStatus(program) : 'preparing'
       }
+      const shortPlayStatus = statusOf('short_play')
+      const readingStatus = statusOf('reading')
+      const shortPlay = shortPlayStatus === 'open'
+      const reading = readingStatus === 'open'
+      const closed = !shortPlay && !reading && (shortPlayStatus === 'closed' || readingStatus === 'closed')
 
-      return { shortPlay: isOpen('short_play'), reading: isOpen('reading'), isLoaded: true }
+      return { shortPlay, reading, closed, isLoaded: true }
     })
     .catch(() => {
       // 실패한 결과를 캐시에 남기면 다음 화면에서도 계속 닫힌 상태로 보인다
@@ -82,6 +94,7 @@ export function useCitizenApplicationOpen(): CitizenApplicationOpenState {
   const [state, setState] = useState<CitizenApplicationOpenState>({
     shortPlay: false,
     reading: false,
+    closed: false,
     isLoaded: false,
   })
 

@@ -99,7 +99,7 @@ export function HeroSection() {
   const [selectedGroup, setSelectedGroup] = useState<TheaterGroup | null>(null)
   // 배지의 인스타그램 링크는 관리자 설정 값을 따른다 (미설정 시 기존 값 유지)
   const siteInfo = useSiteInfo()
-  // 낭독극·단막극 중 하나라도 접수 중이면 신청 버튼에 '모집중'을 붙인다
+  // 낭독극·단막극 중 하나라도 접수 중이면 신청 버튼에 '모집중'을, 마감했으면 '신청마감'을 붙인다
   const citizenApply = useCitizenApplicationOpen()
   const rehearsalHref = useRehearsalEntryHref()
   const isCitizenApplyOpen = citizenApply.shortPlay || citizenApply.reading
@@ -323,6 +323,13 @@ export function HeroSection() {
                           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
                         </span>
                         모집중
+                      </span>
+                    )}
+                    {/* 마감 뒤에는 '신청마감'을 붙인다. 이미 끝난 일이라 서두를 이유가 없으므로
+                        깜빡임 없이 차분한 회색으로 둔다(사용자 요청) */}
+                    {!isCitizenApplyOpen && citizenApply.closed && (
+                      <span className="absolute -right-2 -top-2 flex items-center rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg ring-2 ring-white/80">
+                        신청마감
                       </span>
                     )}
                   </Link>
