@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { Menu, X, ChevronDown } from 'lucide-react'
+import { Menu, X, ChevronDown, NotebookPen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { resolveGroupHomeHref, type GroupPermission } from '@/lib/admin-permissions'
@@ -14,6 +14,10 @@ type NavItem = {
   /** 하위 항목이 없으면 드롭다운 없이 바로 이동하는 단독 메뉴가 된다 */
   children?: { href: string; label: string }[]
 }
+
+// 열린 단막극 팀이 연습일지를 쓰러 들어오는 입구. 로그인 뒤 곧장 연습일지 목록으로 간다
+const REHEARSAL_LOGIN_HREF = '/admin/login?for=rehearsal'
+const REHEARSAL_HOME_HREF = '/admin/rehearsal-logs'
 
 const navItems: NavItem[] = [
   {
@@ -71,6 +75,8 @@ export function Header() {
   // "관리자 로그인" 대신 "관리페이지 이동"을 보여준다. 이 컴포넌트는 페이지마다
   // 개별적으로 들어가 있어 이동할 때마다 새로 마운트되므로, 매번 최신 상태로 확인된다.
   const [adminHref, setAdminHref] = useState<string | null>(null)
+  // 이미 로그인한 연습일지 사용자는 로그인 화면을 건너뛰고 연습일지로 바로 보낸다
+  const [rehearsalHref, setRehearsalHref] = useState(REHEARSAL_LOGIN_HREF)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,11 +91,15 @@ export function Header() {
       .then((res) => res.json())
       .then((data) => {
         const role = data.data?.role
+        const permissions = (data.data?.permissions ?? []) as GroupPermission[]
+        // 연습일지 권한: 관리자·총괄 관리자, 또는 권한 목록에 연습일지가 있는 계정(단막극 담당·팀원)
+        const canOpenRehearsal =
+          data.success && (role === 'superadmin' || role === 'admin' || permissions.includes('rehearsal-logs'))
+        setRehearsalHref(canOpenRehearsal ? REHEARSAL_HOME_HREF : REHEARSAL_LOGIN_HREF)
         if (!data.success || (role !== 'superadmin' && role !== 'admin' && role !== 'group')) {
           setAdminHref(null)
           return
         }
-        const permissions = (data.data?.permissions ?? []) as GroupPermission[]
         setAdminHref(role === 'group' ? resolveGroupHomeHref(permissions) : '/admin')
       })
       .catch(() => setAdminHref(null))
@@ -141,8 +151,15 @@ export function Header() {
                 </span>
               </span>
             </div>
-            {/* 모바일 화면: 좌측 주최·주관/후원이 다 숨겨지므로 후원 로고만이라도 축소해서 노출 */}
-            <span className="flex items-center gap-1.5 text-white/70 sm:hidden flex-shrink-0">
+            {/* 모바일 화면: 좌측 주최·주관/후원이 다 숨겨지므로 후원 로고만이라도 축소해서 노출.
+                팀원이 휴대폰으로 바로 들어오도록 연습일지 버튼을 로고 앞에 둔다 (축제 홍보용 주황과 구분되는 녹색) */}
+            <span className="flex items-center gap-2 text-white/70 sm:hidden flex-shrink-0">
+              <Link
+                href={rehearsalHref}
+                className="rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-500"
+              >
+                연습일지
+              </Link>
               <span>후원</span>
               <span className="flex h-6 items-center rounded-md bg-white px-1">
                 <Image
@@ -168,6 +185,14 @@ export function Header() {
                   관리자 로그인
                 </Link>
               )}
+              {/* 열린 단막극 팀 입구. 축제 홍보용 주황과 섞이지 않게 녹색 버튼으로 구분한다 */}
+              <Link
+                href={rehearsalHref}
+                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 font-semibold text-white transition-colors hover:bg-emerald-500"
+              >
+                <NotebookPen className="h-3.5 w-3.5" />
+                단막극 연습일지
+              </Link>
             </div>
           </div>
         </div>
@@ -357,6 +382,13 @@ export function Header() {
             <Button asChild className="w-full" size="lg">
               <Link href="/tickets" onClick={() => setIsMenuOpen(false)}>
                 예매하기
+              </Link>
+            </Button>
+            {/* 상단 띠는 스크롤하면 사라지므로, 전체 메뉴에서도 연습일지로 갈 수 있게 한다 */}
+            <Button asChild className="mt-3 w-full bg-emerald-600 text-white hover:bg-emerald-500" size="lg">
+              <Link href={rehearsalHref} onClick={() => setIsMenuOpen(false)}>
+                <NotebookPen className="mr-2 h-4 w-4" />
+                단막극 연습일지
               </Link>
             </Button>
           </div>
