@@ -35,6 +35,16 @@ export interface RehearsalLog {
   sessionNo: number
 }
 
+/** 연습일지 댓글. 이름은 서버가 지금 계정 이름으로 채워 준다 */
+export interface RehearsalComment {
+  _id: string
+  /** 쓴 계정 id. 본인 댓글이면 지우기 버튼을 보여준다 */
+  author: string
+  authorName: string
+  content: string
+  createdAt: string
+}
+
 /** 일지 쓰기·고치기 화면에서 다루는 값 */
 export interface RehearsalLogDraft {
   team: string

@@ -205,7 +205,7 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="content">연습 내용</Label>
-            <Textarea id="content" rows={10} className="text-base" placeholder="오늘 한 것, 잘된 점, 다음에 할 것" value={form.content} onChange={(e) => update({ content: e.target.value })} />
+            <Textarea id="content" rows={10} className="text-base" placeholder="오늘 연습 내용, 연출님의 지적사항, 느낀 점, 기타 연습 관련 내용" value={form.content} onChange={(e) => update({ content: e.target.value })} />
           </div>
         </div>
       </Section>

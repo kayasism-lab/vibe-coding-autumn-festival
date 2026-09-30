@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import mongoose from 'mongoose'
-import { RehearsalLog, RehearsalTeam } from '../models/index.js'
+import { RehearsalComment, RehearsalLog, RehearsalTeam } from '../models/index.js'
 import { asyncHandler, fail, ok } from '../lib/http.js'
 import { requireRehearsalAccess } from '../middleware/require-rehearsal.js'
 import { canWriteTeam, type RehearsalAccess } from '../lib/rehearsal-access.js'
@@ -180,6 +180,8 @@ rehearsalLogsRouter.delete(
       fail(res, '연습일지를 찾을 수 없습니다.', 404)
       return
     }
+    // 일지가 없어지면 달린 댓글도 볼 곳이 없으므로 함께 지운다
+    await RehearsalComment.deleteMany({ log: log._id })
     ok(res, null, '연습일지를 지웠습니다.')
   })
 )

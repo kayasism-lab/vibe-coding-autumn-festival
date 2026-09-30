@@ -475,3 +475,16 @@ export interface IRehearsalLog extends Document {
   createdAt: Date
   updatedAt: Date
 }
+
+// 연습일지에 단 댓글. 다른 팀 일지에도 달 수 있다
+export interface IRehearsalComment extends Document {
+  _id: Types.ObjectId
+  log: Types.ObjectId
+  // 쓴 계정. 본인 댓글인지 가려 지우기 버튼을 보여줄 때 쓴다
+  author: Types.ObjectId
+  // 쓸 당시 이름. 계정이 지워져도 누가 썼는지 남도록 함께 저장한다
+  authorName: string
+  content: string
+  createdAt: Date
+  updatedAt: Date
+}

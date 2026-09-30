@@ -8,6 +8,7 @@ import { inquiriesRouter } from './inquiries.js'
 import { noticesRouter } from './notices.js'
 import { programsRouter } from './programs.js'
 import { rehearsalAccountsRouter } from './rehearsal-accounts.js'
+import { rehearsalCommentsRouter } from './rehearsal-comments.js'
 import { rehearsalLogsRouter } from './rehearsal-logs.js'
 import { rehearsalTeamsRouter } from './rehearsal-teams.js'
 import { schedulesRouter } from './schedules.js'
@@ -29,6 +30,8 @@ apiRouter.use('/notices', noticesRouter)
 apiRouter.use('/programs', programsRouter)
 // 열린 단막극 연습일지 (팀 구성 / 일지)
 apiRouter.use('/rehearsal-teams', rehearsalTeamsRouter)
+// 댓글은 일지 주소 아래에 둔다 (일지 id는 mergeParams로 넘겨받는다)
+apiRouter.use('/rehearsal-logs/:logId/comments', rehearsalCommentsRouter)
 apiRouter.use('/rehearsal-logs', rehearsalLogsRouter)
 apiRouter.use('/rehearsal-accounts', rehearsalAccountsRouter)
 apiRouter.use('/schedules', schedulesRouter)

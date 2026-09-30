@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
+import { RehearsalLogComments } from '@/components/admin/rehearsal/log-comments'
 import { RehearsalLogDocument } from '@/components/admin/rehearsal/log-document'
 import { RehearsalShell, useRehearsalContext } from '@/components/admin/rehearsal/rehearsal-shell'
 import { Button } from '@/components/ui/button'
@@ -16,7 +17,7 @@ type LogDetail = RehearsalLog & { teamInfo: RehearsalTeam | null }
 export default function RehearsalLogDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { ability, ready } = useRehearsalContext()
+  const { me, ability, ready } = useRehearsalContext()
   const [log, setLog] = useState<LogDetail | null>(null)
   const [error, setError] = useState('')
 
@@ -72,6 +73,9 @@ export default function RehearsalLogDetailPage() {
             )}
           </div>
           <RehearsalLogDocument log={log} team={log.teamInfo} />
+          {/* 댓글은 모든 팀 일지에 달 수 있고, 인쇄·PDF에도 함께 실린다.
+              계정 정보가 준비된 뒤에 그려야 본인 댓글을 가려낸다 */}
+          {ready && <RehearsalLogComments logId={log._id} myId={me.id} canDeleteAny={ability.canDelete} />}
         </>
       )}
     </RehearsalShell>
