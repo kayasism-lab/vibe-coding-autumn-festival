@@ -25,7 +25,6 @@ export default function NewRehearsalLogPage() {
       content: '',
       directorComment: '',
       photos: [],
-      files: [],
     }
     // ability는 그릴 때마다 새로 만들어지는 객체라, 실제로 바뀌는 값(쓸 수 있는 팀)만 본다
     // eslint-disable-next-line react-hooks/exhaustive-deps

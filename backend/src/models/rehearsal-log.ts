@@ -16,11 +16,6 @@ const RehearsalLogSchema = new Schema<IRehearsalLog>(
     content: { type: String, default: '' },
     directorComment: { type: String, default: '' },
     photos: { type: [String], default: [] },
-    // 첨부 파일. 파일마다 따로 id를 둘 필요가 없어 _id는 만들지 않는다
-    files: {
-      type: [new Schema({ url: String, name: String, size: Number }, { _id: false })],
-      default: [],
-    },
     createdByName: { type: String, default: '' },
     updatedByName: { type: String, default: '' },
   },

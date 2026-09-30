@@ -72,14 +72,6 @@ export function formatTeamLeaders(team: RehearsalTeam) {
   return parts.join(' · ')
 }
 
-/** 연습일지 첨부 파일. 파일은 백엔드 서버 디스크에 있고 일지에는 주소·이름·크기만 남긴다 */
-export interface RehearsalFile {
-  url: string
-  name: string
-  /** 바이트 단위 */
-  size: number
-}
-
 export interface RehearsalLog {
   _id: string
   team: string
@@ -92,8 +84,6 @@ export interface RehearsalLog {
   content: string
   directorComment: string
   photos: string[]
-  /** 첨부 파일. 이 기능을 넣기 전에 쓴 일지에는 값이 없을 수 있다 */
-  files?: RehearsalFile[]
   createdByName: string
   updatedByName: string
   createdAt: string
@@ -123,8 +113,6 @@ export interface RehearsalLogDraft {
   content: string
   directorComment: string
   photos: string[]
-  /** 예전에 임시 저장된 작성 내용에는 없을 수 있어 선택 값으로 둔다 */
-  files?: RehearsalFile[]
 }
 
 /** 로그인 계정이 연습일지에서 할 수 있는 일 */

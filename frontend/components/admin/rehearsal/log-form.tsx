@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CloudinaryUpload } from '@/components/admin/cloudinary-upload'
 import { AttendanceCheck } from '@/components/admin/rehearsal/attendance-check'
-import { LogFilesUpload } from '@/components/admin/rehearsal/log-files'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -235,10 +234,6 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
           aspectRatios={[]}
           placeholder="연습 사진 올리기"
         />
-      </Section>
-
-      <Section title="첨부 파일">
-        <LogFilesUpload value={form.files ?? []} onChange={(files) => update({ files })} />
       </Section>
 
       {/* 휴대폰에서 긴 글을 쓴 뒤 맨 위로 올라가지 않고 저장할 수 있게 아래에 붙여 둔다 */}

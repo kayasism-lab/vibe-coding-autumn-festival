@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Camera, MessageSquareQuote, Paperclip, Plus, Printer, Users } from 'lucide-react'
+import { Camera, MessageSquareQuote, Plus, Printer, Users } from 'lucide-react'
 import { adminFetch } from '@/lib/admin-fetch'
 import { useAdminAccount } from '@/lib/use-admin-account'
 import {
@@ -162,11 +162,6 @@ export default function AdminRehearsalLogsPage() {
                           {log.photos.length > 0 && (
                             <Badge variant="outline" className="font-normal">
                               <Camera className="mr-1 h-3 w-3" />사진 {log.photos.length}
-                            </Badge>
-                          )}
-                          {!!log.files?.length && (
-                            <Badge variant="outline" className="font-normal">
-                              <Paperclip className="mr-1 h-3 w-3" />파일 {log.files.length}
                             </Badge>
                           )}
                           {log.directorComment && (
