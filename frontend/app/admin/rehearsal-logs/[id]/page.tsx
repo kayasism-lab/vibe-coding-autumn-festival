@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { RehearsalLogComments } from '@/components/admin/rehearsal/log-comments'
 import { RehearsalLogDocument } from '@/components/admin/rehearsal/log-document'
-import { RehearsalShell, useRehearsalContext } from '@/components/admin/rehearsal/rehearsal-shell'
+import { RehearsalShell, usePrintTitle, useRehearsalContext } from '@/components/admin/rehearsal/rehearsal-shell'
 import { Button } from '@/components/ui/button'
 import { Pencil, Printer, Trash2 } from 'lucide-react'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
@@ -45,6 +45,8 @@ export default function RehearsalLogDetailPage() {
   }
 
   const backHref = log ? `/admin/rehearsal-logs?team=${log.team}` : '/admin/rehearsal-logs'
+  // PDF로 저장할 때 파일 이름: '팀명 #차수'
+  usePrintTitle(log ? `${log.teamInfo?.name ?? '연습일지'} #${log.sessionNo}` : '')
 
   return (
     <RehearsalShell backHref={backHref}>

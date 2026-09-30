@@ -56,3 +56,20 @@ export function useRehearsalContext() {
     ready: teams !== null && !!me.id,
   }
 }
+
+/**
+ * 화면이 열려 있는 동안 브라우저 탭 제목을 바꾼다.
+ * 인쇄 창에서 'PDF로 저장'을 고르면 이 제목이 파일 이름이 되므로 '팀명 #차수'를 넣는다.
+ * 버튼 대신 Ctrl+P로 인쇄해도 같은 이름이 나오도록 인쇄 순간이 아니라 화면 전체에 걸어 둔다.
+ * 화면을 떠나면 원래 제목으로 되돌린다
+ */
+export function usePrintTitle(title: string) {
+  useEffect(() => {
+    if (!title) return
+    const previous = document.title
+    document.title = title
+    return () => {
+      document.title = previous
+    }
+  }, [title])
+}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { formatCommentTime } from '@/components/admin/rehearsal/log-comments'
 import { RehearsalLogDocument } from '@/components/admin/rehearsal/log-document'
-import { RehearsalShell, useRehearsalContext } from '@/components/admin/rehearsal/rehearsal-shell'
+import { RehearsalShell, usePrintTitle, useRehearsalContext } from '@/components/admin/rehearsal/rehearsal-shell'
 import { Button } from '@/components/ui/button'
 import { Printer } from 'lucide-react'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
@@ -60,6 +60,12 @@ export default function RehearsalLogsPrintPage() {
 
   const team = teams.find((item) => item._id === teamId) ?? null
   const backHref = teamId ? `/admin/rehearsal-logs?team=${teamId}` : '/admin/rehearsal-logs'
+  // PDF로 저장할 때 파일 이름: '팀명 #첫 차수~#마지막 차수' (한 건뿐이면 '팀명 #1')
+  const firstNo = logs?.[0]?.sessionNo
+  const lastNo = logs?.[logs.length - 1]?.sessionNo
+  usePrintTitle(
+    team && firstNo && lastNo ? `${team.name} ${firstNo === lastNo ? `#${firstNo}` : `#${firstNo}~#${lastNo}`}` : ''
+  )
 
   return (
     <RehearsalShell backHref={backHref}>
