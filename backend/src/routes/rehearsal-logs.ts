@@ -33,6 +33,15 @@ function pickAttendees(roster: string[], attendees: string[]) {
   return roster.filter((name) => checked.has(name))
 }
 
+/**
+ * 일지를 고칠 때 쓰는 출석부: 그 일지의 출석부에, 지금 팀원 중 빠져 있는 사람을 뒤에 붙인다.
+ * 일지를 먼저 쓰고 팀원을 나중에 등록하면 그 사람이 출석부에 없어 출석 체크를 할 수 없었다.
+ * 팀에서 빠진 사람은 지우지 않는다 (그날 기록은 그대로 남긴다)
+ */
+function mergeRoster(roster: string[], members: string[]) {
+  return [...roster, ...members.filter((name) => !roster.includes(name))]
+}
+
 /** 본문에서 일지 내용 칸을 읽는다. 연출 코멘트는 쓸 권한이 있을 때만 넣는다 */
 function readLogBody(body: Record<string, unknown>, access: RehearsalAccess) {
   const fields: Record<string, unknown> = {
@@ -160,13 +169,10 @@ rehearsalLogsRouter.put(
       fail(res, '연습 날짜를 선택해주세요.', 400)
       return
     }
-    // 팀은 바꾸지 않는다. 출석은 그 일지의 출석부 안에서만 고른다.
-    // 팀원을 등록하기 전에 쓴 일지는 출석부가 비어 있으므로, 이때만 지금 팀원 명단으로 채운다
-    let roster = existing.roster ?? []
-    if (roster.length === 0) {
-      roster = team.members ?? []
-      fields.roster = roster
-    }
+    // 팀은 바꾸지 않는다. 출석부는 그 일지의 명단에 지금 팀원 중 빠진 사람을 더한 것이다.
+    // 일지를 쓴 뒤에 등록한 팀원도 고치기 화면에서 출석 체크를 할 수 있어야 하기 때문이다
+    const roster = mergeRoster(existing.roster ?? [], team.members ?? [])
+    fields.roster = roster
     fields.attendees = pickAttendees(roster, fields.attendees as string[])
 
     const log = await RehearsalLog.findByIdAndUpdate(req.params.id, fields, { new: true }).lean()

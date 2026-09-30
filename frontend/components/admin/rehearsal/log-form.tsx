@@ -87,8 +87,13 @@ export function RehearsalLogForm({ teams, ability, initial, editingLog }: Props)
 
   const team = teams.find((item) => item._id === form.team)
   const labels = rehearsalLabels(team)
-  // 고칠 때는 그 일지를 쓸 때의 명단을 쓴다 (비어 있으면 지금 팀원 명단)
-  const roster = editingLog?.roster.length ? editingLog.roster : team?.members ?? []
+  // 고칠 때는 그 일지를 쓸 때의 명단에, 지금 팀원 중 빠진 사람을 뒤에 붙인다.
+  // 일지를 먼저 쓰고 팀원을 나중에 등록해도 그 사람을 출석 체크할 수 있게 하려는 것이다.
+  // 팀에서 빠진 사람은 그날 기록이 남도록 그대로 둔다 (서버 rehearsal-logs.ts의 mergeRoster와 같은 규칙)
+  const members = team?.members ?? []
+  const roster = editingLog
+    ? [...editingLog.roster, ...members.filter((name) => !editingLog.roster.includes(name))]
+    : members
   const sessionNo = form.date ? previewSessionNo(teamLogs, form.date, form.startTime, editingLog?._id) : null
   const writableTeams = teams.filter((item) => canWriteTeam(ability, item._id))
 
