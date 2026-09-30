@@ -11,12 +11,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { ArrowRight, Calendar, MapPin, Sparkles, Users, Award, ExternalLink, Play, Ticket, Instagram, Facebook, Youtube, Globe, BookOpen, HeartHandshake } from 'lucide-react'
+import { ArrowRight, Calendar, MapPin, Sparkles, Users, Award, ExternalLink, Play, Ticket, Instagram, Facebook, Youtube, Globe, BookOpen, HeartHandshake, NotebookPen } from 'lucide-react'
 import { UpcomingShowInfo } from '@/components/home/upcoming-show-info'
 import { toFitUrl } from '@/lib/cloudinary-url'
 import type { UpcomingShow } from '@/types/index'
 import { useSiteInfo } from '@/lib/site-info'
 import { citizenApplyHref, useCitizenApplicationOpen } from '@/lib/use-citizen-application-open'
+import { useRehearsalEntryHref } from '@/lib/rehearsal-entry'
 
 // 참여 극단 정보 타입
 interface TheaterGroup {
@@ -100,6 +101,7 @@ export function HeroSection() {
   const siteInfo = useSiteInfo()
   // 낭독극·단막극 중 하나라도 접수 중이면 신청 버튼에 '모집중'을 붙인다
   const citizenApply = useCitizenApplicationOpen()
+  const rehearsalHref = useRehearsalEntryHref()
   const isCitizenApplyOpen = citizenApply.shortPlay || citizenApply.reading
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
@@ -388,21 +390,29 @@ export function HeroSection() {
                 </div>
               </div>
 
-              {/* Quick Links */}
-              <div className="flex gap-3">
+              {/* Quick Links - 세 칸이 휴대폰 한 줄에 들어가도록 여백과 글자를 조금 줄였다 */}
+              <div className="flex gap-2 sm:gap-3">
                 <Link 
                   href="/schedule" 
-                  className="flex-1 bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-md rounded-xl p-4 text-center border border-amber-500/30 transition-all group"
+                  className="flex-1 bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-md rounded-xl px-2 py-3 text-center border border-amber-500/30 transition-all group"
                 >
-                  <Calendar className="h-5 w-5 text-amber-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-medium text-white">공연 일정</span>
+                  <Calendar className="h-4 w-4 text-amber-400 mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs sm:text-sm font-medium text-white">공연 일정</span>
                 </Link>
                 <Link 
                   href="/notices" 
-                  className="flex-1 bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-xl p-4 text-center border border-white/10 transition-all group"
+                  className="flex-1 bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-xl px-2 py-3 text-center border border-white/10 transition-all group"
                 >
-                  <Sparkles className="h-5 w-5 text-white/70 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-medium text-white/80">공지사항</span>
+                  <Sparkles className="h-4 w-4 text-white/70 mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs sm:text-sm font-medium text-white/80">공지사항</span>
+                </Link>
+                {/* 열린 단막극 팀의 연습일지 입구. 축제 홍보용 주황과 구분되게 녹색으로 둔다 */}
+                <Link 
+                  href={rehearsalHref} 
+                  className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 backdrop-blur-md rounded-xl px-2 py-3 text-center border border-emerald-400/40 transition-all group"
+                >
+                  <NotebookPen className="h-4 w-4 text-emerald-400 mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs sm:text-sm font-medium text-white">연습일지</span>
                 </Link>
               </div>
             </div>
