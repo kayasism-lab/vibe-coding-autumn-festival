@@ -108,7 +108,7 @@ export default function ApplyPage() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
-                    신청 안내
+                    2027 가을연극축제 참가 신청 안내
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-muted-foreground">
@@ -116,6 +116,10 @@ export default function ApplyPage() {
                   <p>- 참가 자격: 직장인 연극 동호회 또는 아마추어 극단</p>
                   <p>- 심사 결과: 2027년 1월 중 개별 통보</p>
                   <p>- 문의: {siteInfo.contactEmail}</p>
+                  {/* 올해 축제 신청으로 오해하는 일이 없도록 내년 신청임을 따로 밝힌다 */}
+                  <p className="pt-2 font-medium text-primary">
+                    ※ 극단 참가 신청은 2027년 가을연극축제를 위한 신청입니다. 올해 신청은 마감되었습니다.
+                  </p>
                 </CardContent>
               </Card>
 
