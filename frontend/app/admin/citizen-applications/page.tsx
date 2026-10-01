@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Eye, Loader2 } from 'lucide-react'
+import { Eye, Loader2, MessageCircle } from 'lucide-react'
 import { adminFetch, getErrorMessage } from '@/lib/admin-fetch'
 import {
   CitizenApplicationDetailDialog,
@@ -26,6 +26,9 @@ const statusLabels = {
   approved: { label: '승인', color: 'bg-green-100 text-green-700' },
   rejected: { label: '반려', color: 'bg-red-100 text-red-700' },
 }
+
+/** 마지막 문의 글이 신청자 것이면 아직 담당자 답을 기다리는 중이다 */
+const isAwaitingReply = (app: CitizenApplication) => app.qna?.at(-1)?.author === 'applicant'
 
 const programTypeLabels = {
   reading: '열린 낭독극',
@@ -150,6 +153,7 @@ export default function AdminCitizenApplicationsPage() {
   const hasBothTypes = new Set(applications.map((app) => app.programType)).size > 1
 
   const pendingCount = visibleApplications.filter((a) => a.status === 'pending').length
+  const awaitingReplyCount = visibleApplications.filter(isAwaitingReply).length
 
   return (
     <div className="flex min-h-screen bg-muted/30">
@@ -184,7 +188,12 @@ export default function AdminCitizenApplicationsPage() {
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <CardTitle>신청 목록</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <CardTitle>신청 목록</CardTitle>
+                  {awaitingReplyCount > 0 && (
+                    <Badge className="bg-orange-100 text-orange-700">답변 대기 문의 {awaitingReplyCount}건</Badge>
+                  )}
+                </div>
                 {hasBothTypes && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">신청 구분</span>
@@ -232,7 +241,23 @@ export default function AdminCitizenApplicationsPage() {
                   <TableBody>
                     {visibleApplications.map((app) => (
                       <TableRow key={app._id}>
-                        <TableCell className="font-medium">{app.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {app.name}
+                            {/* 답을 기다리는 문의가 있으면 표시하고, 누르면 바로 답변할 수 있는 상세 창을 연다 */}
+                            {isAwaitingReply(app) && (
+                              <button
+                                type="button"
+                                onClick={() => openDetail(app)}
+                                className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 hover:bg-orange-200"
+                                aria-label={`${app.name} 님 문의에 답변하기`}
+                              >
+                                <MessageCircle className="h-3 w-3" />
+                                문의
+                              </button>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{programTypeLabels[app.programType]}</TableCell>
                         <TableCell>{app.residence}</TableCell>
                         <TableCell>{new Date(app.createdAt).toLocaleDateString('ko-KR')}</TableCell>
