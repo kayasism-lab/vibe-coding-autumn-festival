@@ -237,7 +237,7 @@ export default function ApplyStatusPage() {
 
                   <CitizenApplicationQna
                     qna={application.qna}
-                    canReply={application.status === 'pending'}
+                    canReply={application.status !== 'rejected'}
                     replyingAs="applicant"
                     onSubmit={handleQnaReply}
                   />

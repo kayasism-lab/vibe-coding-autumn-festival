@@ -284,7 +284,7 @@ citizenApplicationsRouter.put(
   })
 )
 
-// 본인 신청 내역에 문의 남기기 (공개, 비밀번호 재확인 필요, 심사중일 때만 가능)
+// 본인 신청 내역에 문의 남기기 (공개, 비밀번호 재확인 필요, 반려된 신청만 불가)
 citizenApplicationsRouter.post(
   '/:id/qna',
   asyncHandler(async (req, res) => {
@@ -315,8 +315,9 @@ citizenApplicationsRouter.post(
     }
     clearFailures(key)
 
-    if (application.status !== 'pending') {
-      fail(res, '심사가 완료된 신청은 문의를 남길 수 없습니다.', 400)
+    // 승인 뒤에도 오디션·연습 안내 문의가 이어지므로 반려된 신청만 막는다
+    if (application.status === 'rejected') {
+      fail(res, '반려된 신청은 문의를 남길 수 없습니다.', 400)
       return
     }
 
@@ -370,7 +371,7 @@ citizenApplicationsRouter.get(
   })
 )
 
-// 관리자/담당 계정이 심사중인 신청에 문의·답변 남기기
+// 관리자/담당 계정이 심사중·승인된 신청에 문의·답변 남기기
 citizenApplicationsRouter.post(
   '/:id/qna/admin',
   requirePermission('citizen-applications'),
@@ -384,8 +385,9 @@ citizenApplicationsRouter.post(
     const application = await findManageableApplication(res, req.params.id)
     if (!application) return
 
-    if (application.status !== 'pending') {
-      fail(res, '심사가 완료된 신청에는 문의를 남길 수 없습니다.', 400)
+    // 승인된 신청자의 문의에도 답할 수 있도록 반려된 신청만 막는다
+    if (application.status === 'rejected') {
+      fail(res, '반려된 신청에는 문의를 남길 수 없습니다.', 400)
       return
     }
 

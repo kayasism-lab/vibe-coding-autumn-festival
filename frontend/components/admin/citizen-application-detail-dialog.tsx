@@ -132,7 +132,7 @@ export function CitizenApplicationDetailDialog({
 
               <CitizenApplicationQna
                 qna={selected.qna}
-                canReply={selected.status === 'pending'}
+                canReply={selected.status !== 'rejected'}
                 replyingAs="admin"
                 onSubmit={onQnaSubmit}
               />
